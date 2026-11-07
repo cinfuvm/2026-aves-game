@@ -1,209 +1,74 @@
-# TSC-80 - TypeScript for the TIC-80
+# Aves de Chile: Duelo Alado — Documentación
 
-![](logo.png)
+Repositorio de documentación del proyecto **Aves de Chile: Duelo Alado**, un juego web/PWA desarrollado con TIC-80 y JavaScript. La documentación está construida con [Antora](https://antora.org/) e incluye:
 
----
+- **PRD** (Product Requirements Document): visión, alcance, requisitos funcionales y no funcionales, reglas de batalla, contenido de las aves, arquitectura, cronograma, riesgos y criterios de aceptación.
+- **UAT** (User Acceptance Testing): estrategia, ambiente de pruebas, casos de aceptación, matriz de trazabilidad, gestión de defectos y acta de aprobación.
 
-_The documentation for TSC-80 **1.0** is available [here](https://github.com/scambier/tic80-typescript/tree/v1) - Projects created for TSC-80 1.0 are incompatible with 2.0_
+> El nombre **Aves de Chile: Duelo Alado** es un nombre de trabajo. Puede cambiarse en `docs/antora.yml` y en el contenido sin afectar la estructura.
 
----
+## Requisitos
 
-Write your [TIC-80](https://tic80.com/) **PRO** games in TypeScript.
+- Node.js 20 o superior
+- npm 10 o superior
 
-TSC-80 contains all the functions declarations (`.d.ts`) for the TIC-80 API, and will compile your TypeScript code in JavaScript to inject it into your TIC-80 cart.
+## Estructura
 
-## Installation and usage
-
-### Pre-requisites
-
-This tool has been tested with TIC-80 version 1.2.x (pro edition) on Windows 10, and should work on all platforms compatible with TIC-80 and TypeScript.
-
-1. Install NodeJS LTS
-2. Install TypeScript: `npm install -g typescript`
-3. Install TSC-80: `npm install -g tic80-typescript`
-
-### Create a project
-
-1. `tsc80 init` will create the necessary files (config, declarations, and game files) into the current directory
-2. Set the correct values inside the `tsc80-config.json`
-
-### Configuration
-
-You need to complete the `tsc80-config.json` for each project.
-
-```js
-{
-  "ticExecutable": "path/to/tic/executable/file", // The file path to your TIC executable.
-  "entry": "main.ts", // The entry point of your game's code
-  "outfile": "build/output.js", // Path to bundled file. You should not have to change this.
-  "minify": false // If you want to minify your build. May provide very slight performances improvements
-}
+```text
+.
+├── antora-playbook.yml          # Configuración del sitio Antora
+├── package.json                 # Scripts y dependencias de documentación
+├── docs/
+│   ├── antora.yml               # Descriptor del componente Antora
+│   └── modules/
+│       ├── ROOT/                # Portada y glosario
+│       ├── prd/                 # Product Requirements Document
+│       └── uat/                 # User Acceptance Testing
+└── .github/workflows/docs.yml   # Build y despliegue a GitHub Pages
 ```
 
-### Run TSC-80
+## Construir y previsualizar
 
-- `$ tsc80 build` will build your game into the "build" directory
-- `$ tsc80 run` will build, watch the changes, and launch your game through TIC-80
-
-Once that TIC-80 is running, all code changes in .ts files will be reflected after a reload (`ctrl+r`). You can update and save your assets directly in TIC-80.
-
-### Workflow
-
-`$ tsc80 run` continuously watches changes in your .ts files and compiles them on the fly. You then alt-tab to TIC-80, and hit `ctrl+r` to reload the game.
-This instructs TIC-80 to load `game.js` and inject the compiled code inside the cart.
-
-❗ You **must not** edit the compiled JavaScript code inside the TIC-80 editor. Your changes would be overwritten.
-
-You **must** only edit **assets** (sprites, map, sounds, music) inside the TIC-80 editor. **Don't forget to save your changes _before_ reloading the code.**
-
-When you hit `ctrl+s` inside TIC-80, `game.js` is saved as a standalone TIC-80 cart.
-
-#### Version control
-
-The `build` folder can be ignored, but you **must** commit `game.js`, since it contains all non-code assets.
-
-## Code & Modules
-
-If you know TypeScript and modern web development, writing your TIC-80 game with TSC-80 should be straightforward. It uses [esbuild](https://esbuild.github.io/) to compile and bundle the code, targets `ES2020` and uses the modern ESM syntax (`import` & `export`).
-
-`tsc80 build|run` only transpiles your TypeScript files to JavaScript, and compiles them together as a single output file. Internally, TIC-80 uses [QuickJS](https://github.com/nesbox/quickjs) as its JavaScript engine.
-
-The following limitations apply:
-
-- JS code up to ES2020. This tool does not provide polyfills.
-- ! No `export` from your entry file
-- Required to have a single file output
-- Tree-shaking is disabled by default, as esbuild would strip important "unused" functions like `TIC()`
-
-## Issues
-
-**TIC-80 doesn't reload my code**
-
-If you're building TIC-80 yourself, make sure to use the correct settings
-
-```sh
-$ cd <path-to-tic>/build
-$ cmake -G "Visual Studio 16 2019" -DBUILD_PRO=On -DCMAKE_BUILD_TYPE=MinSizeRel ..
-$ cmake --build . --config MinSizeRel --parallel
+```bash
+npm install
+npm run docs:build
+npm run docs:serve
 ```
 
-## Changelog
+El sitio se genera en `build/site` y se publica en `http://localhost:8080`.
 
-### 2.0.0 - 2024-02-16 - BREAKING CHANGES
+> El playbook usa el directorio actual como fuente de contenido. Antora espera que la fuente sea un repositorio Git; si aún no lo es, ejecuta `git init` y crea un primer commit antes de construir.
+>
+> El archivo `package-lock.json` está versionado para que el workflow de GitHub Actions use `npm ci` y obtenga instalaciones reproducibles.
 
-- Projects created for TSC-80 1.0 must be refactored to be compatible with 2.0
-- Builds are now done with esbuild, instead of `tsc`
-- Projects now use ESM, with `import` and `export`
+## Limpiar artefactos
 
-### 1.1.0 - 2023-08-18
+```bash
+npm run docs:clean
+```
 
-- Formal tsconfig update to output ES2020 code for TIC-80 1.1.x
+## Despliegue
 
-### 1.0.3 - 2023-08-09
+El workflow `.github/workflows/docs.yml` construye el sitio con Antora y lo publica en GitHub Pages en cada push a `main` o mediante ejecución manual.
 
-- Dependencies update
+En la configuración del repositorio de GitHub:
 
-### 1.0.1 - 2022-06-22
+1. Ir a **Settings → Pages**.
+2. En **Build and deployment → Source**, seleccionar **GitHub Actions**.
+3. Ejecutar el workflow `Docs` o hacer push a `main`.
 
-- Cleaner code
-- Fixed race condition by @tmountain
+> Antes de publicar, actualiza `site.url` en `antora-playbook.yml` con la URL real de GitHub Pages (incluyendo el nombre del repositorio si es un sitio de proyecto, por ejemplo `https://usuario.github.io/mi-repo`).
+>
+> Este workflow publica únicamente el sitio de documentación en la raíz de Pages. Si el juego PWA y la documentación comparten el mismo sitio, integra ambos artefactos en un único workflow y publica Antora bajo `/docs/`; si usan repositorios separados, cada uno puede desplegarse de forma independiente.
 
-### 1.0.0 - 2022-05-15
+## Convenciones de edición
 
-- Official release for TIC-80 1.0
-- Added `ttri()`
+- Un archivo `.adoc` por tema, dentro de `docs/modules/<modulo>/pages/`.
+- Los identificadores de requisitos usan el prefijo `RF-` (funcionales), `RNF-` (no funcionales), `BR-` (reglas de batalla) y `UAT-` (casos de prueba).
+- Cada requisito funcional debe tener al menos un caso UAT asociado en la matriz de trazabilidad.
+- Las referencias entre páginas usan `xref:modulo:pagina.adoc[texto]`.
+- Las tablas se escriben con la sintaxis de AsciiDoc (`|===`).
 
-### 1.0.0-dev - 2021-08-19
+## Licencia y créditos
 
-- Refactoring to make this tool compatible with TIC-80 1.0.x-dev
-- Simplified workflow
-- Added `peek1()`, `peek2()`, `poke1()`, `poke2()`, `vbank()`
-
-### 0.4.9 - 2021-07-17
-
-- Added `elli()`, `ellib()`, and `trib()`
-
-### 0.4.8 - 2021-04-19
-
-- Fixed `mouse()` signature
-
-### 0.4.7 - 2021-04-08
-
-- Removing `"use strict"` from output file, since it breaks the global scope in TIC-80 engine.
-- Updated dependencies
-- Stricter TypeScript
-- Better documentation
-
-### 0.4.6 - 2021-04-03
-
-- Cleaned a bit of code
-- Added information in README
-- `compress` and `mangle` now default to true
-
-### 0.4.5 - 2020-06-15
-
-- Added new function declarations (up-to-date with TIC version 0.80)
-- Added jsdocs for all functions. Thanks a lot @miltoncandelero
-
-### 0.4.3 - 2019-01-17
-
-- Fixed the return types of multiple functions
-- Updated the boilerplate code to meet TS standards
-
-### 0.4.2 - 2018-04-19
-
-- Added `key()`, `keyp()` and `reset()` declarations
-- Updated the boilerplate code for latest TIC-80 version
-- Updated README for better, step-by-step instructions
-
-### 0.4.1 - 2017-10-13
-
-- Fixed missing input support (thanks @matanegui)
-- Fixed `tsc80` cmd help message
-
-### 0.4 - 2017-10-08
-
-- Added `textri()` declaration
-
-### 0.3 - 2017-08-05
-
-- Refactored code
-
-### 0.2 - 2017-08-04
-
-- Making a real npm package
-
-### 2017-07-31
-
-- Added a `backup` option to copy your cart to your project's folder
-
-### 2017-07-29
-
-- Updated `print()` and `spr()` declarations
-
-### 2017-07-27
-
-- Added `exit()` declaration to `tic.d.ts`
-- Updated `README.md`
-
-### 2017-07-19
-
-- Updated `tic.d.ts`
-
-### 2017-07-11
-
-- Compile from TS to JS (_finally..._)
-- Renamed "main.ts" to "sample.ts"
-- Described a small trick to ensure that the init code waits for its dependencies
-- Removed the `require` of the compiled file
-- Cleared README a bit
-
-### 2017-07-09
-
-- Added a `require` of the compiled code to catch exceptions
-- Added uglify-js to compress the compiled code
-- Rewrote the launch script
-
-### 2017-07-06
-
-- Project birth: created a definitions file for TIC-80, and a `tsconfig.json`
+La documentación se distribuye bajo licencia **CC BY 4.0**. Los nombres científicos y datos de las aves provienen de fuentes públicas; las imágenes, sonidos y música deben contar con licencia compatible con el repositorio.

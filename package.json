@@ -1,31 +1,17 @@
 {
-  "name": "tic80-typescript",
-  "version": "2.2.0",
-  "description": "A workflow to create TIC-80 games with Typescript",
+  "name": "aves-de-chile-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Documentación PRD y UAT del proyecto Aves de Chile: Duelo Alado",
   "scripts": {
-    "build": "tsc"
-  },
-  "bin": {
-    "tsc80": "bin/tsc80.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/scambier/tic80-typescript"
-  },
-  "author": "Simon Cambier (https://scambier.github.io/)",
-  "license": "MIT",
-  "dependencies": {
-    "chokidar": "^3.6.0",
-    "commander": "^7.2.0",
-    "esbuild": "^0.25.1",
-    "fs-extra": "^7.0.1",
-    "strip-json-comments": "^3.1.1",
-    "uglify-js": "^3.19.3",
-    "yesno": "^0.3.1"
+    "docs:build": "antora antora-playbook.yml",
+    "docs:serve": "antora antora-playbook.yml && http-server build/site -p 8080 -c-1",
+    "docs:clean": "rimraf build .antora-cache"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.13",
-    "@types/node": "^14.18.63",
-    "@types/uglify-js": "^3.17.5"
+    "@antora/cli": "^3.1.9",
+    "@antora/site-generator": "^3.1.9",
+    "http-server": "^14.1.1",
+    "rimraf": "^6.0.1"
   }
 }

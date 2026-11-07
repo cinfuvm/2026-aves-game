@@ -1,0 +1,30 @@
+site:
+  title: Aves de Chile — Duelo Alado
+  start_page: aves-chile:ROOT:index.adoc
+  url: https://example.github.io/aves-de-chile
+
+content:
+  sources:
+    - url: .
+      branches: HEAD
+      start_path: docs
+
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+
+output:
+  dir: ./build/site
+
+runtime:
+  cache_dir: ./.antora-cache
+
+asciidoc:
+  attributes:
+    experimental: ''
+    icons: font
+    sectanchors: ''
+    source-highlighter: highlight.js
+    project-name: "Aves de Chile: Duelo Alado"
+    project-version: '1.0'

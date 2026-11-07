@@ -1,4 +1,6 @@
-.idea/
-.history/
 node_modules/
 build/
+.antora-cache/
+.DS_Store
+*.log
+.env
