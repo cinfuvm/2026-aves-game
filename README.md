@@ -1,11 +1,11 @@
-# Aves de Chile: Duelo Alado — Documentación
+# Aves de Chile
 
-Repositorio de documentación del proyecto **Aves de Chile: Duelo Alado**, un juego web/PWA desarrollado con TIC-80 y JavaScript. La documentación está construida con [Antora](https://antora.org/) e incluye:
+Repositorio de documentación del proyecto **Aves de Chile**, un juego web/PWA desarrollado con TIC-80 y JavaScript. La documentación está construida con [Antora](https://antora.org/) e incluye:
 
 - **PRD** (Product Requirements Document): visión, alcance, requisitos funcionales y no funcionales, reglas de batalla, contenido de las aves, arquitectura, cronograma, riesgos y criterios de aceptación.
 - **UAT** (User Acceptance Testing): estrategia, ambiente de pruebas, casos de aceptación, matriz de trazabilidad, gestión de defectos y acta de aprobación.
 
-> El nombre **Aves de Chile: Duelo Alado** es un nombre de trabajo. Puede cambiarse en `docs/antora.yml` y en el contenido sin afectar la estructura.
+> El nombre **Aves de Chile: Duelo Alado** es un nombre de trabajo. Puede cambiarse en `docs/antora.yml` y en el contenido sin afectar la estructura. No es el nombre final en caso de que se decida uno distinto.
 
 ## Requisitos
 
