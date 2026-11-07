@@ -1,0 +1,132 @@
+= Matriz de trazabilidad
+:toc: left
+:description: Trazabilidad entre requisitos, reglas de batalla, entregables y casos de aceptación.
+
+== Cómo usar la matriz
+
+* Cada requisito *Must* debe tener al menos un caso UAT asociado.
+* La columna **Estado** se actualiza durante la ejecución: Pendiente, Aprobado, Fallido o Bloqueado.
+* Si un requisito no tiene caso, se considera una brecha de cobertura y debe corregirse antes de la aprobación.
+* Los métodos adicionales (inspección, Lighthouse, revisión de código) complementan los casos cuando la verificación no es funcional.
+
+== Requisitos funcionales
+
+[cols="1,3,1,1",options="header"]
+|===
+| Requisito | Casos UAT | Cobertura | Estado
+
+| RF-001 | UAT-INI-001, UAT-INI-003 | Completa | Pendiente
+| RF-002 | UAT-INI-002, UAT-AUD-001, UAT-AUD-005 | Completa | Pendiente
+| RF-003 | UAT-SEL-001 | Completa | Pendiente
+| RF-004 | UAT-SEL-002, UAT-SEL-003 | Completa | Pendiente
+| RF-005 | UAT-SEL-004, UAT-SEL-005, UAT-SEL-006 | Completa | Pendiente
+| RF-006 | UAT-SEL-007, UAT-SEL-008 | Completa | Pendiente
+| RF-007 | UAT-SEL-008, UAT-SEL-009, UAT-AUD-005 | Completa | Pendiente
+| RF-008 | UAT-SEL-008, UAT-BAT-003 | Completa | Pendiente
+| RF-009 | UAT-BAT-001 | Completa | Pendiente
+| RF-010 | UAT-BAT-002, UAT-BAT-009 | Completa | Pendiente
+| RF-011 | UAT-BAT-003 | Completa | Pendiente
+| RF-012 | UAT-BAT-004, UAT-BAT-022 | Completa | Pendiente
+| RF-013 | UAT-BAT-005, UAT-BAT-006, UAT-BAT-007, UAT-BAT-023 | Completa | Pendiente
+| RF-014 | UAT-BAT-008, UAT-BAT-021 | Completa | Pendiente
+| RF-015 | UAT-BAT-012, UAT-BAT-013 | Completa | Pendiente
+| RF-016 | UAT-BAT-011 | Completa | Pendiente
+| RF-017 | UAT-BAT-010 | Completa | Pendiente
+| RF-018 | UAT-BAT-014, UAT-BAT-015 | Completa | Pendiente
+| RF-019 | UAT-BAT-017 | Completa | Pendiente
+| RF-020 | UAT-BAT-018, UAT-RES-001 | Completa | Pendiente
+| RF-021 | UAT-BAT-019, UAT-RES-002 | Completa | Pendiente
+| RF-022 | UAT-INI-002, UAT-SEL-003, UAT-AUD-001, UAT-AUD-002, UAT-AUD-003, UAT-AUD-004, UAT-ACC-003 | Completa | Pendiente
+| RF-023 | UAT-PWA-001, UAT-PWA-002, UAT-PWA-003, UAT-PWA-006 | Completa | Pendiente
+| RF-024 | UAT-INI-003, UAT-DOC-001, UAT-DOC-002 | Completa | Pendiente
+| RF-025 | UAT-DOC-005 | Completa | Pendiente
+| RF-026 | UAT-PWA-004, UAT-PWA-005, UAT-REP-002 | Completa | Pendiente
+| RF-027 | UAT-BAT-001, UAT-BAT-002, UAT-BAT-005, UAT-BAT-008 (modo debug) | Completa | Pendiente
+| RF-028 | UAT-INI-001, UAT-SEL-001, UAT-SEL-010, UAT-ACC-001, UAT-PERF-002, UAT-PERF-003 | Completa | Pendiente
+| RF-029 | UAT-RES-003, UAT-RES-004 | Completa | Pendiente
+| RF-030 | UAT-BAT-003, UAT-BAT-016 | Completa | Pendiente
+|===
+
+== Requisitos no funcionales
+
+[cols="1,3,2,1",options="header"]
+|===
+| Requisito | Casos UAT | Método adicional | Estado
+
+| RNF-001 | UAT-PERF-003 | Matriz de navegadores | Pendiente
+| RNF-002 | UAT-PERF-002, UAT-PERF-003, UAT-PWA-001 | Prueba en dispositivos | Pendiente
+| RNF-003 | UAT-PERF-001, UAT-PERF-002 | Medición de FPS | Pendiente
+| RNF-004 | UAT-PERF-001, UAT-PERF-004 | Lighthouse y Network | Pendiente
+| RNF-005 | UAT-PWA-002, UAT-PWA-003 | DevTools offline | Pendiente
+| RNF-006 | UAT-PERF-004 | Auditoría de red | Pendiente
+| RNF-007 | UAT-USA-001 | Sesión moderada | Pendiente
+| RNF-008 | UAT-ACC-001, UAT-ACC-002, UAT-ACC-003 | Checklist de accesibilidad | Pendiente
+| RNF-009 | UAT-SEL-010, UAT-ACC-001 | Prueba táctil | Pendiente
+| RNF-010 | UAT-REP-003 | Revisión de código | Pendiente
+| RNF-011 | UAT-REP-003 | Revisión de red | Pendiente
+| RNF-012 | UAT-REP-001 | Lint y tests en CI | Pendiente
+| RNF-013 | UAT-REP-001 | Build en entorno limpio | Pendiente
+| RNF-014 | UAT-PWA-004, UAT-PWA-005 | Log de Actions | Pendiente
+| RNF-015 | UAT-DOC-006 | Revisión de `CREDITS.md` | Pendiente
+| RNF-016 | UAT-DOC-001, UAT-DOC-002, UAT-DOC-003 | Revisión de textos | Pendiente
+| RNF-017 | UAT-PWA-001, UAT-DOC-003 | Inspección de metadatos | Pendiente
+| RNF-018 | UAT-PWA-004, UAT-REP-002 | Disponibilidad de URL | Pendiente
+| RNF-019 | UAT-BAT-004, UAT-PWA-002 | Consola sin errores | Pendiente
+| RNF-020 | UAT-SEL-002, UAT-DOC-002 | Revisión de contenido | Pendiente
+|===
+
+== Reglas de batalla
+
+[cols="1,3,1",options="header"]
+|===
+| Regla | Casos UAT | Estado
+
+| BR-001 | UAT-SEL-008, UAT-BAT-003 | Pendiente
+| BR-002 | UAT-BAT-001 | Pendiente
+| BR-003 | UAT-BAT-002 | Pendiente
+| BR-004 | UAT-SEL-002, UAT-BAT-005, UAT-BAT-023 | Pendiente
+| BR-005 | UAT-BAT-005, UAT-BAT-006, UAT-BAT-023 | Pendiente
+| BR-006 | UAT-BAT-008 | Pendiente
+| BR-007 | UAT-BAT-008 | Pendiente
+| BR-008 | UAT-BAT-008 | Pendiente
+| BR-009 | UAT-BAT-007 | Pendiente
+| BR-010 | UAT-BAT-011 | Pendiente
+| BR-011 | UAT-BAT-010 | Pendiente
+| BR-012 | UAT-BAT-012, UAT-BAT-013 | Pendiente
+| BR-013 | UAT-BAT-018, UAT-BAT-019, UAT-BAT-020 | Pendiente
+|===
+
+== Entregables
+
+[cols="1,2,1",options="header"]
+|===
+| Entregable | Casos / verificación | Estado
+
+| ENT-01 Código fuente | UAT-REP-001 | Pendiente
+| ENT-02 Juego web/PWA | UAT-PWA-001 a UAT-PWA-006, UAT-PERF-002, UAT-PERF-003 | Pendiente
+| ENT-03 Manual web | UAT-DOC-001, UAT-DOC-002 | Pendiente
+| ENT-04 Tráiler | UAT-DOC-005 | Pendiente
+| ENT-05 Documentación Antora | UAT-DOC-003, UAT-DOC-004 | Pendiente
+| ENT-06 Pipeline CI/CD | UAT-PWA-004, UAT-PWA-005, UAT-REP-002 | Pendiente
+| ENT-07 Evidencia UAT | Registro de resultados y acta | Pendiente
+|===
+
+== Resumen de cobertura
+
+[cols="1,1,1",options="header"]
+|===
+| Categoría | Total | Con cobertura
+
+| Requisitos funcionales | 30 | 30
+| Requisitos no funcionales | 20 | 20
+| Reglas de batalla | 13 | 13
+| Entregables | 7 | 7
+|===
+
+== Brechas y observaciones
+
+* Si se agrega un requisito nuevo, debe incorporarse a esta matriz y a un caso UAT antes de la aprobación.
+* Si un caso se marca *No aplica*, se debe justificar y verificar que el requisito quede cubierto por otro método.
+* La cobertura de las aves se verifica en UAT-SEL-002, UAT-SEL-003 y UAT-DOC-002; si se agrega o cambia un ave, actualizar esos casos.
+* La cobertura de audio se verifica en UAT-AUD-001 a UAT-AUD-005 y UAT-ACC-003.
+* La cobertura de PWA se verifica en UAT-PWA-001 a UAT-PWA-006 y UAT-PERF-001.

@@ -1,0 +1,152 @@
+= Plan de UAT
+:toc: left
+:toclevels: 3
+:description: Plan de pruebas de aceptación de usuario para Aves de Chile: Duelo Alado.
+
+== Propósito
+
+Este documento define cómo se validará que **Aves de Chile: Duelo Alado** cumple los requisitos del PRD y está listo para su lanzamiento. El UAT se centra en la experiencia del jugador, las reglas de batalla, el contenido, el audio, la PWA y la documentación.
+
+== Alcance
+
+=== Incluido
+
+* Pantalla de inicio y navegación general.
+* Selección de equipo y fichas de aves.
+* Batalla PPTLS 4 contra 4.
+* HP, PP, daño, efectividad, rendición y relevo.
+* Pantallas de ganador, perdedor y empate.
+* Audio por pantalla y control de silencio.
+* PWA: instalación, offline, responsive y despliegue.
+* Manual de usuario web.
+* Documentación Antora (PRD y UAT).
+* Tráiler y créditos.
+
+=== Excluido
+
+* Pruebas de carga o estrés con muchos usuarios.
+* Pruebas de penetración o auditoría de seguridad formal.
+* Certificación de accesibilidad WCAG completa.
+* Compatibilidad con navegadores obsoletos.
+* Pruebas de backend (no existe).
+* Pruebas de monetización (no aplica).
+* Pruebas de internacionalización (solo español).
+
+== Referencias
+
+* xref:prd:index.adoc[PRD — Resumen ejecutivo]
+* xref:prd:requisitos-funcionales.adoc[Requisitos funcionales]
+* xref:prd:requisitos-no-funcionales.adoc[Requisitos no funcionales]
+* xref:prd:reglas-batalla.adoc[Reglas de batalla]
+* xref:prd:contenido-aves.adoc[Contenido de aves]
+* xref:prd:criterios-aceptacion.adoc[Criterios de aceptación]
+
+== Enfoque
+
+El UAT se ejecuta en tres pasadas:
+
+. **Humo:** verificar que la versión candidata carga, navega y permite una batalla completa.
+. **Funcional:** ejecutar todos los casos de este plan, priorizando los requisitos *Must*.
+. **Regresión:** repetir los casos críticos después de corregir defectos.
+
+Se usa un enfoque basado en riesgos: primero las pantallas y reglas centrales, luego el audio, la PWA y la documentación. Los casos con aleatoriedad se validan con el modo de depuración (`?debug=1`) para obtener resultados deterministas y, además, con ejecuciones normales para verificar la variabilidad.
+
+== Participantes
+
+[cols="1,2,2",options="header"]
+|===
+| Rol | Responsabilidad | Persona
+
+| Product Owner | Aprueba alcance, prioridades y acta final. | Por definir.
+| Líder de QA | Diseña y coordina la ejecución del UAT. | Por definir.
+| Ejecutor de pruebas | Ejecuta casos, registra resultados y evidencias. | QA + un integrante de código.
+| Desarrollador de guardia | Corrige defectos y confirma correcciones. | Equipo de código.
+| DevOps | Mantiene el ambiente, despliegue y acceso a URLs. | Equipo de gestión/DevOps.
+| Usuario de validación | Persona externa al equipo que prueba la experiencia. | 1–3 voluntarios.
+|===
+
+== Entregables del UAT
+
+* Plan UAT (este documento).
+* Casos de aceptación por módulo.
+* Matriz de trazabilidad requisito → caso.
+* Registro de resultados con estado y evidencia.
+* Registro de defectos con severidad y estado.
+* Acta de aceptación firmada.
+
+== Formato de los casos
+
+Cada caso incluye:
+
+[cols="1,2",options="header"]
+|===
+| Campo | Descripción
+
+| ID | Identificador único (`UAT-XXX-###`).
+| Prioridad | Alta (Must), Media (Should), Baja (Could).
+| Requisito | Requisito(s) cubierto(s).
+| Precondición y datos | Estado inicial y datos necesarios.
+| Pasos | Acciones para reproducir el caso.
+| Resultado esperado | Comportamiento observable que define el éxito.
+| Evidencia | Captura, video o log que respalda el resultado; se adjunta en el registro de resultados.
+|===
+
+== Estados de ejecución
+
+[cols="1,2",options="header"]
+|===
+| Estado | Significado
+
+| **Pendiente** | No ejecutado.
+| **Aprobado** | El resultado observado coincide con el esperado.
+| **Fallido** | El resultado observado difiere del esperado.
+| **Bloqueado** | No se puede ejecutar por una dependencia o defecto previo.
+| **No aplica** | El caso no corresponde a la versión evaluada (requiere justificación).
+|===
+
+== Cronograma de UAT
+
+[cols="1,2,2",options="header"]
+|===
+| Fecha | Actividad | Responsable
+
+| Semana 7 | Preparación del ambiente, datos y evidencia. | DevOps/QA.
+| Semana 7 | Pasada de humo sobre la versión candidata. | QA.
+| Semana 8 | Ejecución funcional de casos *Must* y *Should*. | QA + código.
+| Semana 8 | Registro de defectos y correcciones. | Código.
+| Semana 8–9 | Regresión de casos críticos. | QA.
+| Semana 9 | UAT final y acta de aceptación. | Product Owner + QA.
+|===
+
+== Instrucciones de ejecución
+
+1. Verificar que la versión desplegada corresponda al commit o tag en evaluación.
+2. Abrir la URL de producción y limpiar la caché del navegador antes de la pasada de humo.
+3. Ejecutar los casos en el orden sugerido por módulo.
+4. Registrar cada resultado en xref:uat:registro-resultados.adoc[el registro de resultados].
+5. Adjuntar evidencia: captura de pantalla, video corto o log de consola.
+6. Si un caso falla, crear un defecto con el formato de xref:uat:gestion-defectos.adoc[gestión de defectos].
+7. Al corregir un defecto, ejecutar de nuevo el caso y los casos de regresión asociados.
+8. Al finalizar, completar la matriz de trazabilidad y el acta.
+
+== Criterios de éxito
+
+* 100 % de los casos *Must* aprobados.
+* 90 % o más de los casos *Should* aprobados o justificados.
+* Cero defectos críticos o altos abiertos.
+* PWA instalable y funcional offline.
+* Documentación y manual publicados.
+* Acta de aceptación firmada.
+
+== Riesgos del UAT
+
+[cols="1,2,2",options="header"]
+|===
+| Riesgo | Impacto | Mitigación
+
+| Aleatoriedad dificulta la reproducibilidad. | Resultados inconsistentes. | Usar `?debug=1` y semillas; repetir escenarios.
+| Dispositivos limitados. | Cobertura móvil incompleta. | Emuladores + dispositivos del equipo + servicio externo si es posible.
+| Caché del service worker muestra una versión antigua. | Falsos negativos/positivos. | Limpiar caché y verificar versión antes de probar.
+| Falta de tiempo. | Casos sin ejecutar. | Priorizar *Must* y automatizar regresión.
+| Audio bloqueado por el navegador. | Casos de sonido fallidos. | Interactuar antes de validar; probar con y sin silencio.
+|===

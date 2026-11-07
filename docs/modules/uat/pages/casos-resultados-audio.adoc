@@ -1,0 +1,56 @@
+= Casos: resultados y audio
+:toc: left
+:description: Casos de aceptación de las pantallas de resultado, transiciones de audio, sonidos de aves y accesibilidad básica.
+
+== Casos de pantallas de resultado
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-RES-001 | Alta | RF-020 | Ganar una batalla con el modo de depuración o una partida normal. | 1) Derrotar a todas las aves del CPU. 2) Observar la pantalla. 3) Revisar el resumen y las opciones. 4) Escuchar el audio. | Se muestra la pantalla de ganador; suena la música 4; se ve un resumen con aves usadas, turnos y daño total; están disponibles *Jugar de nuevo* y *Volver al inicio*.
+| UAT-RES-002 | Alta | RF-021 | Perder una batalla con el modo de depuración o una partida normal. | 1) Perder todas las aves. 2) Observar la pantalla. 3) Revisar el resumen y las opciones. 4) Escuchar el audio. | Se muestra la pantalla de perdedor; suena la música 5; se ve un resumen; están disponibles *Intentar de nuevo* y *Volver al inicio*.
+| UAT-RES-003 | Alta | RF-029 | Estar en la pantalla de ganador o perdedor. | 1) Presionar *Jugar de nuevo*. 2) Verificar el estado. 3) Volver al inicio. 4) Comenzar una nueva partida. | La nueva partida reinicia HP, PP, equipos e historial; la música cambia a la pista correspondiente; no quedan procesos de audio o animación en segundo plano.
+| UAT-RES-004 | Media | RF-029 | Estar en la pantalla de resultado. | 1) Presionar *Volver al inicio*. 2) Verificar la pantalla y la música. 3) Presionar *Comenzar*. | Se vuelve al título con la música 1; el estado anterior se limpió; se puede iniciar una nueva selección de equipo.
+|===
+
+== Casos de audio
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-AUD-001 | Alta | RF-022 | Juego cargado, sonido activo. | 1) Recorrer inicio, selección, batalla, ganador y perdedor. 2) Escuchar cada pista. 3) Verificar las transiciones. | Cada pantalla reproduce su música correspondiente (1 a 5); la pista anterior se detiene antes de iniciar la nueva; no hay superposición ni silencios inesperados.
+| UAT-AUD-002 | Alta | RF-022 | Juego cargado, sonido activo. | 1) Activar silencio en una pantalla. 2) Navegar por todas las pantallas. 3) Desactivar silencio. | El silencio detiene música y efectos; se mantiene al cambiar de pantalla; al desactivarlo, vuelve la música de la pantalla actual.
+| UAT-AUD-003 | Media | RF-022 | Ficha de ave abierta. | 1) Reproducir el sonido de cada una de las diez aves. 2) Comparar los audios. 3) Verificar el volumen relativo. | Cada ave tiene un sonido único y reconocible; no se reutiliza el mismo audio; el volumen es audible pero no distorsiona.
+| UAT-AUD-004 | Media | RF-022 | Batalla en curso. | 1) Ejecutar ataques, daño, debilitamiento y rendición. 2) Escuchar los efectos. | Se reproducen efectos para ataque, daño, debilitamiento y rendición; no cortan la música; no se superponen de forma desagradable.
+| UAT-AUD-005 | Media | RF-002, RF-007, RF-019 | Navegar por las pantallas. | 1) Medir el tiempo entre el cambio de pantalla y el inicio de la música. 2) Repetir tres veces. | La música inicia de forma oportuna tras la transición; no queda audio de la pantalla anterior; no se requiere una nueva interacción salvo la inicial.
+|===
+
+== Casos de accesibilidad básica
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-ACC-001 | Media | RNF-008, RF-028 | Escritorio con teclado. | 1) Navegar el juego solo con Tab, Enter y flechas. 2) Verificar el foco. 3) Activar un botón. | El foco es visible en todos los controles; se puede jugar la selección y la batalla sin mouse; los botones se activan con Enter o Espacio.
+| UAT-ACC-002 | Media | RNF-008 | Pantalla de batalla. | 1) Revisar contraste de texto y fondos. 2) Verificar que los tipos no dependan solo del color. 3) Revisar el tamaño del texto en móvil. | El texto es legible; los íconos PPTLS tienen forma y etiqueta; la información no se pierde en escala de grises; el texto es legible en 360 px.
+| UAT-ACC-003 | Media | RF-022, RNF-008 | Juego cargado. | 1) Activar silencio. 2) Verificar que exista una alternativa visual a los avisos sonoros. 3) Revisar los mensajes de resultado. | Los avisos importantes también se muestran en texto; el silencio no oculta información; los mensajes son claros y legibles.
+|===
+
+== Caso de usabilidad
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-USA-001 | Media | RNF-007, OBJ-02 | Versión candidata. 1–3 usuarios externos al equipo. Guion de sesión y formulario. | 1) Pedir al usuario que abra el juego sin instrucciones. 2) Observar si completa una batalla. 3) Registrar dudas y errores. 4) Aplicar un cuestionario breve de satisfacción. | Al menos el 80 % de los usuarios completa una batalla sin ayuda; las dudas se registran y se clasifican; la satisfacción promedio es aceptable para el equipo.
+|===
+
+== Notas de ejecución
+
+* Las pruebas de audio deben realizarse con auriculares y con el altavoz del dispositivo.
+* Verificar el comportamiento en Chrome, Firefox y Safari; las políticas de audio pueden variar.
+* La música 4 y 5 deben ser claramente distintas de la música de batalla.
+* El resumen de la partida no debe contener datos incorrectos (por ejemplo, turnos negativos o daño total inconsistente).
+* La pantalla de empate, si se implementa, debe reutilizar el estilo de resultado y ofrecer revancha.

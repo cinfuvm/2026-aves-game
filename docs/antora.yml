@@ -1,0 +1,13 @@
+name: aves-chile
+title: Aves de Chile — Duelo Alado
+version: '1.0'
+display_version: '1.0'
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/prd/nav.adoc
+  - modules/uat/nav.adoc
+asciidoc:
+  attributes:
+    project-name: "Aves de Chile: Duelo Alado"
+    project-version: '1.0'
+    toc: left

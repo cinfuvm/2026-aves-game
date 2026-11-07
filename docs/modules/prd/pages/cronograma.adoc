@@ -1,0 +1,112 @@
+= Equipos y cronograma
+:toc: left
+:description: Plan de trabajo de nueve semanas, hitos, dependencias y asignación de equipos.
+
+== Supuestos de planificación
+
+* Duración total: **9 semanas**.
+* Iteraciones semanales con demo al cierre.
+* Equipo de 11 personas: 5 de arte/audio, 3 de código y 3 de gestión/DevOps.
+* Dedicación parcial del equipo, compatible con actividades académicas.
+* El alcance del MVP está congelado al final de la semana 2.
+* El contenido de las diez aves se entrega antes de la semana 5.
+
+== Cronograma de alto nivel
+
+[cols="1,2,3,2",options="header"]
+|===
+| Semana | Fase | Actividades principales | Hito
+
+| 1 | Descubrimiento | PRD inicial, alcance, referencias visuales, definición de aves y reglas. | Kickoff y PRD v0.1.
+| 2 | Diseño | Wireframes, paleta, fichas de aves, guion de audio, arquitectura y plan UAT. | Alcance congelado y PRD v0.9.
+| 3 | Arte y prototipo | Sprites base, pantalla de inicio, selección y primer flujo jugable sin audio final. | Prototipo de navegación.
+| 4 | Batalla | Motor PPTLS, HP, PP, daño, rendición, relevo y HUD. | Batalla jugable interna.
+| 5 | Contenido e integración | Diez aves integradas, imágenes, sonidos, descripciones y movimientos. | Contenido completo.
+| 6 | Audio y refinamiento | Cinco pistas, efectos, sonidos de aves, transiciones y pulido visual. | Candidata alpha.
+| 7 | PWA y DevOps | Manifiesto, service worker, íconos, CI/CD, Pages y manual web. | PWA publicada.
+| 8 | UAT y correcciones | Ejecución de casos, registro de defectos, correcciones y regresión. | Candidata beta.
+| 9 | Lanzamiento | UAT final, acta de aceptación, tráiler publicado y release 1.0. | Lanzamiento.
+|===
+
+== Hitos y criterios de salida
+
+[cols="1,2,2",options="header"]
+|===
+| Hito | Criterio de salida | Responsable
+
+| H1 — Kickoff | Equipo conformado, canales y repositorio listos. | Gestión.
+| H2 — Alcance congelado | PRD v0.9 revisado y aprobado. | Product Owner.
+| H3 — Prototipo navegable | Inicio, selección y transición a batalla funcionando. | Código + arte.
+| H4 — Batalla jugable | Turnos completos con PPTLS, HP, PP y resultado. | Código.
+| H5 — Contenido completo | Diez aves con assets y movimientos. | Arte/audio.
+| H6 — Alpha | Juego completo con audio y pantallas finales. | Todo el equipo.
+| H7 — PWA publicada | Instalable, offline y desplegada en Pages. | DevOps.
+| H8 — UAT | Casos *Must* ejecutados y defectos críticos cerrados. | QA.
+| H9 — Release 1.0 | Acta firmada, tráiler y documentación publicados. | Product Owner.
+|===
+
+== Distribución por equipo
+
+=== Semanas 1–2
+
+* **Arte/audio:** referencias, moodboard, paleta, fichas visuales, guion musical.
+* **Código:** arquitectura, esqueleto del cartucho, escenas vacías, módulos de batalla.
+* **Gestión/DevOps:** PRD, plan UAT, repositorio, GitHub Actions inicial, manual en borrador.
+
+=== Semanas 3–4
+
+* **Arte/audio:** sprites de aves, fondos, íconos PPTLS, música 1 y 2, efectos base.
+* **Código:** navegación, selección de equipo, motor PPTLS, HP/PP, HUD de batalla.
+* **Gestión/DevOps:** manual de usuario, estructura Antora, pipeline de docs, pruebas de concepto PWA.
+
+=== Semanas 5–6
+
+* **Arte/audio:** todas las aves, sonidos únicos, música 3, 4 y 5, animaciones, tráiler en guion.
+* **Código:** integración de contenido, rendición, relevo, resultados, modo debug.
+* **Gestión/DevOps:** service worker, manifiesto, íconos, despliegue de la PWA, avance del manual.
+
+=== Semanas 7–8
+
+* **Arte/audio:** pulido visual, mezcla de audio, edición del tráiler.
+* **Código:** correcciones de UAT, optimización móvil, pruebas de regresión.
+* **Gestión/DevOps:** ejecución UAT, registro de defectos, publicación de docs, coordinación de correcciones.
+
+=== Semana 9
+
+* **Todo el equipo:** cierre de defectos, UAT final, acta, release, publicación del tráiler y comunicación.
+
+== Dependencias críticas
+
+[cols="1,2,1",options="header"]
+|===
+| Dependencia | Impacto si se retrasa | Mitigación
+
+| Assets de las diez aves | Bloquea la integración y la UAT de contenido. | Entregas parciales semanales y placeholders.
+| Motor de batalla | Bloquea la pantalla de batalla y los resultados. | Prototipo temprano con datos de prueba.
+| Música y efectos | Afecta la experiencia y los casos de audio. | Versiones temporales con licencia y reemplazo posterior.
+| PWA y service worker | Bloquea la validación offline y el despliegue. | Implementar en paralelo desde la semana 3.
+| Exportación TIC-80 en CI | Bloquea el despliegue automatizado. | Prueba de concepto en semana 3; plan B manual documentado.
+| Dispositivos para UAT | Retrasa la validación móvil. | Emuladores y dispositivos del equipo.
+| Aprobación del Product Owner | Retrasa el cierre de alcance. | Revisiones semanales y criterios claros.
+|===
+
+== Capacidad y riesgos de planificación
+
+* La carga de arte/audio es la más alta; se recomienda paralelizar sprites, música y sonidos.
+* El equipo de código debe priorizar el motor de batalla sobre los detalles visuales.
+* El equipo de gestión/DevOps debe preparar la PWA y el pipeline desde temprano para evitar un cuello de botella al final.
+* Si el cronograma se retrasa, se recorta primero lo marcado como *Should* o *Could*, nunca los requisitos *Must*.
+* Las horas semanales se revisan en la demo de cierre de iteración.
+
+== Comunicación
+
+[cols="1,2",options="header"]
+|===
+| Actividad | Frecuencia
+
+| Daily de 15 minutos | Diaria.
+| Demo integrada | Semanal.
+| Revisión de riesgos | Quincenal.
+| Comité de aceptación | Al final de cada fase.
+| Publicación de avances | Semanal en el repositorio y canal del equipo.
+|===

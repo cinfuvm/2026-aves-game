@@ -1,0 +1,77 @@
+= PRD — Resumen ejecutivo
+:toc: left
+:toclevels: 3
+:description: Resumen, control de versiones, supuestos y decisiones abiertas del PRD.
+
+== Control del documento
+
+[cols="1,1,2,2",options="header"]
+|===
+| Versión | Fecha | Autor | Cambio
+
+| 0.1 | 2026-10-30 | Product Owner | Borrador inicial.
+| 0.9 | 2026-11-04 | Equipo completo | Revisión de alcance, reglas y contenido.
+| 1.0 | 2026-11-06 | Product Owner | Versión aprobada para desarrollo y UAT.
+|===
+
+== Resumen ejecutivo
+
+**Aves de Chile: Duelo Alado** es un videojuego de batallas por turnos para navegador web y PWA. El jugador selecciona un equipo de cuatro aves chilenas y se enfrenta a un equipo rival controlado por la CPU. Cada ave posee puntos vitales, puntos de poder y cuatro movimientos activos inspirados en la mecánica *Piedra, Papel, Tijera, Lagarto, Spock* (PPTLS). El juego busca combinar la familiaridad de una batalla Pokémon con una resolución de combate simple, rápida y creativa, usando aves y sonidos de Chile como identidad central.
+
+El producto se implementa con el motor **TIC-80** y **JavaScript**, se exporta a HTML y se envuelve en una **PWA** para permitir instalación y uso offline. Se despliega en **GitHub Pages** mediante **GitHub Actions**. El proyecto se completa con un manual de usuario web, un tráiler en YouTube y esta documentación técnica en Antora.
+
+== Problema y oportunidad
+
+Los juegos de batallas por turnos suelen exigir curvas de aprendizaje largas y una gran cantidad de contenido. Al mismo tiempo, existe interés por productos breves, jugables en el navegador y con identidad local. Este proyecto aprovecha la simplicidad de PPTLS para ofrecer una experiencia de combate inmediata, con la profundidad suficiente para cuatro aves por equipo y la riqueza visual y sonora de las aves chilenas.
+
+== Propuesta de valor
+
+* **Fácil de aprender:** la ventaja entre movimientos se entiende en segundos.
+* **Rápido de jugar:** una partida completa dura pocos minutos.
+* **Identidad local:** diez aves de Chile con imagen, sonido y descripción propias.
+* **Multiplataforma:** funciona en escritorio y móvil, y puede instalarse como PWA.
+* **Gratuito y abierto:** código fuente público y despliegue automatizado.
+
+== Objetivos de alto nivel
+
+1. Entregar un juego completo y jugable en navegador web y móvil.
+2. Implementar una batalla 4 contra 4 con reglas PPTLS claras y verificables.
+3. Incluir diez aves chilenas con contenido único.
+4. Publicar una PWA instalable con funcionamiento offline.
+5. Automatizar el despliegue con GitHub Actions y GitHub Pages.
+6. Documentar el producto con PRD, UAT y manual de usuario.
+
+== Supuestos y decisiones abiertas
+
+[cols="1,2,2",options="header"]
+|===
+| ID | Supuesto o decisión | Estado
+
+| A-01 | El equipo del jugador debe tener exactamente cuatro aves para comenzar; el CPU también usa cuatro. Se evaluará permitir equipos parciales en una versión futura. | Confirmado para MVP.
+| A-02 | Cada ave define cinco movimientos, de los cuales cuatro son activos y uno es distintivo (no usable en batalla). Los cuatro activos son fijos para mantener estables los íconos de selección. | Confirmado para MVP.
+| A-03 | El tipo PPTLS de cada movimiento es fijo y visible en la pantalla de selección. Al entrar en combate se aleatorizan los HP y los PP; el daño se aleatoriza en cada turno. | Confirmado para MVP.
+| A-04 | El daño se calcula solo para el ganador del enfrentamiento PPTLS. En caso de empate no hay daño, pero ambos consumen PP. | Confirmado para MVP.
+| A-05 | El nombre *Aves de Chile: Duelo Alado* es provisional. | Abierto.
+| A-06 | El juego es de un solo jugador contra CPU, sin cuentas, backend ni guardado de partida. | Confirmado para MVP.
+| A-07 | El idioma del juego y de la documentación es español de Chile (`es-CL`). | Confirmado para MVP.
+| A-08 | El juego se exporta desde TIC-80 a HTML y se integra en una PWA con manifiesto y service worker. | Confirmado para MVP.
+| A-09 | El manual de usuario es un sitio web estático independiente, enlazado desde el juego y desde el repositorio. | Confirmado para MVP.
+| A-10 | La música y los efectos requieren una interacción inicial del usuario para cumplir las políticas de reproducción automática de los navegadores. | Confirmado.
+| A-11 | Si ambas escuadras se quedan sin aves en el mismo turno, se declara empate técnico y se ofrece revancha. | Abierto; validar con stakeholders.
+| A-12 | Se incluirá un modo de depuración por parámetro de URL para fijar HP, PP y daño durante las pruebas UAT. | Confirmado para QA.
+|===
+
+== Navegación del PRD
+
+* xref:prd:vision-objetivos.adoc[Visión y objetivos]
+* xref:prd:alcance.adoc[Alcance y entregables]
+* xref:prd:actores.adoc[Actores y equipos]
+* xref:prd:requisitos-funcionales.adoc[Requisitos funcionales]
+* xref:prd:requisitos-no-funcionales.adoc[Requisitos no funcionales]
+* xref:prd:reglas-batalla.adoc[Sistema de batalla]
+* xref:prd:contenido-aves.adoc[Contenido: aves y movimientos]
+* xref:prd:historias-usuario.adoc[Historias de usuario]
+* xref:prd:arquitectura.adoc[Arquitectura técnica]
+* xref:prd:cronograma.adoc[Equipos y cronograma]
+* xref:prd:riesgos.adoc[Riesgos]
+* xref:prd:criterios-aceptacion.adoc[Criterios de aceptación]

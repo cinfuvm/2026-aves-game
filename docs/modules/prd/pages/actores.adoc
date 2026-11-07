@@ -1,0 +1,110 @@
+= Actores y equipos
+:toc: left
+:description: Personas, actores del sistema, equipos de trabajo y matriz RACI.
+
+== Personas
+
+[cols="1,2,2,2",options="header"]
+|===
+| Persona | Perfil | Necesidad | Escenario de uso
+
+| Jugador casual | 16–35 años, juega en el teléfono en ratos libres. | Una partida rápida, clara y sin registro. | Abre la PWA, elige cuatro aves y juega una batalla en menos de cinco minutos.
+| Fan de Pokémon | 18–40 años, conoce batallas por turnos y tipos. | Descubrir una variante creativa de combate. | Compara movimientos, busca ventajas PPTLS y arma un equipo equilibrado.
+| Estudiante o docente | 12–50 años, interés en aves de Chile. | Aprender nombres y características de aves locales. | Lee las descripciones y escucha los sonidos de cada ave.
+| Visitante desde el móvil | Usuario que llega por un enlace o redes sociales. | Instalar el juego y jugar sin fricción. | Instala la PWA desde el navegador y la usa offline.
+| Evaluador académico | Docente o jurado que revisa el proyecto. | Verificar entregables y calidad. | Revisa el repositorio, la documentación, el manual y el tráiler.
+|===
+
+== Actores del sistema
+
+[cols="1,2",options="header"]
+|===
+| Actor | Responsabilidad
+
+| Jugador | Selecciona el equipo, elige movimientos, se rinde y decide volver a jugar.
+| CPU | Selecciona automáticamente los movimientos del equipo rival y gestiona sus aves.
+| Runtime TIC-80 | Ejecuta el cartucho exportado a HTML, el bucle de juego y el audio.
+| Navegador | Ejecuta la PWA, aplica políticas de audio y ofrece instalación.
+| Service Worker | Cachea recursos y permite el funcionamiento offline.
+| GitHub Actions | Construye y despliega el juego, el manual y la documentación.
+| GitHub Pages | Publica los artefactos estáticos en una URL pública.
+| YouTube | Aloja el tráiler del juego.
+|===
+
+== Equipos
+
+El proyecto se organiza en tres equipos con responsabilidades complementarias.
+
+=== Equipo gráfico y audiovisual (5 personas)
+
+* Dirección de arte y paleta visual.
+* Diseño de las diez aves: sprites, retratos, íconos de tipos y pantallas.
+* Animaciones de ataque, daño, relevo y transiciones.
+* Composición de las cinco pistas de música.
+* Diseño de efectos de sonido y sonidos únicos de las aves.
+* Producción del tráiler.
+* Aseguramiento de licencias y créditos de recursos.
+
+=== Equipo de código fuente y lógica (3 personas)
+
+* Arquitectura del cartucho TIC-80 y organización del código JavaScript.
+* Implementación de la máquina de estados de pantallas.
+* Lógica de selección de equipo y validaciones.
+* Motor de batalla PPTLS, HP, PP, daño, rendición y relevo.
+* Integración de datos de aves, imágenes y audio.
+* Pruebas unitarias de la lógica y revisión de código.
+* Exportación del juego a HTML.
+
+=== Equipo de gestión, DevOps y documentación (3 personas)
+
+* Planificación, seguimiento y gestión de riesgos.
+* PWA: manifiesto, service worker, íconos e instalación.
+* GitHub Actions y despliegue en GitHub Pages.
+* Manual de usuario web.
+* Documentación Antora: PRD y UAT.
+* Coordinación de UAT y acta de aceptación.
+* Comunicación y publicación del tráiler.
+
+== Matriz RACI
+
+[cols="2,1,1,1",options="header"]
+|===
+| Actividad | Gráfico/Audio | Código | Gestión/DevOps
+
+| Definición de alcance y PRD | C | C | R/A
+| Diseño visual y de personajes | R/A | C | I
+| Música y efectos | R/A | I | C
+| Lógica de batalla | C | R/A | I
+| Integración de contenido | C | R/A | I
+| PWA y service worker | I | C | R/A
+| GitHub Actions y Pages | I | C | R/A
+| Manual de usuario | C | I | R/A
+| Documentación Antora | I | C | R/A
+| Casos y ejecución UAT | C | C | R/A
+| Tráiler | R/A | I | C
+| Aprobación final | C | C | R/A
+|===
+
+R = responsable de ejecutar; A = accountable (aprueba); C = consultado; I = informado.
+
+== Cadencia de trabajo
+
+[cols="1,2",options="header"]
+|===
+| Ceremonia | Frecuencia
+
+| Daily breve | Diaria, 15 minutos.
+| Revisión de arte y audio | Dos veces por semana.
+| Revisión técnica | Semanal.
+| Demo integrada | Semanal, al cierre de iteración.
+| Revisión de riesgos | Quincenal.
+| Comité de aceptación | Al final de cada fase y antes del lanzamiento.
+|===
+
+== Canales y artefactos
+
+* Tablero de tareas compartido con columnas *Backlog*, *En curso*, *Revisión*, *Hecho*.
+* Repositorio único con carpetas para juego, PWA, manual y documentación.
+* Documento de decisiones de arquitectura (ADR) para cambios técnicos relevantes.
+* Registro de defectos con severidad y responsable.
+* Carpeta compartida para assets, guiones y versiones de audio.

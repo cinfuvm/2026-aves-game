@@ -1,0 +1,70 @@
+= Visión y objetivos
+:toc: left
+:description: Visión del producto, objetivos medibles, indicadores y no objetivos.
+
+== Declaración de visión
+
+> Crear un juego breve, colorido y fácil de aprender que convierta las aves de Chile en protagonistas de batallas por turnos, usando la lógica de *Piedra, Papel, Tijera, Lagarto, Spock* para que cualquier persona pueda jugar en su navegador o teléfono en menos de un minuto.
+
+== Objetivos del producto
+
+[cols="1,2,2",options="header"]
+|===
+| ID | Objetivo | Métrica de éxito
+
+| OBJ-01 | Ofrecer una experiencia completa de principio a fin. | Un jugador puede iniciar, seleccionar equipo, combatir y ver el resultado sin bloqueos.
+| OBJ-02 | Enseñar la mecánica PPTLS sin tutorial extenso. | Un jugador nuevo completa su primera batalla sin ayuda externa; el 80 % de los testeadores lo logra en la primera sesión.
+| OBJ-03 | Dar identidad propia a cada ave. | Diez aves con imagen, sonido, descripción y movimientos únicos.
+| OBJ-04 | Funcionar en web y móvil. | Juego usable en Chrome, Firefox, Safari y Edge actuales, en escritorio y pantallas móviles.
+| OBJ-05 | Permitir uso offline. | Tras la primera carga, el juego abre sin conexión y permite una partida completa.
+| OBJ-06 | Automatizar la publicación. | Cada push a `main` construye y publica la PWA y la documentación en GitHub Pages.
+| OBJ-07 | Documentar y validar el producto. | PRD y UAT aprobados; 100 % de requisitos *Must* con caso UAT asociado.
+|===
+
+== Indicadores clave (KPI)
+
+[cols="2,1,1",options="header"]
+|===
+| Indicador | Meta MVP | Responsable
+
+| Partidas completadas en sesión de prueba | ≥ 90 % de sesiones | QA
+| Errores críticos abiertos al lanzamiento | 0 | QA / Líder técnico
+| Requisitos *Must* cubiertos por UAT | 100 % | QA
+| Casos UAT *Must* aprobados | 100 % | QA
+| Lighthouse PWA (instalable y offline) | Aprobado | DevOps
+| Tiempo de carga inicial en 3G rápida | ≤ 5 s | Código / DevOps
+| Cuadros por segundo en móvil de gama media | ≥ 30 fps estables | Código
+| Aves con contenido completo | 10 de 10 | Arte / Audio
+| Pistas de música implementadas | 5 de 5 | Audio
+| Documentación y manual publicados | 100 % | Gestión / DevOps
+|===
+
+== Objetivos de experiencia
+
+* La pantalla de inicio debe comunicar el tema y permitir comenzar con una sola acción.
+* La selección de equipo debe ser visual, con íconos PPTLS legibles y sin ambigüedad sobre qué aves están elegidas.
+* La batalla debe mostrar claramente la ave activa, sus HP, sus PP y el resultado de cada turno.
+* El jugador debe entender por qué ganó o perdió un intercambio de movimientos.
+* El juego debe ser disfrutable con teclado, mouse y pantalla táctil.
+* El audio debe acompañar cada pantalla sin resultar invasivo; debe existir control de silencio.
+
+== No objetivos (fuera del MVP)
+
+* Multijugador en línea o modos cooperativos.
+* Creación de cuentas, perfiles, rankings o logros persistentes.
+* Guardado de partidas en servidor o en la nube.
+* Monetización, anuncios o compras integradas.
+* Traducción a idiomas distintos del español.
+* Aplicaciones nativas para Android o iOS.
+* Editor de aves o contenido generado por usuarios.
+* Modo historia, mapas o exploración.
+* Sistema de captura o evolución de aves.
+
+== Restricciones
+
+* El motor debe ser TIC-80 y el lenguaje principal JavaScript.
+* La exportación debe ser compatible con navegadores modernos y con GitHub Pages.
+* Los recursos gráficos y sonoros deben ser originales o tener licencia compatible con la publicación pública.
+* El juego debe funcionar sin backend.
+* La documentación debe construirse con Antora.
+* El equipo total es de 11 personas distribuidas en tres equipos.

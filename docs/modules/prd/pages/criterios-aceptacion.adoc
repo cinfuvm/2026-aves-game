@@ -1,0 +1,149 @@
+= Criterios de aceptación
+:toc: left
+:description: Definition of Done, compuertas de calidad, aceptación por entregable y aprobación final.
+
+== Principios
+
+* Un entregable se acepta cuando cumple sus criterios y tiene evidencia verificable.
+* Los requisitos *Must* son obligatorios; los *Should* se aceptan con justificación si no se completan.
+* Ningún defecto crítico o alto puede quedar abierto al lanzamiento.
+* La aceptación final la firma el Product Owner con el líder de QA.
+
+== Definition of Done global
+
+* [ ] Código integrado en `main` y revisado por un par.
+* [ ] Build reproducible y exitoso en GitHub Actions.
+* [ ] Lint y pruebas automatizadas sin errores.
+* [ ] Funcionalidad probada en escritorio y móvil.
+* [ ] Casos UAT *Must* ejecutados y aprobados.
+* [ ] Documentación y manual actualizados.
+* [ ] Assets con licencia registrada en `CREDITS.md`.
+* [ ] Sin secretos ni credenciales en el repositorio.
+* [ ] Sin defectos críticos o altos abiertos.
+* [ ] URL pública verificada.
+
+== Compuertas de calidad
+
+[cols="1,2,2",options="header"]
+|===
+| Compuerta | Criterio | Evidencia
+
+| QG-01 Build | El build de juego, PWA y docs termina sin errores. | Log de GitHub Actions.
+| QG-02 Tests | Pruebas unitarias de batalla y lint pasan. | Reporte de tests.
+| QG-03 Funcional | Casos UAT *Must* aprobados. | Registro de resultados.
+| QG-04 PWA | Manifiesto, service worker y offline funcionan. | Lighthouse y video offline.
+| QG-05 Responsive | Jugable en móvil y escritorio. | Capturas por dispositivo.
+| QG-06 Audio | Cinco músicas y sonidos funcionan; silencio respeta. | Checklist de audio.
+| QG-07 Accesibilidad | Contraste, foco y controles de audio verificados. | Checklist de accesibilidad.
+| QG-08 Documentación | PRD, UAT y manual publicados y enlazados. | URLs y capturas.
+| QG-09 Seguridad | Sin secretos, sin datos personales, HTTPS. | Checklist de seguridad.
+| QG-10 Release | Tag, changelog y acta firmados. | Release en GitHub y acta.
+|===
+
+== Aceptación por entregable
+
+=== ENT-01 Código fuente
+
+* Compila y exporta sin errores.
+* Estructura modular y README con instrucciones.
+* Pruebas de lógica de batalla presentes y pasando.
+* Revisión de código aprobada.
+* Licencia y créditos definidos.
+
+=== ENT-02 Juego web/PWA
+
+* Inicio, selección, batalla, ganador y perdedor funcionan.
+* Diez aves con contenido completo.
+* Reglas PPTLS implementadas y verificadas.
+* HP, PP, daño, rendición y relevo funcionan.
+* PWA instalable y offline.
+* Música y sonidos por pantalla.
+* Responsive y controles táctiles.
+
+=== ENT-03 Manual de usuario web
+
+* Cubre todas las pantallas y reglas.
+* Incluye tabla de aves y movimientos.
+* Incluye controles y FAQ.
+* Publicado y enlazado desde el juego y el README.
+* Revisado por QA y Product Owner.
+
+=== ENT-04 Tráiler
+
+* Duración de 60 a 90 segundos.
+* Muestra título, aves, selección y batalla.
+* Audio del juego y buena calidad visual.
+* Publicado en YouTube con URL en el README.
+* Sin recursos sin licencia.
+
+=== ENT-05 Documentación Antora
+
+* PRD y UAT completos y navegables.
+* Build de Antora sin errores.
+* Matriz de trazabilidad completa.
+* Publicada en GitHub Pages.
+* Enlaces internos funcionando.
+
+=== ENT-06 Pipeline CI/CD
+
+* Build y despliegue automáticos en `main`.
+* Falla visible ante errores.
+* Pages configurado y documentado.
+* Rollback posible mediante release o tag.
+
+=== ENT-07 Evidencia UAT
+
+* Casos ejecutados con resultados y evidencia.
+* Defectos registrados y cerrados o aceptados.
+* Acta de aceptación firmada.
+* Matriz de trazabilidad actualizada.
+
+== Matriz de aceptación de requisitos
+
+[cols="1,1,1,2",options="header"]
+|===
+| Requisito | Prioridad | Estado requerido | Evidencia
+
+| RF-001 a RF-030 | Must/Should | *Must* aprobados; *Should* justificados | Casos UAT y registro de resultados.
+| RNF-001 a RNF-020 | Mixta | Verificación según método definido | Reportes, capturas y checklists.
+| BR-001 a BR-013 | Must | Reglas implementadas y probadas | Pruebas unitarias y UAT de batalla.
+| ENT-01 a ENT-07 | Must | Criterios de cada entregable | Repositorio, URLs, acta.
+|===
+
+== Criterios de rechazo
+
+Se rechaza un entregable si:
+
+* Un requisito *Must* no está implementado.
+* Existe un defecto crítico abierto.
+* La PWA no instala o no funciona offline.
+* Una pantalla principal no es usable en móvil.
+* Faltan assets o contenido de alguna ave.
+* El build de documentación o del juego falla.
+* Hay recursos sin licencia o secretos en el repositorio.
+* La evidencia UAT es insuficiente.
+
+== Proceso de aceptación
+
+1. El equipo entrega la versión candidata y la evidencia.
+2. QA ejecuta los casos UAT y registra resultados.
+3. El Product Owner revisa los entregables y las URLs.
+4. Se realiza el comité de aceptación.
+5. Se firma el acta con observaciones y condiciones.
+6. Se publica el release 1.0.
+
+== Acta de aceptación (resumen)
+
+[cols="1,2"]
+|===
+| Proyecto | Aves de Chile: Duelo Alado
+| Versión evaluada | 1.0
+| Fecha | 2026-11-06
+| Product Owner | ______________________
+| Líder de QA | ______________________
+| Líder técnico | ______________________
+| Resultado | Aprobado / Aprobado con observaciones / Rechazado
+| Observaciones | __________________________________________________
+|===
+
+El detalle del acta y el registro de resultados se encuentran en el módulo UAT, en xref:uat:registro-resultados.adoc[registro de resultados] y xref:uat:gestion-defectos.adoc[gestión de defectos].

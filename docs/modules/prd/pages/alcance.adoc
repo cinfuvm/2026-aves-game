@@ -1,0 +1,96 @@
+= Alcance y entregables
+:toc: left
+:description: Alcance incluido y excluido, entregables, criterios de termino y dependencias.
+
+== Alcance incluido
+
+=== Producto jugable
+
+* Pantalla de inicio con título, botón de comienzo y música 1.
+* Pantalla de selección de equipo con las diez aves, ficha de movimientos e íconos PPTLS; selección de hasta cuatro aves y confirmación.
+* Pantalla de batalla 4 contra 4 contra CPU, con HP, PP, movimientos, resultado inmediato, rendición y relevo automático.
+* Pantalla de ganador con música 4.
+* Pantalla de perdedor con música 5.
+* Sistema de audio con cinco pistas de música y efectos de sonido.
+* Contenido de diez aves chilenas: imagen, sonido, descripción, cuatro movimientos activos y un movimiento distintivo.
+* Diseño responsive para escritorio y móvil, con controles táctiles y de teclado.
+
+=== Plataforma y despliegue
+
+* Exportación del juego TIC-80 a HTML.
+* PWA con manifiesto, íconos y service worker para instalación y uso offline.
+* Repositorio público en GitHub con código fuente.
+* GitHub Actions para build y despliegue en GitHub Pages.
+* URL pública del juego y de la documentación.
+
+=== Documentación y comunicación
+
+* Manual de usuario en formato web, público y enlazado desde el juego.
+* Tráiler del juego publicado en YouTube.
+* Documentación técnica en Antora con PRD y UAT.
+* README con instrucciones de instalación, ejecución y despliegue.
+
+== Fuera de alcance
+
+[cols="1,2",options="header"]
+|===
+| Elemento | Justificación
+
+| Multijugador en línea | Requiere backend, matchmaking y sincronización; no es necesario para validar la mecánica.
+| Cuentas y persistencia | El MVP es una experiencia autocontenida.
+| Ranking y logros | Se evaluará después de validar la retención.
+| Traducciones | El público inicial es hispanohablante.
+| Apps nativas | La PWA cubre el objetivo web y móvil.
+| Editor de contenido | Aumenta el alcance y el costo de QA.
+| Modo historia | La propuesta es una sucesión de batallas rápidas.
+| Monetización | El proyecto es académico y gratuito.
+| Analítica avanzada | Se usarán métricas manuales de UAT.
+| Backend o base de datos | El juego se ejecuta íntegramente en el cliente.
+| Accesibilidad completa WCAG AA | Se aplicarán buenas prácticas, pero la certificación queda fuera del MVP.
+|===
+
+== Entregables
+
+[cols="1,2,1,1,2",options="header"]
+|===
+| ID | Entregable | Formato | Responsable | Criterio de aceptación
+
+| ENT-01 | Código fuente del juego | Repositorio GitHub | Equipo de código | Compila/exporta y ejecuta sin errores; revisión de código aprobada.
+| ENT-02 | Juego web/PWA público | URL GitHub Pages | DevOps | Instalable, jugable y funcional offline tras primera carga.
+| ENT-03 | Manual de usuario web | Sitio estático | Gestión/DevOps | Cubre todas las pantallas, reglas y controles; publicado y enlazado.
+| ENT-04 | Tráiler | Video YouTube | Arte/audiovisual | Duración de 60–90 s; muestra pantallas, aves y batalla; publicado.
+| ENT-05 | Documentación Antora | Sitio Antora | Gestión/DevOps | PRD y UAT construyen sin errores y se publican en Pages.
+| ENT-06 | Pipeline CI/CD | GitHub Actions | DevOps | Build y despliegue automáticos en `main`.
+| ENT-07 | Evidencia UAT | Registro y acta | QA | Casos *Must* ejecutados, defectos gestionados y acta firmada.
+|===
+
+== Fases de entrega
+
+[cols="1,2,2",options="header"]
+|===
+| Fase | Resultado | Criterio de salida
+
+| F1 — Descubrimiento | PRD v1.0 y alcance congelado | Revisión y aprobación del Product Owner.
+| F2 — Diseño | Wireframes, paleta, fichas de aves, guion de audio y arquitectura | Revisión de arte, audio y técnica.
+| F3 — Desarrollo | Juego jugable en TIC-80 con pantallas y batalla | Build interna sin errores críticos.
+| F4 — PWA y despliegue | PWA, GitHub Actions, Pages y manual web | Lighthouse PWA aprobado y URL pública.
+| F5 — UAT | Casos ejecutados y defectos corregidos | 100 % de casos *Must* aprobados.
+| F6 — Lanzamiento | Versión 1.0 y tráiler publicados | Acta de aceptación firmada.
+|===
+
+== Dependencias
+
+* Disponibilidad de TIC-80 y de su exportador HTML en el entorno de desarrollo y CI.
+* Recursos gráficos y sonoros originales o con licencia.
+* Acceso a GitHub y GitHub Pages.
+* Disponibilidad de dispositivos y navegadores para UAT.
+* Revisión del Product Owner para congelar alcance y aprobar entregables.
+* Coordinación entre los equipos de arte/audio, código y gestión/DevOps.
+
+== Supuestos de planificación
+
+* El equipo trabaja en iteraciones de una semana.
+* El contenido de las diez aves se entrega antes de la fase de integración.
+* La música y los efectos se entregan en formato compatible con TIC-80.
+* El tráiler se produce en paralelo al desarrollo y se finaliza con la versión candidata.
+* No se requiere soporte de navegadores obsoletos.

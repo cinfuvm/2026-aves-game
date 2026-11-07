@@ -1,0 +1,73 @@
+= Casos: batalla
+:toc: left
+:description: Casos de aceptación del sistema de batalla PPTLS, HP, PP, daño, rendición, relevo y resultados.
+
+== Preparación
+
+* Usar el modo de depuración para los casos que requieren valores deterministas: `?debug=1`.
+* Parámetros disponibles: `hpJugador`, `hpCpu`, `pp`, `dano`, `cpuMove`, `seed`.
+* Registrar el equipo y el orden de selección antes de iniciar la batalla.
+* Verificar la consola del navegador antes y después de cada caso.
+
+== Casos de inicialización y HUD
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-BAT-001 | Alta | RF-009 | Batalla recién iniciada. | 1) Revisar el HP máximo de cada ave. 2) Repetir con `hpJugador=20`, `hpJugador=35`, `hpJugador=50`, `hpCpu=20`, `hpCpu=50`. 3) Ejecutar varias partidas normales. | El HP máximo está siempre entre 20 y 50; el HP actual inicial es igual al máximo; se muestra numéricamente y en barra.
+| UAT-BAT-002 | Alta | RF-010 | Batalla recién iniciada. | 1) Revisar el PP de cada movimiento. 2) Repetir con `pp=1`, `pp=3`, `pp=5`. 3) Ejecutar varias partidas normales. | Cada movimiento tiene PP máximo entre 1 y 5; el PP actual inicia igual al máximo; se muestra el valor actual y máximo.
+| UAT-BAT-003 | Alta | RF-011, RF-030 | Batalla en curso. | 1) Revisar el HUD del jugador y del CPU. 2) Verificar nombres, imágenes, HP, PP e íconos. 3) Revisar el historial. | Se ven ambas aves activas con nombre e imagen; HP actual y máximo; PP actual y máximo por movimiento; íconos PPTLS correctos; historial visible con al menos el último turno.
+|===
+
+== Casos de turno y PPTLS
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-BAT-004 | Alta | RF-012 | Batalla en curso, movimientos con PP. | 1) Seleccionar un movimiento. 2) Observar la resolución. 3) Intentar seleccionar otro movimiento durante la animación. | El turno se ejecuta inmediatamente sin confirmación adicional; se muestra el resultado; ambos movimientos consumen PP; no se aceptan selecciones durante la animación.
+| UAT-BAT-005 | Alta | RF-013, RF-014 | `?debug=1&cpuMove=papel&dano=10`; usar Cóndor como primera ave y elegir su movimiento de Tijera. | 1) Iniciar batalla. 2) Usar Garra Cortante (Tijera). 3) Revisar HP y mensaje. | Gana el jugador; el HP del CPU baja en 10; el HP del jugador no cambia; el mensaje explica la ventaja Tijera sobre Papel.
+| UAT-BAT-006 | Alta | RF-013, RF-014 | `?debug=1&cpuMove=papel&dano=12`; usar Cóndor como primera ave y elegir su movimiento de Piedra. | 1) Iniciar batalla. 2) Usar Planeo Pesado (Piedra). 3) Revisar HP y mensaje. | Gana el CPU; el HP del jugador baja en 12; el HP del CPU no cambia; el mensaje explica la ventaja Papel sobre Piedra.
+| UAT-BAT-007 | Alta | RF-013 | `?debug=1&cpuMove=piedra`; usar Cóndor como primera ave y elegir su movimiento de Piedra. | 1) Iniciar batalla. 2) Usar Planeo Pesado (Piedra). 3) Revisar HP y PP. | Empate; no hay daño; ambos movimientos consumen un PP; se muestra el mensaje de choque.
+| UAT-BAT-008 | Alta | RF-014 | `?debug=1&hpCpu=35&cpuMove=papel`; usar Cóndor y su movimiento de Tijera. Repetir con `dano=0`, `dano=18`, `dano=19`, `dano=35`. | 1) Ejecutar el turno con cada valor. 2) Revisar la clasificación y el HP. | `dano=0` muestra *Sin efecto*; `dano=18` (50 %) muestra *Efectivo*; `dano=19` y `dano=35` muestran *Muy efectivo*; el HP se reduce según el daño sin valores negativos.
+| UAT-BAT-009 | Alta | RF-010, RF-012 | `?debug=1&pp=1`; batalla en curso. | 1) Usar un movimiento. 2) Verificar su PP. 3) Intentar usarlo de nuevo. 4) Verificar los otros movimientos. | El movimiento usado queda con PP 0 y deshabilitado; los demás conservan su PP; no se puede volver a usar el movimiento agotado.
+|===
+
+== Casos de HP, PP, rendición y relevo
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-BAT-010 | Alta | RF-017 | `?debug=1&dano=50`; el CPU con HP bajo. | 1) Usar un movimiento ganador. 2) Observar el HP del CPU. 3) Observar el relevo. | El HP del CPU llega a 0, nunca negativo; el ave se marca debilitada; entra la siguiente ave del CPU con su HP y PP iniciales.
+| UAT-BAT-011 | Alta | RF-016 | `?debug=1&pp=1`; ave con cuatro movimientos. | 1) Usar los cuatro movimientos hasta agotar sus PP. 2) Observar el comportamiento. | Al quedar todos los PP en 0, el ave se rinde automáticamente; se muestra un mensaje; entra la siguiente ave; si no quedan aves, termina la batalla.
+| UAT-BAT-012 | Alta | RF-015 | Batalla en curso, jugador con más de un ave. | 1) Presionar *Rendirse*. 2) Cancelar. 3) Presionar de nuevo y confirmar. | Cancelar no cambia el estado; confirmar retira el ave activa sin reducir su HP a 0; entra la siguiente ave; el evento queda en el historial.
+| UAT-BAT-013 | Alta | RF-015, RF-021 | Jugador con una sola ave disponible. | 1) Presionar *Rendirse*. 2) Confirmar. | El ave sale de combate; como no quedan aves, se muestra la pantalla de perdedor con la música 5.
+| UAT-BAT-014 | Alta | RF-018 | Batalla en curso. | 1) Jugar varios turnos. 2) Observar los movimientos del CPU. 3) Verificar que nunca use un movimiento con PP 0. | El CPU elige movimientos válidos al azar; consume PP; no elige movimientos agotados; aplica las mismas reglas.
+| UAT-BAT-015 | Media | RF-018 | `?debug=1&pp=1`; CPU con movimientos agotados. | 1) Jugar hasta que el CPU no tenga PP. 2) Observar el relevo. | El CPU se rinde automáticamente; entra su siguiente ave; si no quedan aves, gana el jugador.
+| UAT-BAT-016 | Media | RF-030 | Batalla en curso, al menos tres turnos jugados. | 1) Revisar el historial. 2) Verificar cada entrada. | Se muestran al menos los últimos tres turnos con ave, movimiento, tipo, resultado y daño; el historial se actualiza tras cada turno.
+|===
+
+== Casos de final de batalla
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-BAT-017 | Alta | RF-019 | Batalla en curso. | 1) Verificar la música 3. 2) Activar silencio. 3) Desactivar silencio. | La música 3 suena en bucle; el silencio la detiene; al reactivar, vuelve; no se superpone con otras pistas.
+| UAT-BAT-018 | Alta | RF-020 | `?debug=1&dano=50`; el CPU con una sola ave. | 1) Derrotar al último ave del CPU. 2) Observar la pantalla y el audio. | Se muestra la pantalla de ganador con la música 4; se ofrece *Jugar de nuevo* y *Volver al inicio*; se muestra un resumen.
+| UAT-BAT-019 | Alta | RF-021 | `?debug=1&dano=50`; el jugador con una sola ave. | 1) Dejar que el CPU derrote al último ave del jugador. 2) Observar la pantalla y el audio. | Se muestra la pantalla de perdedor con la música 5; se ofrece *Intentar de nuevo* y *Volver al inicio*; se muestra un resumen.
+| UAT-BAT-020 | Media | RF-020, RF-021 | `?debug=1&pp=1`; ambas escuadras con una sola ave. | 1) Usar el último PP de ambas aves en el mismo turno. 2) Observar el resultado. | Se declara empate técnico; se muestra la pantalla de empate; se ofrece revancha; no se produce un estado inconsistente.
+| UAT-BAT-021 | Media | RF-014 | `?debug=1&dano=50`; rival con HP menor a 50. | 1) Ejecutar el turno. 2) Revisar el HP mostrado. | El HP se muestra en 0, nunca negativo; el ave se debilita; no hay errores en consola.
+| UAT-BAT-022 | Media | RF-012 | Batalla en curso, animación de ataque. | 1) Presionar repetidamente varios movimientos durante la animación. 2) Esperar el resultado. | Solo se resuelve un turno por interacción; los clics extra se ignoran; no se consumen PP adicionales.
+| UAT-BAT-023 | Alta | RF-013, BR-004, BR-005 | `?debug=1&dano=1`; equipo con Cóndor y Loica para cubrir los cinco tipos; modo debug para fijar el movimiento del CPU. | 1) Ejecutar las 25 combinaciones de tipo jugador vs CPU. 2) Registrar ganador, daño y PP. | Cada combinación respeta la matriz PPTLS: 10 victorias del jugador, 10 del CPU y 5 empates; en los empates no hay daño; en victorias y derrotas el daño se aplica al perdedor; ambos consumen PP.
+|===
+
+== Notas de ejecución
+
+* Para UAT-BAT-005, UAT-BAT-006, UAT-BAT-007 y UAT-BAT-008 se requiere que el modo de depuración permita fijar el movimiento del CPU. Si no está implementado, repetir los turnos hasta observar el escenario y registrar la evidencia.
+* La clasificación *Muy efectivo* usa la condición estricta `dano > 50 %`; el valor exacto del 50 % es *Efectivo*.
+* El daño se calcula sobre el HP máximo del rival, no sobre el HP actual.
+* La rendición manual debe requerir confirmación; la rendición por PP no.
+* El historial no debe bloquear la selección de movimientos en móvil.
