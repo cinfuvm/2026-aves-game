@@ -69,6 +69,14 @@ En la configuración del repositorio de GitHub:
 - Las referencias entre páginas usan `xref:modulo:pagina.adoc[texto]`.
 - Las tablas se escriben con la sintaxis de AsciiDoc (`|===`).
 
+## Equipo
+
+| Equipo | Líder | Integrantes |
+|---|---|---|
+| Audiovisual | Justin Vidaure | Sebastián Hugueño, Daniel Castro |
+| Lógica | José Luis | Mauricio Zuñiga, Marcelo Guzmán |
+| Gestión y Documentación | Johan Cortés | José Araya |
+
 ## Licencia y créditos
 
 La documentación se distribuye bajo licencia **CC BY 4.0**. Los nombres científicos y datos de las aves provienen de fuentes públicas; las imágenes, sonidos y música deben contar con licencia compatible con el repositorio.
