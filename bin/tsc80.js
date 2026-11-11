@@ -1,16 +1,52 @@
 #!/usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var child_process = require("child_process");
-var fs = require("fs-extra");
-var path = require("path");
-var stripJsonComments = require("strip-json-comments");
-var yesno = require("yesno");
-var commander_1 = require("commander");
-var chokidar = require("chokidar");
-var esbuild = require("esbuild");
-var version = require("../package.json").version;
-var program = new commander_1.Command();
+const child_process = __importStar(require("child_process"));
+const fs = __importStar(require("fs-extra"));
+const path = __importStar(require("path"));
+const strip_json_comments_1 = __importDefault(require("strip-json-comments"));
+const yesno_1 = __importDefault(require("yesno"));
+const commander_1 = require("commander");
+const chokidar = __importStar(require("chokidar"));
+const esbuild = __importStar(require("esbuild"));
+const version = require("../package.json").version;
+const program = new commander_1.Command();
 program.version(version);
 program
     .command("init")
@@ -20,14 +56,14 @@ program
     .command("build")
     .description(" Compile and compress your game")
     // .option('-w, --watch', 'Will automatically recompile and refresh the TIC game')
-    .action(function (option, command) {
+    .action((option, command) => {
     build({ run: false });
 });
 program
     .command("run")
     .description(" Build, watch, and launch your TIC-80 game")
     // .option('-w, --watch', 'Will automatically recompile and refresh the TIC game')
-    .action(function (option, command) {
+    .action((option, command) => {
     build({ run: true });
 });
 program.parse();
@@ -36,25 +72,25 @@ program.parse();
  * Copy required files to working dir
  */
 function init() {
-    var toCopyDir = path.join(__dirname, "../tocopy");
+    const toCopyDir = path.join(__dirname, "../tocopy");
     console.log("The following files will be added to the current directory:");
     // Fetch all files to copy
-    fs.readdirSync(toCopyDir).forEach(function (file) {
+    fs.readdirSync(toCopyDir).forEach((file) => {
         console.log(file);
     });
-    yesno({ question: "Proceed to copy? (y/n)" }).then(function (ok) {
+    (0, yesno_1.default)({ question: "Proceed to copy? (y/n)" }).then((ok) => {
         if (!ok) {
             console.log("Stopping installation");
             process.exit(0);
         }
         console.log();
-        fs.readdirSync(toCopyDir).forEach(function (file) {
-            var from = path.join(toCopyDir, file);
-            var to = path.join(process.cwd(), file);
+        fs.readdirSync(toCopyDir).forEach((file) => {
+            const from = path.join(toCopyDir, file);
+            const to = path.join(process.cwd(), file);
             fs.copySync(from, to, {
-                filter: function () {
+                filter: () => {
                     if (fs.existsSync(to)) {
-                        console.log("/!\\ ".concat(file, " already exists in directory, skipping"));
+                        console.log(`/!\\ ${file} already exists in directory, skipping`);
                         return false;
                     }
                     return true;
@@ -68,16 +104,15 @@ function init() {
 /**
  * Compile, compress, run
  */
-function build(_a) {
-    var _b = _a.run, run = _b === void 0 ? false : _b;
-    var config = JSON.parse(stripJsonComments(fs.readFileSync("tsc80-config.json", "utf8")));
-    var tsConfig = JSON.parse(stripJsonComments(fs.readFileSync("tsconfig.json", "utf-8")));
-    var toWatch = path.join(process.cwd(), "**/*.ts");
+function build({ run = false }) {
+    const config = JSON.parse((0, strip_json_comments_1.default)(fs.readFileSync("tsc80-config.json", "utf8")));
+    const tsConfig = JSON.parse((0, strip_json_comments_1.default)(fs.readFileSync("tsconfig.json", "utf-8")));
+    const toWatch = path.join(process.cwd(), "**/*.ts");
     if (run) {
         // Watch changes
         chokidar
             .watch(toWatch)
-            .on("change", function () {
+            .on("change", () => {
             try {
                 compileAndRun(false);
             }
@@ -85,21 +120,20 @@ function build(_a) {
                 console.error(e);
             }
         })
-            .on("ready", function () { return compileAndRun(); });
+            .on("ready", () => compileAndRun());
     }
     else {
         // Build once
         compileAndRun(false);
     }
-    function compileAndRun(launch) {
-        if (launch === void 0) { launch = true; }
-        var metadata = extractMetadata();
+    function compileAndRun(launch = true) {
+        const metadata = extractMetadata();
         compile();
         makeGameFile(metadata);
         launch && launchTIC();
     }
     function extractMetadata() {
-        var keys = [
+        const keys = [
             "title",
             "author",
             "desc",
@@ -110,24 +144,19 @@ function build(_a) {
             "input",
             "saveid",
         ];
-        var metadata = "";
-        var code = fs.readFileSync(config.entry, "utf8");
-        var lines = code.split("\n");
-        var _loop_1 = function (line) {
-            if (keys.find(function (k) { return line.startsWith("// ".concat(k, ":")); })) {
+        let metadata = "";
+        const code = fs.readFileSync(config.entry, "utf8");
+        const lines = code.split("\n");
+        for (const line of lines) {
+            if (keys.find((k) => line.startsWith(`// ${k}:`))) {
                 metadata += line + "\n";
             }
-        };
-        for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
-            var line = lines_1[_i];
-            _loop_1(line);
         }
         return metadata;
     }
     function compile() {
-        var _a, _b;
-        var target = (_b = (_a = tsConfig === null || tsConfig === void 0 ? void 0 : tsConfig.compilerOptions) === null || _a === void 0 ? void 0 : _a.target) !== null && _b !== void 0 ? _b : "es2020";
-        console.log("Building ".concat(config.outfile, " to ").concat(target, "..."));
+        const target = tsConfig?.compilerOptions?.target ?? "es2020";
+        console.log(`Building ${config.outfile} to ${target}...`);
         if (!!config.treeShaking)
             console.log("Tree shaking enabled");
         esbuild.buildSync({
@@ -142,11 +171,11 @@ function build(_a) {
             minifyIdentifiers: false, // Or else global functions will be mangled https://esbuild.github.io/api/#minify-considerations
             minifyWhitespace: config.minify,
             minifySyntax: config.minify,
-            target: target,
+            target,
         });
     }
     function makeGameFile(metadata) {
-        var buildStr = fs
+        const buildStr = fs
             .readFileSync(config.outfile, "utf8")
             // Explicit strict mode breaks the global TIC scope
             .replace('"use strict";', "");
@@ -154,25 +183,28 @@ function build(_a) {
             console.log("empty code");
             console.log(buildStr);
         }
-        if (!config.ticExecutable) {
-            console.log('Missing "ticExecutable" in tsc80-config.json');
+        if (!process.env.TIC80_PATH && !config.ticExecutable) {
+            console.log('Missing "ticExecutable" in tsc80-config.json or TIC80_PATH env var');
             process.exit(0);
         }
         fs.writeFileSync(config.outfile, metadata + buildStr);
         console.log("Build complete.");
     }
     function launchTIC() {
-        var child = child_process.spawn(config.ticExecutable, [
+        // TIC80_PATH tiene prioridad sobre ticExecutable del config,
+        // para que cada integrante del equipo use la ruta de su máquina.
+        const ticExecutable = process.env.TIC80_PATH || config.ticExecutable;
+        let child = child_process.spawn(ticExecutable, [
             "--skip",
             "--keepcmd",
-            "--fs=".concat(process.cwd()),
+            `--fs=${process.cwd()}`,
             "--cmd",
-            "load game.js & load ".concat(config.outfile, " code & run"),
+            `load game.js & load ${config.outfile} code & run`,
         ], {
             stdio: "inherit",
         });
-        child.on("exit", function (code, signal) {
-            process.exit(code !== null && code !== void 0 ? code : 0);
+        child.on("exit", (code, signal) => {
+            process.exit(code ?? 0);
         });
     }
 }

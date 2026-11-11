@@ -41,6 +41,28 @@ El sitio se genera en `build/site` y se publica en `http://localhost:8080`.
 >
 > El archivo `package-lock.json` está versionado para que el workflow de GitHub Actions use `npm ci` y obtenga instalaciones reproducibles.
 
+## Ejecutar el juego (TIC-80)
+
+El código del juego vive en `game/` (plantilla base de TIC-80 en TypeScript). La herramienta `bin/tsc80.js` compila `game/main.ts` y abre el cartucho en TIC-80.
+
+Requisitos: TIC-80 instalado. En macOS, `/Applications/TIC-80.app/Contents/MacOS/tic80`; en otros sistemas, la ruta del ejecutable.
+
+```bash
+npm install
+npm run game:build   # compila game/main.ts a game/build/output.js
+npm run game:run     # compila, abre TIC-80 y recompila al guardar cambios en .ts
+```
+
+Para usar otra ruta de TIC-80 sin editar el repo, define la variable de entorno `TIC80_PATH`; tiene prioridad sobre `ticExecutable` de `game/tsc80-config.json`:
+
+```bash
+TIC80_PATH=/ruta/a/tic80 npm run game:run
+```
+
+> Al guardar un `.ts`, la herramienta recompila el cartucho, pero TIC-80 no se recarga solo: presiona `Ctrl+R` en TIC-80.
+
+Si cambias `src/tsc80.ts`, recompila la herramienta con `npm run tsc80:build` antes de usar los comandos anteriores.
+
 ## Limpiar artefactos
 
 ```bash

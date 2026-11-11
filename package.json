@@ -6,12 +6,26 @@
   "scripts": {
     "docs:build": "antora antora-playbook.yml",
     "docs:serve": "antora antora-playbook.yml && http-server build/site -p 8080 -c-1",
-    "docs:clean": "rimraf build .antora-cache"
+    "docs:clean": "rimraf build .antora-cache",
+    "tsc80:build": "tsc -p tsconfig.json",
+    "game:build": "cd game && node ../bin/tsc80.js build",
+    "game:run": "cd game && node ../bin/tsc80.js run"
   },
   "devDependencies": {
     "@antora/cli": "^3.1.9",
     "@antora/site-generator": "^3.1.9",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^26.6.6",
+    "@types/uglify-js": "^3.17.5",
+    "chokidar": "^3.6.0",
+    "commander": "^15.1.0",
+    "esbuild": "^0.28.2",
+    "fs-extra": "^11.4.1",
     "http-server": "^14.1.1",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "strip-json-comments": "^3.1.1",
+    "typescript": "^7.0.2",
+    "uglify-js": "^3.19.3",
+    "yesno": "^0.4.0"
   }
 }
