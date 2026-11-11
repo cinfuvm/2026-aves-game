@@ -4,3 +4,5 @@ build/
 .DS_Store
 *.log
 .env
+# Configuración local que TIC-80 crea al ejecutar el juego
+.local/
