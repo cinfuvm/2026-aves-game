@@ -41,6 +41,43 @@ El sitio se genera en `build/site` y se publica en `http://localhost:8080`.
 >
 > El archivo `package-lock.json` está versionado para que el workflow de GitHub Actions use `npm ci` y obtenga instalaciones reproducibles.
 
+## Ejecutar el juego (TIC-80)
+
+El código del juego vive en `game/` (plantilla base de TIC-80 en TypeScript). La herramienta `bin/tsc80.js` compila `game/main.ts` y abre el cartucho en TIC-80.
+
+### Requisitos
+
+- **Node.js 20 o superior** y npm (ya necesarios para la documentación).
+- **TIC-80 PRO**: la plantilla carga `game/game.js` (sprites y paleta) como cartucho de texto, y la versión gratuita no lo permite. Mientras no se resuelva, usa la versión PRO.
+- Instalar TIC-80 desde [tic80.com](https://tic80.com/create). Por defecto, `game/tsc80-config.json` apunta a `/Applications/TIC-80.app/Contents/MacOS/tic80` (macOS). En otros sistemas, usa la variable `TIC80_PATH` (ver abajo).
+
+### Pasos
+
+```bash
+npm install               # instala las herramientas de build (una sola vez)
+npm run game:build        # compila game/main.ts a game/build/output.js
+npm run game:run          # compila, abre TIC-80 y vigila cambios en los .ts
+```
+
+Para verificar que funciona:
+
+1. `npm run game:build` termina con `Build complete.` y existe `game/build/output.js`.
+2. `npm run game:run` abre TIC-80 y debe mostrar el juego: fondo de color, un pájaro animado y el texto `HELLO WORLD!`. Las flechas mueven el pájaro. (Con TIC-80 PRO; con la versión gratuita el cartucho no carga.)
+3. En la terminal debe aparecer `Module import works!`, que confirma que `helpers.ts` se empaquetó bien.
+4. Edita `game/main.ts`, guarda, y observa que la terminal muestra `Building ... Build complete.`. Para ver el cambio en TIC-80, presiona `Ctrl+R`: la herramienta recompila el cartucho, pero no recarga TIC-80 sola.
+
+### Otra ruta de TIC-80
+
+Si TIC-80 no está en la ruta por defecto, define `TIC80_PATH` (tiene prioridad sobre `ticExecutable`):
+
+```bash
+TIC80_PATH=/ruta/a/tic80 npm run game:run
+```
+
+### Cambiar la herramienta
+
+Si modificas `src/tsc80.ts`, recompila la herramienta con `npm run tsc80:build` antes de usar los comandos anteriores.
+
 ## Limpiar artefactos
 
 ```bash

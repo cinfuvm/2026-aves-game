@@ -3,9 +3,9 @@
 import * as child_process from "child_process"
 import * as fs from "fs-extra"
 import * as path from "path"
-import * as stripJsonComments from "strip-json-comments"
+import stripJsonComments from "strip-json-comments"
 import * as uglifyJS from "uglify-js"
-import * as yesno from "yesno"
+import yesno from "yesno"
 import { Command } from "commander"
 import * as chokidar from "chokidar"
 import * as esbuild from "esbuild"
@@ -182,8 +182,8 @@ function build({ run = false }): void {
       console.log(buildStr)
     }
 
-    if (!config.ticExecutable) {
-      console.log('Missing "ticExecutable" in tsc80-config.json')
+    if (!process.env.TIC80_PATH && !config.ticExecutable) {
+      console.log('Missing "ticExecutable" in tsc80-config.json or TIC80_PATH env var')
       process.exit(0)
     }
 
@@ -193,8 +193,11 @@ function build({ run = false }): void {
   }
 
   function launchTIC() {
+    // TIC80_PATH tiene prioridad sobre ticExecutable del config,
+    // para que cada integrante del equipo use la ruta de su máquina.
+    const ticExecutable = process.env.TIC80_PATH || config.ticExecutable
     let child = child_process.spawn(
-      config.ticExecutable,
+      ticExecutable,
       [
         "--skip",
         "--keepcmd",
