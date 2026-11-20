@@ -131,7 +131,9 @@ PerfilCpu { tipo: 'aleatorio', datos?: Record<string, unknown> }
 PERFIL_BASE
 ```
 
-Nivel base: aleatorio uniforme entre los movimientos usables del ave activa del CPU. `null` = no puede jugar (el motor procesa la rendición). La Parte C añade perfiles **sin cambiar la firma**.
+Nivel base: aleatorio uniforme entre los movimientos usables del ave activa del CPU. La Parte C añade perfiles **sin cambiar la firma**.
+
+`null` solo ocurre si el ave activa del CPU no tiene ningún movimiento usable. En una batalla en curso no debería pasar: tras cada turno, `resolverTurno` marca como `rendida` al ave sin movimientos usables y hace el relevo, así que el ave activa siempre tiene al menos un movimiento. `resolverTurno` **no acepta `null`**: si la UI o el perfil de la CPU lo reciben, deben tratarlo como error de estado, no como una rendición.
 
 ---
 
@@ -143,20 +145,23 @@ import { resolverTurno } from './battle/turn';
 import { elegirMovimientoCpu } from './battle/cpu';
 import { crearRng } from './battle/rng';
 
-// 1. Crear la batalla (los datos de aves vienen de data/birds)
+// 1. Crear la batalla (las fichas vienen de game/src/data/birds.ts)
 const rng = Math.random;                       // producción
-const estado = inicializarBatalla(fichasJugador, fichasCpu, rng);
+let estado = inicializarBatalla(fichasJugador, fichasCpu, rng);
 
 // 2. Pantalla de selección: movimientos del ave activa del jugador
 const activa = aveActiva(estado.jugador);
 const bloqueados = activa.movimientos.filter((m) => m.costeMp > activa.mpActual);
 
 // 3. Cada turno:
-const movCpu = elegirMovimientoCpu(estado, rng);          // puede ser null
+const movCpu = elegirMovimientoCpu(estado, rng);          // MovimientoActivo | null
+if (movCpu === null) {
+  throw new Error('El CPU no tiene movimientos usables: estado inconsistente');
+}
 const movJugador = /* elegido por el jugador en la UI */;
 const { estado: nuevo, entrada } = resolverTurno(estado, movJugador, movCpu, rng);
 //  → renderizar `entrada.mensaje`, `entrada.eventos`, HP/MP actualizados
-//  → `nuevo.terminado`/`nuevo.ganador` deciden la transición a WIN / LOSE / DRAW
+//  → `nuevo.terminada` es true cuando hay ganador; `nuevo.ganador` vale 'jugador', 'cpu' o 'empate' (WIN / LOSE / empate técnico)
 
 estado = nuevo; // el estado original no se muta: reemplazar la referencia
 ```
@@ -171,5 +176,5 @@ PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
 
 ## Datos que faltan (pendientes del equipo de contenido)
 
-- Fichas reales de las 10 aves en `game/src/data/birds.js` con el formato `AveFicha`.
+- Fichas reales de las 10 aves en `game/src/data/birds.ts` con el formato `AveFicha` (el motor es TypeScript, D-08). La carpeta aún no existe.
 - Los tests usan fichas de prueba generadas (`fichaPrueba`); ver `game/tests/README.md`.
