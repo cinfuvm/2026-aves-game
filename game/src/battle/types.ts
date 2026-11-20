@@ -104,6 +104,8 @@ export interface ConfigBatalla {
   costeMpRango: [number, number];
   /** Probabilidad de que un movimiento de tipo papel no consuma MP (pasiva). */
   probCosteCeroPapel: number;
+  /** HP que recupera un ave de tipo lagarto al final de cada turno (pasiva, con tope en hpMax). */
+  regeneracionLagarto: number;
   /** Multiplicador de esfuerzo por punto de coste MP: daño ×(1 + coste × factor). */
   factorEsfuerzo: number;
   /** Multiplicador STAB cuando el tipo del movimiento coincide con el tipo del ave. */
@@ -127,6 +129,7 @@ export const CONFIG_BASE: ConfigBatalla = {
   hpMaxRangoPiedra: [40, 50],
   costeMpRango: [1, 5],
   probCosteCeroPapel: 0.25,
+  regeneracionLagarto: 3,
   factorEsfuerzo: 0.15,
   factorStab: 1.5,
   bonusTijera: 5,

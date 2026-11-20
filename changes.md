@@ -70,3 +70,16 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
   - La rendición ('rendida') y el debilitamiento ('debilitada') cuentan igual como aves no disponibles para `evaluarFin` (BR-013, empate técnico incluido).
   - Los tamaños de equipo se validan contra `config.modo` (1v1 = 1 ave, 3v3 = 3 aves).
 - Tests en `game/tests/state.test.ts` (26 casos): validación de fichas (cantidad, tipo propio, ids duplicados), 4 activos sin repetición y con el garantizado siempre presente (50 semillas), costes de MP en rango, HP base 20–50 y Piedra 40–50, MP 15 compartido, determinismo por semilla, tamaños por modo 1v1/3v3, estado inicial completo, bloqueo por MP, relevo en orden y los 4 resultados de `evaluarFin`.
+
+### Paso 4 — Resolución de turnos (19 nov 2026)
+
+- Creado `game/src/battle/turn.ts`: `resolverTurno(estado, movJugador, movCpu, rng)` → `ResultadoTurno` (estado nuevo + entrada de historial), con `clonarEstado` exportado (copia profunda; el estado original nunca se muta).
+- Flujo: validaciones (batalla terminada, movimiento ajeno al ave activa, MP insuficiente → error; la UI debe prevenirlo, CB-01/CB-09) → pago de MP → PPTLS → daño → aplicación → salidas y relevo → regeneración Lagarto → fin → historial.
+- `ConfigBatalla.regeneracionLagarto = 3` añadido (parámetro de la pasiva, no desviación).
+- Decisiones de diseño (interpretaciones de D-04):
+  - **Las pasivas se asocian al TIPO DEL AVE, no al del movimiento:** un ave de tipo papel tira su 25 % aunque su movimiento no sea de papel; Tijera +5 y Spock 30 % aplican según el tipo del ave atacante.
+  - **La regeneración de Lagarto no revive:** se aplica al final del turno solo a aves activas en pie (hp > 0), con tope en hpMax. Un ave debilitada en ese turno no se recupera.
+  - **CB-05:** si el ave cayó por HP, 'debilitada' tiene prioridad sobre 'rendida' aunque también se haya quedado sin movimientos usables.
+  - **Orden de consumo del rng documentado** en el código (tiradas de papel jugador/CPU, luego daño jugador→CPU, luego daño CPU→jugador) para tests deterministas.
+- Casos borde del PRD cubiertos: CB-03 (HP 0), CB-05 (prioridad debilitamiento), CB-08 (empate técnico), CB-02 (sin efecto), más el relevo en orden y el fin de batalla 1v1/3v3.
+- Tests en `game/tests/turn.test.ts` (22 casos): validaciones, números exactos de los 3 resultados PPTLS, pasiva Papel (tirada baja/alta, ave-vs-movimiento, no-tirada de no papel), pasiva Lagarto (tope, espacio, no revivir, otros tipos), CB-03/CB-05/CB-08, rendición por MP con relevo (D-07), relevo del CPU, historial acumulativo e inmutabilidad del estado original.
