@@ -158,6 +158,8 @@ export interface EntradaHistorial {
 export interface EstadoBatalla {
   jugador: Equipo;
   cpu: Equipo;
+  /** Configuración con la que se creó la batalla (reglas usadas por resolverTurno). */
+  config: ConfigBatalla;
   /** Turno actual, base 1; 0 antes del primer turno. */
   turno: number;
   historial: EntradaHistorial[];

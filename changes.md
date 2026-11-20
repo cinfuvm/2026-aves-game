@@ -58,3 +58,15 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 - **D-09 (decisión por defecto implementada):** la pasiva Spock prevalece sobre «Sin efecto» (BR-007) mientras el PO decide; desactivable con `pasivaSpockActiva: false`.
 - **D-12 nueva:** daño final con redondeo hacia abajo a entero ≥ 0.
 - Tests en `game/tests/damage.test.ts` (20 casos): rangos del daño base, fórmula de esfuerzo, STAB con y sin, pasiva Tijera (con/sin STAB, en empate), pasiva Spock (base 0, bajo el mínimo, sobre el mínimo, empate, desactivada), límites de efectividad (20/21 sobre HP 40), mensajes del PRD, monotonía por coste MP y cotas superiores.
+
+### Paso 3 — Estado de batalla (19 nov 2026)
+
+- Creado `game/src/battle/state.ts`: `validarFicha`, `seleccionarMovimientos`, `inicializarAve`, `inicializarEquipo`, `inicializarBatalla`, `aveActiva`, `estaBloqueado`, `movimientosUsables`, `tieneMovimientoUsable`, `siguienteAve`, `avesDisponibles`, `evaluarFin`, `avesPorModo`.
+- `EstadoBatalla` ahora incluye su `config: ConfigBatalla` (enriquecimiento del contrato, no desviación): `resolverTurno` usará las reglas configuradas por batalla.
+- Decisiones de diseño:
+  - El movimiento garantizado se elige **al azar entre los movimientos del tipo propio** de la ficha (con 1 propio es directo; con varios, cualquiera de ellos). La validación exige al menos uno.
+  - Los 4 activos se devuelven en **orden mezclado** (Fisher–Yates con el rng) para que la UI no repita siempre la misma secuencia.
+  - `siguienteAve(equipo)` devuelve la primera ave en estado 'activa' del equipo: pensada para llamarse tras marcar la salida de la anterior, implementa el relevo en orden de selección.
+  - La rendición ('rendida') y el debilitamiento ('debilitada') cuentan igual como aves no disponibles para `evaluarFin` (BR-013, empate técnico incluido).
+  - Los tamaños de equipo se validan contra `config.modo` (1v1 = 1 ave, 3v3 = 3 aves).
+- Tests en `game/tests/state.test.ts` (26 casos): validación de fichas (cantidad, tipo propio, ids duplicados), 4 activos sin repetición y con el garantizado siempre presente (50 semillas), costes de MP en rango, HP base 20–50 y Piedra 40–50, MP 15 compartido, determinismo por semilla, tamaños por modo 1v1/3v3, estado inicial completo, bloqueo por MP, relevo en orden y los 4 resultados de `evaluarFin`.
