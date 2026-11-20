@@ -88,7 +88,7 @@ Cada paso depende del anterior.
 3. **Máquina de estados mínima.** *Hecho: `game/src/juego/flujo.ts` (lógica pura, 10 pruebas en `game/tests/juego.test.ts`) y `game/main.ts` (entrada y dibujo). Incluye la conexión con el motor del paso 4, porque el bucle `TIC()` llama directamente al motor.*
 4. **Conexión con el motor.** Crear la batalla con `inicializarBatalla` (modo 1v1), elegir la CPU con `elegirMovimientoCpu` y resolver cada turno con `resolverTurno`. Mostrar `entrada.mensaje` y `entrada.eventos`.
 5. **HUD de batalla.** Dibujar HP y MP del ave activa de cada lado, los movimientos con los bloqueados marcados y el resultado del turno.
-6. **Rendición y relevo.** Botón para rendirse y transición cuando un ave sale.
+6. **Rendición y relevo.** Botón para rendirse y transición cuando un ave sale. *Hecho: la rendición está en el motor (`game/src/battle/rendicion.ts`, 7 pruebas). El relevo no aplica en 1v1; se verifica en 3v3.*
 7. **Pantalla de resultado.** Mostrar `ganador` y permitir volver a jugar.
 8. **Verificación de tree-shaking.** Confirmar que el cartucho incluye los módulos de batalla (nota de `changes.md`).
 

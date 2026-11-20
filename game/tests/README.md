@@ -17,7 +17,7 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 
 ---
 
-## Qué se prueba (7 archivos, 107 casos)
+## Qué se prueba (8 archivos, 118 casos)
 
 | Archivo | Módulo probado | Casos | En qué consiste |
 |---|---|---|---|
@@ -26,7 +26,8 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 | `state.test.ts` | `state.ts` | 26 | Validación de fichas (5 movimientos, tipo propio, ids únicos); selección de 4 activos con el garantizado presente (50 semillas); costes de MP en rango; HP 20–50 y Piedra 40–50; MP 15 compartido; determinismo por semilla; tamaños 1v1/3v3; bloqueo por MP; relevo; los 4 resultados de `evaluarFin` |
 | `turn.test.ts` | `turn.ts` | 22 | Validaciones (batalla terminada, movimiento ajeno, MP insuficiente); números exactos de los 3 resultados PPTLS; pasiva Papel (tirada baja/alta, ave vs movimiento, no-tirada de aves no papel); pasiva Lagarto (tope, espacio, no revive, otros tipos); CB-03 (HP 0), CB-05 (prioridad debilitamiento), CB-08 (empate técnico); rendición por MP con relevo; historial acumulativo; inmutabilidad del estado |
 | `cpu.test.ts` | `cpu.ts` | 10 | Nunca elige movimientos bloqueados; cubre todos los usables; respeta el ave activa tras relevo; determinismo por semilla; `null` sin MP; perfil base explícito e implícito |
-| `juego.test.ts` | `src/juego/flujo.ts` | 10 | Estados seleccion → batalla → resultado; cursores con vuelta; batalla 1v1; movimiento bloqueado por MP sin turno; turno válido; fin de batalla con el ganador del motor; rendición; reinicio; acciones fuera de pantalla |
+| `juego.test.ts` | `src/juego/flujo.ts` | 14 | Estados seleccion → batalla → revelación → resultado; cursores con vuelta; batalla 1v1; movimiento bloqueado por MP sin turno; revelación sin gastar MP antes de confirmar; confirmación que resuelve el turno; fin de batalla con el ganador del motor; rendición; reinicio; acciones fuera de pantalla |
+| `rendicion.test.ts` | `rendicion.ts` | 7 | Rendir en 1v1 termina con victoria del rival (y viceversa); sin turno, MP ni historial; no muta el estado; en 3v3 entra la siguiente ave; rendir las 3 termina la batalla; error si la batalla ya terminó |
 | `birds.test.ts` | `src/data/birds.ts` | 11 | Las 3 fichas del MVP (Cóndor, Loica, Chincol) pasan `validarFicha`; ids de movimiento únicos; tipo propio según S-01; cada selección de 4 movimientos incluye uno de su tipo (50 semillas) |
 
 ---

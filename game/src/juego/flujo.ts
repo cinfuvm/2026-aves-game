@@ -1,6 +1,11 @@
 /**
  * Flujo del juego (paso 3 del plan MVP): máquina de estados
- *   seleccion → batalla → resultado → (reiniciar) → seleccion
+ *   seleccion → batalla → revelacion → (confirmar) → batalla | resultado
+ *   resultado → (reiniciar) → seleccion
+ *
+ * En «revelacion» se muestran los movimientos de ambas aves antes de resolver
+ * el turno (daño incluido). La CPU elige al pasar a «revelacion»; el turno no
+ * se resuelve hasta confirmar, así que no se paga MP antes.
  *
  * Módulo puro: no usa la API de TIC-80. `main.ts` dibuja este estado y
  * traduce los botones a estas funciones. Todas devuelven un juego nuevo.
@@ -13,15 +18,18 @@ import { FICHAS_MVP } from '../data/birds';
 import { aveActiva, estaBloqueado, inicializarBatalla } from '../battle/state';
 import { resolverTurno } from '../battle/turn';
 import { elegirMovimientoCpu } from '../battle/cpu';
+import { rendirAveActiva } from '../battle/rendicion';
 import {
   CONFIG_BASE,
   type AveFicha,
   type ConfigBatalla,
+  type EntradaHistorial,
   type EstadoBatalla,
+  type MovimientoActivo,
   type Rng,
 } from '../battle/types';
 
-export type Pantalla = 'seleccion' | 'batalla' | 'resultado';
+export type Pantalla = 'seleccion' | 'batalla' | 'revelacion' | 'resultado';
 
 export interface Juego {
   pantalla: Pantalla;
@@ -37,6 +45,15 @@ export interface Juego {
   eventos: string[];
   /** Ganador de la batalla, cuando la pantalla es 'resultado'. */
   resultado: 'jugador' | 'cpu' | 'empate' | null;
+  /** Movimiento elegido por el jugador, mientras la pantalla es 'revelacion'. */
+  movJugador: MovimientoActivo | null;
+  /** Movimiento elegido por la CPU, mientras la pantalla es 'revelacion'. */
+  movCpu: MovimientoActivo | null;
+  /**
+   * Resultado del turno revelado (daño y mensaje). Es null hasta la primera
+   * confirmación; después se muestra en la misma pantalla de revelación.
+   */
+  entradaTurno: EntradaHistorial | null;
 }
 
 /** Configuración del ejecutable mínimo: 1v1 (D1). */
@@ -52,6 +69,9 @@ export function nuevoJuego(): Juego {
     mensaje: '',
     eventos: [],
     resultado: null,
+    movJugador: null,
+    movCpu: null,
+    entradaTurno: null,
   };
 }
 
@@ -107,30 +127,65 @@ export function usarMovimiento(j: Juego, rng: Rng): Juego {
     // No debería pasar: tras cada turno el motor deja al ave activa con algún movimiento usable.
     return { ...j, mensaje: 'Error: la CPU no tiene movimientos usables', eventos: [] };
   }
-  const { estado, entrada } = resolverTurno(j.estado, mov, movCpu, rng);
-  const terminada = estado.terminada;
+  // Solo se muestran las elecciones; el daño se calcula al confirmar.
+  return {
+    ...j,
+    pantalla: 'revelacion',
+    movJugador: mov,
+    movCpu,
+    entradaTurno: null,
+    mensaje: '',
+    eventos: [],
+  };
+}
+
+/**
+ * Confirmación de la pantalla de revelación, en dos pasos:
+ * 1. Resuelve el turno con el motor y muestra el daño en la misma pantalla.
+ * 2. Al confirmar de nuevo, pasa a batalla o a resultado si la batalla terminó.
+ */
+export function confirmarTurno(j: Juego, rng: Rng): Juego {
+  if (j.pantalla !== 'revelacion' || !j.estado || !j.movJugador || !j.movCpu) return j;
+
+  if (j.entradaTurno) {
+    const terminada = j.estado.terminada;
+    return {
+      ...j,
+      pantalla: terminada ? 'resultado' : 'batalla',
+      resultado: terminada ? j.estado.ganador : null,
+      movJugador: null,
+      movCpu: null,
+      entradaTurno: null,
+    };
+  }
+
+  const { estado, entrada } = resolverTurno(j.estado, j.movJugador, j.movCpu, rng);
   return {
     ...j,
     estado,
     mensaje: entrada.mensaje,
     eventos: entrada.eventos,
-    pantalla: terminada ? 'resultado' : 'batalla',
-    resultado: terminada ? estado.ganador : null,
+    entradaTurno: entrada,
   };
 }
 
 /**
- * Rendición manual (RF-015). El motor no tiene una función de rendición, así que
- * la batalla termina aquí con victoria de la CPU. Pendiente de mover al motor en el paso 6.
+ * Rendición manual del ave del jugador (RF-015). La resuelve el motor
+ * (`rendirAveActiva`). Con una sola ave por equipo (1v1), la batalla termina.
  */
 export function rendirse(j: Juego): Juego {
-  if (j.pantalla !== 'batalla') return j;
+  if (j.pantalla !== 'batalla' || !j.estado) return j;
+  const { estado, evento } = rendirAveActiva(j.estado, 'jugador');
+  const terminada = estado.terminada;
   return {
     ...j,
-    pantalla: 'resultado',
-    resultado: 'cpu',
-    mensaje: 'Te rindes. Gana la CPU.',
-    eventos: [],
+    estado,
+    pantalla: terminada ? 'resultado' : 'batalla',
+    resultado: terminada ? estado.ganador : null,
+    mensaje: terminada
+      ? `Te rindes. Gana ${estado.ganador === 'cpu' ? 'la CPU' : 'el jugador'}.`
+      : `${evento}. Entra ${aveActiva(estado.jugador).nombre}.`,
+    eventos: [evento],
   };
 }
 

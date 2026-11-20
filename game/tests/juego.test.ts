@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   confirmarAve,
+  confirmarTurno,
   moverMovimiento,
   moverSeleccion,
   nuevoJuego,
@@ -63,19 +64,64 @@ describe('flujo del juego (game/src/juego/flujo.ts)', () => {
     expect(despues.mensaje).toMatch(/MP insuficiente/);
   });
 
-  it('usar un movimiento válido resuelve un turno y muestra el mensaje', () => {
+  it('usar un movimiento muestra la revelación de ambas aves sin resolver el turno', () => {
     const j = confirmarAve(nuevoJuego(), crearRng(5));
-    const despues = usarMovimiento(j, crearRng(6));
-    expect(despues.estado!.turno).toBe(1);
-    expect(despues.estado!.historial).toHaveLength(1);
-    expect(despues.mensaje.length).toBeGreaterThan(0);
+    const mp = j.estado!.jugador.aves[0].mpActual;
+    const revelado = usarMovimiento(j, crearRng(6));
+    expect(revelado.pantalla).toBe('revelacion');
+    expect(revelado.movJugador).not.toBeNull();
+    expect(revelado.movCpu).not.toBeNull();
+    // Antes de confirmar no hay turno ni MP gastado.
+    expect(revelado.estado!.turno).toBe(0);
+    expect(revelado.estado!.jugador.aves[0].mpActual).toBe(mp);
+  });
+
+  it('el movimiento revelado es el elegido por el jugador y uno activo de cada ave', () => {
+    const j = confirmarAve(moverMovimiento(nuevoJuego(), 0), crearRng(5));
+    const revelado = usarMovimiento(j, crearRng(6));
+    const activosJugador = j.estado!.jugador.aves[0].movimientos;
+    expect(activosJugador[j.cursorMov]).toEqual(revelado.movJugador);
+    expect(revelado.estado!.cpu.aves[0].movimientos).toContainEqual(revelado.movCpu);
+  });
+
+  it('la primera confirmación resuelve el turno y deja el daño visible en la revelación', () => {
+    const j = confirmarAve(nuevoJuego(), crearRng(5));
+    const resuelto = confirmarTurno(usarMovimiento(j, crearRng(6)), crearRng(7));
+    expect(resuelto.pantalla).toBe('revelacion');
+    expect(resuelto.estado!.turno).toBe(1);
+    expect(resuelto.estado!.historial).toHaveLength(1);
+    expect(resuelto.entradaTurno).not.toBeNull();
+    expect(resuelto.entradaTurno!.danoAlCpu).toBeGreaterThanOrEqual(0);
+    expect(resuelto.entradaTurno!.danoAlJugador).toBeGreaterThanOrEqual(0);
+    expect(resuelto.mensaje.length).toBeGreaterThan(0);
+    expect(resuelto.movJugador).not.toBeNull();
+    expect(resuelto.movCpu).not.toBeNull();
+  });
+
+  it('la segunda confirmación continúa a batalla y limpia la revelación', () => {
+    const j = confirmarAve(nuevoJuego(), crearRng(5));
+    const resuelto = confirmarTurno(usarMovimiento(j, crearRng(6)), crearRng(7));
+    const continuado = confirmarTurno(resuelto, crearRng(8));
+    expect(continuado.pantalla).toMatch(/batalla|resultado/);
+    expect(continuado.entradaTurno).toBeNull();
+    expect(continuado.movJugador).toBeNull();
+    expect(continuado.movCpu).toBeNull();
+    // La segunda confirmación no vuelve a resolver el turno.
+    expect(continuado.estado!.turno).toBe(1);
+  });
+
+  it('confirmar fuera de la revelación no cambia el juego', () => {
+    const j = confirmarAve(nuevoJuego(), crearRng(5));
+    expect(confirmarTurno(j, crearRng(1))).toBe(j);
   });
 
   it('la batalla termina en la pantalla de resultado con el ganador del motor', () => {
     let j = confirmarAve(nuevoJuego(), crearRng(7));
     let guard = 0;
-    while (j.pantalla === 'batalla' && guard++ < 500) {
-      j = usarMovimiento(j, crearRng(1000 + guard));
+    while (j.pantalla !== 'resultado' && guard++ < 500) {
+      j = j.pantalla === 'batalla'
+        ? usarMovimiento(j, crearRng(1000 + guard))
+        : confirmarTurno(j, crearRng(2000 + guard));
     }
     expect(j.pantalla).toBe('resultado');
     expect(j.estado!.terminada).toBe(true);

@@ -118,3 +118,18 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - Limitación de la pantalla de batalla: los mensajes largos se cortan en el borde de 240 px. Pendiente de ajustar.
 - Tests: `game/tests/juego.test.ts` (10 casos). Total: 107 pruebas pasan.
 - Verificado: `tsc` sin errores; `npm run game:build` genera el cartucho; `npm run game:run` carga con `import code` sin errores en el log. **No se verificó visualmente**: no hay permiso para capturar la pantalla.
+
+### Paso 9 — Rendición en el motor (20 nov 2026)
+
+- Creado `game/src/battle/rendicion.ts`: `rendirAveActiva(estado, lado)`. El ave activa pasa a `'rendida'`, entra la siguiente (si hay) y se evalúa el fin de la batalla. No consume turno, MP ni historial.
+- `game/src/juego/flujo.ts`: `rendirse()` ahora llama al motor. Ya no decide el ganador por su cuenta. (Reemplaza la nota del paso 7.)
+- Tests: `game/tests/rendicion.test.ts` (7 casos). Total: 118 pruebas pasan.
+- Verificado: `tsc` sin errores; cartucho generado; TIC-80 corre sin errores en el log.
+
+### Paso 8 — Revelación de movimientos y teclas (20 nov 2026)
+
+- **Revelación antes del daño:** al usar un movimiento, la CPU elige y la pantalla `revelacion` muestra ambos movimientos (nombre y tipo). El turno se resuelve al confirmar con `Z` (`confirmarTurno` en `flujo.ts`). No se paga MP antes de confirmar. Esto no cambia el motor: `resolverTurno` sigue recibiendo los dos movimientos.
+- **Teclas:** las instrucciones en pantalla usan las teclas de TIC-80 (`Z` = botón A, `X` = botón B). Antes decían «A» y «B».
+- **Daño en la revelación:** la pantalla de revelación tiene dos pasos. Primero muestra las dos elecciones. Al confirmar con `Z` se resuelve el turno y, en la misma pantalla, aparecen el daño de cada ave (`Daño a <ave>: -N HP`) y el mensaje del turno. Otro `Z` continúa a batalla o a resultado. El estado de batalla se actualiza en el primer paso (`entradaTurno` en `flujo.ts`).
+- Tests: `game/tests/juego.test.ts` ahora tiene 14 casos. Total: 111 pruebas pasan.
+- Verificado: `tsc` sin errores; cartucho generado; TIC-80 corre sin errores en el log. No verificado visualmente.

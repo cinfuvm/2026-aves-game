@@ -25,6 +25,7 @@ game/src/battle/
 ├── damage.ts  Cálculo de daño (base, esfuerzo, STAB, pasivas)
 ├── state.ts   Fichas, inicialización, bloqueo, relevo, fin
 ├── turn.ts    Resolución del turno
+├── rendicion.ts  Rendición manual del ave activa
 └── cpu.ts     Elección del CPU (nivel base)
 ```
 
@@ -123,6 +124,14 @@ clonarEstado(estado): EstadoBatalla  // copia profunda
 **Lanza un error** si la batalla terminó, el movimiento no pertenece al ave activa o está bloqueado por MP — la UI debe prevenir esas selecciones (CB-01, CB-09).
 
 Flujo interno: pago de MP (pasiva Papel) → PPTLS → daño (empate = ambos se dañan, D-02) → salidas (HP 0 → debilitada; sin MP usable → rendida) y relevo → regeneración Lagarto → fin → historial.
+
+## `rendicion.ts` — rendición manual (RF-015, BR-012)
+
+```ts
+rendirAveActiva(estado, lado: 'jugador' | 'cpu'): { estado, evento }
+```
+
+El ave activa del `lado` pasa a `'rendida'`, entra la siguiente ave (si hay) y se evalúa el fin de la batalla. No consume turno, MP ni historial. No muta el estado recibido. Lanza un error si la batalla ya terminó. En 1v1 la batalla termina; en 3v3 entra la siguiente ave o la batalla termina cuando no quedan aves.
 
 ## `cpu.ts` — elección del CPU (Parte C)
 

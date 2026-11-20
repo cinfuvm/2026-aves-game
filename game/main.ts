@@ -6,6 +6,7 @@
 import { printh } from "./helpers"
 import {
   confirmarAve,
+  confirmarTurno,
   moverMovimiento,
   moverSeleccion,
   nuevoJuego,
@@ -73,6 +74,9 @@ function leerEntrada() {
       if (btnp(A)) juego = usarMovimiento(juego, rng)
       if (btnp(B)) juego = rendirse(juego)
       break
+    case "revelacion":
+      if (btnp(A)) juego = confirmarTurno(juego, rng)
+      break
     case "resultado":
       if (btnp(A)) juego = reiniciar(juego)
       break
@@ -89,6 +93,9 @@ function dibujar() {
       break
     case "batalla":
       dibujarBatalla()
+      break
+    case "revelacion":
+      dibujarRevelacion()
       break
     case "resultado":
       dibujarResultado()
@@ -121,7 +128,7 @@ function dibujarSeleccion() {
     )
   })
 
-  print("IZQ/DER: cambiar   A: elegir", 30, 124, GRIS, false, 1, true)
+  print("IZQ/DER: cambiar   Z: elegir", 30, 124, GRIS, false, 1, true)
 }
 
 function dibujarBatalla() {
@@ -151,7 +158,46 @@ function dibujarBatalla() {
     print(juego.eventos[0], 8, 114, BLANCO, false, 1, true)
   }
 
-  print("ARR/ABJ: mover  A: usar  B: rendirse", 14, 128, GRIS, false, 1, true)
+  print("ARR/ABJ: mover  Z: usar  X: rendirse", 14, 128, GRIS, false, 1, true)
+}
+
+function dibujarRevelacion() {
+  const estado = juego.estado
+  const movJugador = juego.movJugador
+  const movCpu = juego.movCpu
+  if (!estado || !movJugador || !movCpu) return
+  const cpu = aveActiva(estado.cpu)
+  const jugador = aveActiva(estado.jugador)
+
+  print(`CPU: ${cpu.nombre} usa:`, 8, 14, ROJO)
+  print(`${movCpu.nombre}`, 16, 26, BLANCO, false, 2)
+  print(`Tipo: ${NOMBRE_TIPO[movCpu.tipo]}`, 16, 44, GRIS, false, 1, true)
+
+  print(`Tú: ${jugador.nombre} usa:`, 8, 64, VERDE)
+  print(`${movJugador.nombre}`, 16, 76, BLANCO, false, 2)
+  print(`Tipo: ${NOMBRE_TIPO[movJugador.tipo]}`, 16, 94, GRIS, false, 1, true)
+
+  const entrada = juego.entradaTurno
+  if (!entrada) {
+    // Antes de resolver: solo las elecciones.
+    print(
+      `${NOMBRE_TIPO[movJugador.tipo]} vs ${NOMBRE_TIPO[movCpu.tipo]}`,
+      8,
+      110,
+      NARANJA,
+      false,
+      1,
+      true
+    )
+    print("Z: resolver turno", 80, 124, GRIS, false, 1, true)
+    return
+  }
+
+  // Después de resolver: daño de cada ave y mensaje del turno.
+  print(`Daño a ${cpu.nombre}: -${entrada.danoAlCpu} HP`, 8, 102, VERDE, false, 1, true)
+  print(`Daño a ${jugador.nombre}: -${entrada.danoAlJugador} HP`, 8, 110, ROJO, false, 1, true)
+  print(juego.mensaje, 8, 118, NARANJA, false, 1, true)
+  print("Z: continuar", 80, 128, GRIS, false, 1, true)
 }
 
 function dibujarMovimientos(ave: AveCombate) {
@@ -175,7 +221,7 @@ function dibujarResultado() {
         : "EMPATE TECNICO"
   print(texto, 36, 40, NARANJA, false, 2)
   print(juego.mensaje, 8, 76, BLANCO, false, 1, true)
-  print("A: jugar de nuevo", 72, 110, GRIS, false, 1, true)
+  print("Z: jugar de nuevo", 72, 110, GRIS, false, 1, true)
 }
 
 function barra(x: number, y: number, ancho: number, valor: number, max: number, color: number) {
