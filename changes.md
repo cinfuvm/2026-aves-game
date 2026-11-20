@@ -108,3 +108,13 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - **D1:** el formato 1v1 se pasa al crear la batalla en `game/main.ts`. Todavía no hay batalla en `main.ts`; se aplica con la integración del paso 4 del plan.
 - **Fichas (paso 2 del plan):** creado `game/src/data/birds.ts` con Cóndor, Loica y Chincol (5 movimientos cada una, datos de `contenido-aves.adoc`). Tipo propio según S-01 (D-14).
 - Tests: `game/tests/birds.test.ts` (11 casos): validación de las fichas, ids únicos, tipo propio y que cada selección de 4 movimientos incluye uno de su tipo. Total: 97 pruebas pasan.
+
+### Paso 7 — Máquina de estados y conexión con el motor (20 nov 2026)
+
+- Creado `game/src/juego/flujo.ts`: estados `seleccion → batalla → resultado → seleccion`. Es lógica pura, sin API de TIC-80. Usa el motor en modo 1v1 (`CONFIG_1V1`) y elige la CPU al azar entre las 3 aves del MVP.
+- `game/main.ts` reemplazado: lee los botones de TIC-80 (`btnp`) y dibuja cada pantalla con `rect` y `print`. Quedan fuera los sprites (D-13) y el texto de prueba de la plantilla.
+- **Rendición (RF-015):** el motor no tiene una función de rendición. `rendirse()` en `flujo.ts` termina la batalla con victoria de la CPU. Pendiente de moverlo al motor en el paso 6 del plan (rendición y relevo).
+- **Sin relevo:** en 1v1 solo hay un ave por equipo; el relevo se verifica en 3v3.
+- Limitación de la pantalla de batalla: los mensajes largos se cortan en el borde de 240 px. Pendiente de ajustar.
+- Tests: `game/tests/juego.test.ts` (10 casos). Total: 107 pruebas pasan.
+- Verificado: `tsc` sin errores; `npm run game:build` genera el cartucho; `npm run game:run` carga con `import code` sin errores en el log. **No se verificó visualmente**: no hay permiso para capturar la pantalla.
