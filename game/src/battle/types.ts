@@ -18,6 +18,9 @@ export type Rng = () => number;
 /** Ganador de un intercambio PPTLS entre el movimiento del jugador y el del CPU. */
 export type ResultadoPPTLS = 'jugador' | 'cpu' | 'empate';
 
+/** Clasificación del daño infligido según su magnitud (reglas-batalla.adoc). */
+export type ClasificacionEfectividad = 'sin-efecto' | 'efectivo' | 'muy-efectivo';
+
 /** Ficha estática de un movimiento (vive en data/birds). El coste de MP se asigna al entrar en combate. */
 export interface MovimientoFicha {
   id: string;
@@ -101,6 +104,19 @@ export interface ConfigBatalla {
   costeMpRango: [number, number];
   /** Probabilidad de que un movimiento de tipo papel no consuma MP (pasiva). */
   probCosteCeroPapel: number;
+  /** Multiplicador de esfuerzo por punto de coste MP: daño ×(1 + coste × factor). */
+  factorEsfuerzo: number;
+  /** Multiplicador STAB cuando el tipo del movimiento coincide con el tipo del ave. */
+  factorStab: number;
+  /** Daño fijo adicional de la pasiva Tijera cuando el ave gana el intercambio. */
+  bonusTijera: number;
+  /** Fracción del HP máx rival como daño mínimo de la pasiva Spock cuando gana. */
+  minimoSpock: number;
+  /**
+   * D-09 (changes.md): pasiva Spock activa mientras el Product Owner decide
+   * el conflicto con la regla «daño 0 = Sin efecto» (BR-007).
+   */
+  pasivaSpockActiva: boolean;
 }
 
 /** Valores base acordados en plan_logica.md. */
@@ -111,6 +127,11 @@ export const CONFIG_BASE: ConfigBatalla = {
   hpMaxRangoPiedra: [40, 50],
   costeMpRango: [1, 5],
   probCosteCeroPapel: 0.25,
+  factorEsfuerzo: 0.15,
+  factorStab: 1.5,
+  bonusTijera: 5,
+  minimoSpock: 0.3,
+  pasivaSpockActiva: true,
 };
 
 /** Registro de un turno resuelto, para el historial visual de la Parte B. */

@@ -21,10 +21,11 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 | D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Conflicto abierto:** con la pasiva de Spock el daño nunca es 0 si gana. Pendiente de decisión del Product Owner. La pasiva se implementa como parámetro del cálculo, activable/desactivable. | BR-007 |
 | D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 5]** (provisional, decisión propia al no fijarlo `pelea.md`). | BR-003 |
 | D-11 | Pasiva Tijera «+5» | No aplica. | Interpretación: **+5 de daño fijo adicional** al daño calculado cuando el ave de tipo tijera gana el intercambio. | — |
+| D-12 | Redondeo del daño final | No se especifica. | El daño final se **redondea hacia abajo** (`floor`) a un entero ≥ 0, coherente con el estilo del PRD. | BR-006 |
 
 ## Pendientes de decisión (bloquean cambios futuros)
 
-1. **D-09 (Spock vs Sin efecto):** ¿se mantiene BR-007 (empate/daño 0) o prevalece la pasiva?
+1. **D-09 (Spock vs Sin efecto):** ¿se mantiene BR-007 (empate/daño 0) o prevalece la pasiva? **Decisión por defecto mientras no se resuelva:** la pasiva prevalece (daño mínimo 30 % al ganar, incluso si el base es 0); se puede desactivar con `ConfigBatalla.pasivaSpockActiva`.
 2. **Pokédex** (plan_logica.md §4.1): sin definir.
 3. **Torre de desafíos** (plan_logica.md §4.2): sin definir.
 4. **Actualización del PRD:** pendiente incorporar D-01 a D-11 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
@@ -47,3 +48,13 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 - Matriz idéntica a `reglas-batalla.adoc` (sin desviaciones): Piedra aplasta Tijera/Lagarto, Papel cubre Piedra/refuta Spock, Tijera corta Papel/decapita Lagarto, Lagarto come Papel/envenena Spock, Spock rompe Tijera/vaporiza Piedra.
 - Mensajes de empate: «Choque de {tipo en plural}» (p. ej. «Choque de piedras», como el ejemplo del PRD).
 - Tests en `game/tests/pptls.test.ts`: las 25 combinaciones contra la matriz del PRD, simetría, empates y mensajes.
+
+### Paso 2 — Cálculo de daño (19 nov 2026)
+
+- Creado `game/src/battle/damage.ts`: `calcularDanoBase`, `calcularDano`, `clasificarEfectividad` y `MENSAJE_EFECTIVIDAD`, con desglose completo (`DetalleDano`) para historial y modo de depuración.
+- Orden de aplicación: daño base (0–HP máx rival, inclusive) → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → pasiva Tijera +5 al ganar → pasiva Spock mínimo 30 % del HP máx rival al ganar → `floor`.
+- STAB depende solo de los tipos (aplica también en empate); las pasivas de Tijera y Spock exigen ganar el intercambio (no aplican en empate).
+- `ConfigBatalla` ampliado con parámetros de daño: `factorEsfuerzo`, `factorStab`, `bonusTijera`, `minimoSpock`, `pasivaSpockActiva`.
+- **D-09 (decisión por defecto implementada):** la pasiva Spock prevalece sobre «Sin efecto» (BR-007) mientras el PO decide; desactivable con `pasivaSpockActiva: false`.
+- **D-12 nueva:** daño final con redondeo hacia abajo a entero ≥ 0.
+- Tests en `game/tests/damage.test.ts` (20 casos): rangos del daño base, fórmula de esfuerzo, STAB con y sin, pasiva Tijera (con/sin STAB, en empate), pasiva Spock (base 0, bajo el mínimo, sobre el mínimo, empate, desactivada), límites de efectividad (20/21 sobre HP 40), mensajes del PRD, monotonía por coste MP y cotas superiores.
