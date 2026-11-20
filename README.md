@@ -48,7 +48,7 @@ El código del juego vive en `game/` (plantilla base de TIC-80 en TypeScript). L
 ### Requisitos
 
 - **Node.js 20 o superior** y npm (ya necesarios para la documentación).
-- **TIC-80 PRO**: la plantilla carga `game/game.js` (sprites y paleta) como cartucho de texto, y la versión gratuita no lo permite. Mientras no se resuelva, usa la versión PRO.
+- **TIC-80 gratuito.** El ejecutable mínimo no usa sprites: todo se dibuja con formas y texto (decisión D-13 en `changes.md`). Cargar `game/game.js` (sprites y paleta) requiere TIC-80 PRO y queda para una versión futura.
 - Instalar TIC-80 desde [tic80.com](https://tic80.com/create). Por defecto, `game/tsc80-config.json` apunta a `/Applications/TIC-80.app/Contents/MacOS/tic80` (macOS). En otros sistemas, usa la variable `TIC80_PATH` (ver abajo).
 
 ### Pasos
@@ -62,7 +62,7 @@ npm run game:run          # compila, abre TIC-80 y vigila cambios en los .ts
 Para verificar que funciona:
 
 1. `npm run game:build` termina con `Build complete.` y existe `game/build/output.js`.
-2. `npm run game:run` abre TIC-80 y debe mostrar el juego: fondo de color, un pájaro animado y el texto `HELLO WORLD!`. Las flechas mueven el pájaro. (Con TIC-80 PRO; con la versión gratuita el cartucho no carga.)
+2. `npm run game:run` abre TIC-80 y carga el cartucho con `import code`. La consola debe mostrar `build/output.js imported :)` y luego `run`. La plantilla actual solo muestra el texto `HELLO WORLD!`: su pájaro usa `spr()`, que no dibuja nada sin `game.js`.
 3. En la terminal debe aparecer `Module import works!`, que confirma que `helpers.ts` se empaquetó bien.
 4. Edita `game/main.ts`, guarda, y observa que la terminal muestra `Building ... Build complete.`. Para ver el cambio en TIC-80, presiona `Ctrl+R`: la herramienta recompila el cartucho, pero no recarga TIC-80 sola.
 

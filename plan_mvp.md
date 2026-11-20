@@ -83,8 +83,8 @@ Todo se dibuja con formas y texto, sin sprites.
 
 Cada paso depende del anterior.
 
-1. **Cambios de código de la sección 3** (D1 a D4), con sus pruebas. Verificar que `npm test` pasa.
-2. **Fichas de datos.** Crear `game/src/data/birds.ts` con 3 aves y sus 5 movimientos cada una. Validar cada ficha con `validarFicha`.
+1. **Cambios de código de la sección 3** (D1 a D4), con sus pruebas. *Hecho.*
+2. **Fichas de datos.** *Hecho: `game/src/data/birds.ts` con Cóndor, Loica y Chincol (tests en `game/tests/birds.test.ts`).* Crear `game/src/data/birds.ts` con 3 aves y sus 5 movimientos cada una. Validar cada ficha con `validarFicha`.
 3. **Máquina de estados mínima.** En `game/main.ts`: `SELECT → BATTLE → RESULT`, con un bucle `TIC()` que lea la entrada, llame al motor y dibuje la pantalla.
 4. **Conexión con el motor.** Crear la batalla con `inicializarBatalla` (modo 1v1), elegir la CPU con `elegirMovimientoCpu` y resolver cada turno con `resolverTurno`. Mostrar `entrada.mensaje` y `entrada.eventos`.
 5. **HUD de batalla.** Dibujar HP y MP del ave activa de cada lado, los movimientos con los bloqueados marcados y el resultado del turno.

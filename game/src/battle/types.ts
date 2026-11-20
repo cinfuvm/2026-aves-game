@@ -79,15 +79,15 @@ export interface Equipo {
  * - tijera:  si gana el intercambio, daño fijo adicional de +5.
  * - papel:   `probCosteCeroPapel` (25 %) de que su movimiento no consuma MP.
  * - lagarto: recupera +3 HP al final del turno, sin superar su HP máx.
- * - spock:   si gana, daño mínimo de 30 % del HP máx del rival.
- *            (Pendiente de resolución el conflicto con "Sin efecto" — ver changes.md D-09.)
+ * - spock:   si gana con daño mayor que 0, daño mínimo de 30 % del HP máx del rival.
+ *            Con daño 0 el resultado es «Sin efecto» (decisión D3, changes.md D-09).
  */
 export const NOMBRE_PASIVA: Record<TipoPPTLS, string> = {
   piedra: 'HP inicial 40–50',
   tijera: '+5 de daño al ganar',
   papel: '25 % de coste 0',
   lagarto: '+3 HP por turno',
-  spock: 'daño mínimo 30 %',
+  spock: 'daño mínimo 30 % si hay daño',
 };
 
 /** Configuración de una batalla. */
@@ -115,8 +115,8 @@ export interface ConfigBatalla {
   /** Fracción del HP máx rival como daño mínimo de la pasiva Spock cuando gana. */
   minimoSpock: number;
   /**
-   * D-09 (changes.md): pasiva Spock activa mientras el Product Owner decide
-   * el conflicto con la regla «daño 0 = Sin efecto» (BR-007).
+   * D3 (changes.md, D-09): `true` aplica la pasiva Spock (solo con daño mayor que 0);
+   * `false` la desactiva y Spock sigue las reglas base.
    */
   pasivaSpockActiva: boolean;
 }

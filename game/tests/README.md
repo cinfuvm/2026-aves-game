@@ -17,15 +17,16 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 
 ---
 
-## Qué se prueba (5 archivos, 86 casos)
+## Qué se prueba (6 archivos, 97 casos)
 
 | Archivo | Módulo probado | Casos | En qué consiste |
 |---|---|---|---|
 | `pptls.test.ts` | `pptls.ts` | 8 | Las 25 combinaciones de la matriz contra `reglas-batalla.adoc`; cada tipo gana 2 / pierde 2 / empata 1; simetría; mensajes mnemotécnicos y de empate |
-| `damage.test.ts` | `damage.ts` | 20 | Rango del daño base; multiplicador de esfuerzo `×(1+coste×0.15)`; STAB ×1.5; pasiva Tijera (+5 al ganar, con/sin STAB); pasiva Spock (mínimo 30 %, base 0, empate, desactivable); límites de efectividad; monotonía por coste; cotas superiores |
+| `damage.test.ts` | `damage.ts` | 20 | Rango del daño base; multiplicador de esfuerzo `×(1+coste×0.15)`; STAB ×1.5; pasiva Tijera (+5 al ganar, con/sin STAB); pasiva Spock (mínimo 30 % con daño > 0; base 0 → «Sin efecto» según D3; empate; desactivable); límites de efectividad; monotonía por coste; cotas superiores |
 | `state.test.ts` | `state.ts` | 26 | Validación de fichas (5 movimientos, tipo propio, ids únicos); selección de 4 activos con el garantizado presente (50 semillas); costes de MP en rango; HP 20–50 y Piedra 40–50; MP 15 compartido; determinismo por semilla; tamaños 1v1/3v3; bloqueo por MP; relevo; los 4 resultados de `evaluarFin` |
 | `turn.test.ts` | `turn.ts` | 22 | Validaciones (batalla terminada, movimiento ajeno, MP insuficiente); números exactos de los 3 resultados PPTLS; pasiva Papel (tirada baja/alta, ave vs movimiento, no-tirada de aves no papel); pasiva Lagarto (tope, espacio, no revive, otros tipos); CB-03 (HP 0), CB-05 (prioridad debilitamiento), CB-08 (empate técnico); rendición por MP con relevo; historial acumulativo; inmutabilidad del estado |
 | `cpu.test.ts` | `cpu.ts` | 10 | Nunca elige movimientos bloqueados; cubre todos los usables; respeta el ave activa tras relevo; determinismo por semilla; `null` sin MP; perfil base explícito e implícito |
+| `birds.test.ts` | `src/data/birds.ts` | 11 | Las 3 fichas del MVP (Cóndor, Loica, Chincol) pasan `validarFicha`; ids de movimiento únicos; tipo propio según S-01; cada selección de 4 movimientos incluye uno de su tipo (50 semillas) |
 
 ---
 
@@ -77,7 +78,7 @@ function preparar3v3(movsJ, movsC, mpJ?, mpC?, fichasJ?, fichasC?): EstadoBatall
 
 **Truco importante al elegir aves de prueba:** cada tipo trae pasivas que cambian los números —
 piedra (HP inicial), papel (tirada de MP, consume la 1.ª tirada del rng), tijera (+5 si gana),
-lagarto (+3 HP al final del turno), spock (daño mín. 30 % si gana).
+lagarto (+3 HP al final del turno), spock (daño mín. 30 % si gana y hay daño base; con base 0 es «Sin efecto»).
 Para un caso de "números limpios" elige tipos **sin la pasiva que interferiría**
 (p. ej. para probar daño sin pasivas: atacante lagarto o piedra; el defensor piedra/tijera según quién gane).
 

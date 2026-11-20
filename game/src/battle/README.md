@@ -51,7 +51,7 @@ game/src/battle/
 
 | Parámetro | Valor | Regla |
 |---|---|---|
-| `modo` | `'3v3'` (o `'1v1'` para la entrega parcial) | Avances por equipo |
+| `modo` | `'3v3'` (regla final). El ejecutable mínimo pasa `'1v1'` al crear la batalla (D1) | Aves por equipo |
 | `mpInicial` | 15 | MP compartido por ave (D-01) |
 | `hpMaxRango` | `[20, 50]` | HP máx aleatorio al entrar |
 | `hpMaxRangoPiedra` | `[40, 50]` | Pasiva Piedra |
@@ -61,8 +61,8 @@ game/src/battle/
 | `factorEsfuerzo` | `0.15` | Daño ×(1 + coste×0.15) |
 | `factorStab` | `1.5` | STAB |
 | `bonusTijera` | `5` | Pasiva Tijera al ganar |
-| `minimoSpock` | `0.3` | Pasiva Spock al ganar |
-| `pasivaSpockActiva` | `true` | D-09: desactivable hasta decisión del PO |
+| `minimoSpock` | `0.3` | Pasiva Spock al ganar, solo si el daño es mayor que 0 (D3) |
+| `pasivaSpockActiva` | `true` | D3 (D-09): `false` desactiva la pasiva Spock |
 
 ---
 
@@ -91,8 +91,9 @@ clasificarEfectividad(dano, hpMaxRival): ClasificacionEfectividad  // 'sin-efect
 MENSAJE_EFECTIVIDAD  // «El ataque no tuvo efecto», «El ataque fue efectivo», «¡Es muy efectivo!»
 ```
 
-Orden de aplicación: base → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → Spock mín. 30 % al ganar → `floor` ≥ 0.
+Orden de aplicación: base → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → Spock mín. 30 % al ganar con daño mayor que 0 → `floor` ≥ 0.
 El STAB depende solo de los tipos (aplica también en empate); las pasivas de Tijera/Spock exigen ganar el intercambio.
+Con daño base 0, Spock que gana produce «Sin efecto» (D3): el mínimo no se aplica.
 
 ## `state.ts` — estado y equipos
 
@@ -176,5 +177,6 @@ PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
 
 ## Datos que faltan (pendientes del equipo de contenido)
 
-- Fichas reales de las 10 aves en `game/src/data/birds.ts` con el formato `AveFicha` (el motor es TypeScript, D-08). La carpeta aún no existe.
+- Fichas de `game/src/data/birds.ts`: Cóndor, Loica y Chincol (`FICHAS_MVP`). Faltan las otras 7 aves del PRD con el formato `AveFicha` (el motor es TypeScript, D-08).
+- El tipo propio de cada ave es el de su movimiento distintivo (supuesto S-01, D-14 en `changes.md`).
 - Los tests usan fichas de prueba generadas (`fichaPrueba`); ver `game/tests/README.md`.

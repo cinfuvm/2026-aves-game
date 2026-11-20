@@ -15,20 +15,23 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 | D-03 | Cálculo de daño | Daño base aleatorio 0–HP máx del rival (BR-006). | Daño base + **multiplicador de esfuerzo** `×(1 + coste_MP × 0.15)` + **STAB ×1.5** si el tipo del movimiento coincide con el tipo del ave. | BR-006, sección «Cálculo de daño» |
 | D-04 | Pasivas por tipo | No existen. | Piedra: HP inicial 40–50. Tijera: +5 de daño si gana. Papel: 25 % de coste 0. Lagarto: +3 HP al fin del turno (sin pasar el máx). Spock: daño mínimo de 30 % del HP máx rival si gana. | `reglas-batalla.adoc` (capítulo nuevo) |
 | D-05 | Movimientos por ave | 4 activos fijos + 1 distintivo no usable. | **5 movimientos posibles**; al entrar en combate se activan **4 al azar**: 1 garantizado del tipo propio del ave + 3 de los 4 restantes. El coste de MP de cada movimiento es aleatorio. | `reglas-batalla.adoc` (estado de un ave), `contenido-aves.adoc` |
-| D-06 | Tamaño del equipo | Cada equipo tiene 4 aves (BR-001). | **3 contra 3** en todas las batallas (entrega final). Config `modo: '1v1'` para la entrega parcial de la semana 23–27. | BR-001 |
+| D-06 | Tamaño del equipo | Cada equipo tiene 4 aves (BR-001). | **3 contra 3** en la versión final; `CONFIG_BASE` usa `modo: '3v3'`. El **ejecutable mínimo** (plan_mvp.md, decisión D1) usa `modo: '1v1'`, pasado al crear la batalla. | BR-001 |
 | D-07 | Salida de un ave | Rendición automática cuando todos los PP llegan a cero (BR-010). | Un ave sale cuando su HP llega a 0 **o** cuando ningún movimiento es usable por MP insuficiente. | BR-010, BR-011, casos CB-05/CB-06 |
 | D-08 | Lenguaje de los módulos de batalla | `game/src/battle/*.js` (JavaScript). | **TypeScript** (`game/src/battle/*.ts`), coherente con el pipeline tsc80/esbuild del repo. | `arquitectura.adoc` (estructura del repositorio) |
-| D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Conflicto abierto:** con la pasiva de Spock el daño nunca es 0 si gana. Pendiente de decisión del Product Owner. La pasiva se implementa como parámetro del cálculo, activable/desactivable. | BR-007 |
+| D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Resuelto (decisión D3 del plan MVP):** la pasiva de Spock solo se aplica si el daño base es mayor que 0. Con daño 0, el resultado es «Sin efecto». Sigue siendo desactivable con `pasivaSpockActiva`. | BR-007 |
+| D-13 | Versión de TIC-80 y sprites | Sprites e imagen de cada ave (RF-004, `contenido-aves.adoc`); cartucho exportado a HTML (`arquitectura.adoc`). | **Ejecutable mínimo sin sprites**, con TIC-80 **gratuito** (decisión D4 del plan MVP). Todo se dibuja con formas y texto. El cargador usa `import code` en lugar de `load game.js`, porque la versión gratuita no carga texto con `load`. Los sprites quedan para una versión futura. | RF-004, `arquitectura.adoc` |
+| D-14 | Tipo propio del ave | El PRD no define el tipo propio de cada ave; sí indica el tipo de su movimiento distintivo. | **Supuesto S-01:** el tipo propio de cada ave es el tipo de su movimiento distintivo (Cóndor: Spock; Loica: Lagarto; Chincol: Papel). Así el movimiento garantizado (regla del equipo) coincide con el distintivo. Pendiente de confirmar por el Product Owner. | `contenido-aves.adoc` («Fichas de aves», «Cobertura de tipos») |
 | D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 5]** (provisional, decisión propia al no fijarlo `pelea.md`). | BR-003 |
 | D-11 | Pasiva Tijera «+5» | No aplica. | Interpretación: **+5 de daño fijo adicional** al daño calculado cuando el ave de tipo tijera gana el intercambio. | — |
 | D-12 | Redondeo del daño final | No se especifica. | El daño final se **redondea hacia abajo** (`floor`) a un entero ≥ 0, coherente con el estilo del PRD. | BR-006 |
 
 ## Pendientes de decisión (bloquean cambios futuros)
 
-1. **D-09 (Spock vs Sin efecto):** ¿se mantiene BR-007 (empate/daño 0) o prevalece la pasiva? **Decisión por defecto mientras no se resuelva:** la pasiva prevalece (daño mínimo 30 % al ganar, incluso si el base es 0); se puede desactivar con `ConfigBatalla.pasivaSpockActiva`.
-2. **Pokédex** (plan_logica.md §4.1): sin definir.
-3. **Torre de desafíos** (plan_logica.md §4.2): sin definir.
-4. **Actualización del PRD:** pendiente incorporar D-01 a D-11 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
+1. **D-09 (Spock vs Sin efecto):** resuelto en el código (D3). Falta que el Product Owner lo confirme en `reglas-batalla.adoc`.
+2. **D-14 (tipo propio de las aves):** supuesto S-01. Falta que el Product Owner lo confirme; si cambia, solo hay que editar `game/src/data/birds.ts`.
+3. **Pokédex** (plan_logica.md §4.1): sin definir.
+4. **Torre de desafíos** (plan_logica.md §4.2): sin definir.
+5. **Actualización del PRD:** pendiente incorporar D-01 a D-14 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
 
 ---
 
@@ -55,7 +58,7 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 - Orden de aplicación: daño base (0–HP máx rival, inclusive) → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → pasiva Tijera +5 al ganar → pasiva Spock mínimo 30 % del HP máx rival al ganar → `floor`.
 - STAB depende solo de los tipos (aplica también en empate); las pasivas de Tijera y Spock exigen ganar el intercambio (no aplican en empate).
 - `ConfigBatalla` ampliado con parámetros de daño: `factorEsfuerzo`, `factorStab`, `bonusTijera`, `minimoSpock`, `pasivaSpockActiva`.
-- **D-09 (decisión por defecto implementada):** la pasiva Spock prevalece sobre «Sin efecto» (BR-007) mientras el PO decide; desactivable con `pasivaSpockActiva: false`.
+- **D-09 (decisión por defecto implementada):** la pasiva Spock prevalecía sobre «Sin efecto». **Superado por D3 (paso 6):** ahora solo se aplica con daño base mayor que 0; desactivable con `pasivaSpockActiva: false`.
 - **D-12 nueva:** daño final con redondeo hacia abajo a entero ≥ 0.
 - Tests en `game/tests/damage.test.ts` (20 casos): rangos del daño base, fórmula de esfuerzo, STAB con y sin, pasiva Tijera (con/sin STAB, en empate), pasiva Spock (base 0, bajo el mínimo, sobre el mínimo, empate, desactivada), límites de efectividad (20/21 sobre HP 40), mensajes del PRD, monotonía por coste MP y cotas superiores.
 
@@ -95,3 +98,13 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 
 - Creado `game/src/battle/README.md`: índice de la API del motor para los equipos B y C — reglas del contrato, export de cada módulo con firmas, valores de `CONFIG_BASE`, flujo típico de integración para la Parte B y punto de extensión para la Parte C.
 - Creado `game/tests/README.md`: guía de la suite — cómo ejecutarla (`npm test`, `test:watch`, archivo individual), qué consiste cada uno de los 5 archivos (86 casos), técnicas para escribir tests nuevos (rng por secuencia/semilla, forzar daño base exacto, fichas y estados de prueba, orden de consumo del rng, advertencia sobre el LCG con semillas consecutivas).
+
+### Paso 6 — Ajustes del ejecutable mínimo (20 nov 2026)
+
+Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance actual sin cambios, D3 pasiva de Spock solo con daño mayor que 0, D4 TIC-80 gratuito sin sprites.
+
+- **D3:** `game/src/battle/damage.ts` exige `dano > 0` para la pasiva Spock. `game/tests/damage.test.ts` actualizado: con daño base 0 el resultado es «Sin efecto» (D-09 resuelto).
+- **D4:** `src/tsc80.ts` lanza TIC-80 con `import code <salida> & run` en lugar de `load game.js & load <salida> code & run`. Se recompiló `bin/tsc80.js`. Verificado: TIC-80 gratuito abre, importa el código y ejecuta `Module import works!`.
+- **D1:** el formato 1v1 se pasa al crear la batalla en `game/main.ts`. Todavía no hay batalla en `main.ts`; se aplica con la integración del paso 4 del plan.
+- **Fichas (paso 2 del plan):** creado `game/src/data/birds.ts` con Cóndor, Loica y Chincol (5 movimientos cada una, datos de `contenido-aves.adoc`). Tipo propio según S-01 (D-14).
+- Tests: `game/tests/birds.test.ts` (11 casos): validación de las fichas, ids únicos, tipo propio y que cada selección de 4 movimientos incluye uno de su tipo. Total: 97 pruebas pasan.
