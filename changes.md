@@ -90,3 +90,8 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 - Interfaz de extensión: `PerfilCpu { tipo: 'aleatorio', datos? }` — la Parte C añadirá tipos de perfil (preferencias, IA por jefe) sin cambiar la firma ni tocar el motor.
 - **Parte A del motor de combate: completa.** Con estos 6 módulos (`types`, `rng`, `pptls`, `damage`, `state`, `turn`, `cpu`), la Parte B puede armar la pantalla de batalla completa (cada turno: `elegirMovimientoCpu` + `resolverTurno`) y la Parte C puede reemplazar el stub por perfiles reales.
 - Tests en `game/tests/cpu.test.ts` (10 casos): nunca elige movimientos bloqueados, cubre todos los usables, respeta el ave activa tras relevo, determinismo por semilla, `null` sin MP, y el perfil base explícito/implícito. Nota de test: el LCG con semillas consecutivas produce primeras salidas muy correlacionadas; para distribución se usa un solo rng con muchas iteraciones.
+
+### Documentación de la Parte A (19 nov 2026)
+
+- Creado `game/src/battle/README.md`: índice de la API del motor para los equipos B y C — reglas del contrato, export de cada módulo con firmas, valores de `CONFIG_BASE`, flujo típico de integración para la Parte B y punto de extensión para la Parte C.
+- Creado `game/tests/README.md`: guía de la suite — cómo ejecutarla (`npm test`, `test:watch`, archivo individual), qué consiste cada uno de los 5 archivos (86 casos), técnicas para escribir tests nuevos (rng por secuencia/semilla, forzar daño base exacto, fichas y estados de prueba, orden de consumo del rng, advertencia sobre el LCG con semillas consecutivas).
