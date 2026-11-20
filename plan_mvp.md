@@ -34,7 +34,7 @@ Alcance: lo mínimo para mostrar avance y que la mecánica funcione. Quedan fuer
 
 ## 3. Cambios de código que implican las decisiones
 
-Estos cambios todavía no están hechos.
+Estado: los puntos 1, 2, 3 y 4 están hechos y verificados (86 pruebas pasan, el cartucho se genera e importa en TIC-80 gratuito). El punto 5 se aplica cuando `main.ts` cree la batalla (paso 4 de la sección 6).
 
 1. **D3 (`game/src/battle/damage.ts`):** la condición de la pasiva Spock pasa a exigir `dano > 0`. Hoy solo verifica `ganaIntercambio` y `pasivaSpockActiva`.
 2. **D3 (`game/tests/damage.test.ts`):** los casos de la pasiva Spock con daño base 0 esperan que el mínimo se aplique. Hay que cambiarlos para que esperen "sin efecto". Revisar también el caso de `pasivaSpockActiva: false`.

@@ -111,13 +111,12 @@ describe('calcularDano — pasiva Tijera (+5 al ganar, D-11)', () => {
   });
 });
 
-describe('calcularDano — pasiva Spock (mínimo 30 %, D-09)', () => {
-  it('eleva el daño al 30 % del HP máx rival cuando gana con daño base 0', () => {
-    // Base 0: sin la pasiva sería «Sin efecto»; la pasiva prevalece (decisión por defecto, D-09).
+describe('calcularDano — pasiva Spock (mínimo 30 %, D3)', () => {
+  it('no aplica el mínimo con daño base 0: el resultado es «Sin efecto» (D3)', () => {
     const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(0, 40));
-    expect(detalle.aplicaMinimoSpock).toBe(true);
-    expect(detalle.dano).toBe(12); // 40 × 0.3
-    expect(detalle.clasificacion).toBe('efectivo');
+    expect(detalle.aplicaMinimoSpock).toBe(false);
+    expect(detalle.dano).toBe(0);
+    expect(detalle.clasificacion).toBe('sin-efecto');
   });
 
   it('eleva el daño al mínimo cuando el daño calculado queda debajo', () => {

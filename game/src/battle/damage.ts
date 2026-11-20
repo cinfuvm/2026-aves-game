@@ -8,7 +8,7 @@
  *   3. STAB ×factorStab si el tipo del movimiento coincide con el tipo del ave.
  *   4. Pasiva Tijera: +bonusTijera de daño fijo si el ave gana el intercambio.
  *   5. Pasiva Spock: daño mínimo de minimoSpock × HP máx rival si el ave gana
- *      (solo con `pasivaSpockActiva`; conflicto con BR-007 abierto, D-09).
+ *      y el daño es mayor que 0 (solo con `pasivaSpockActiva`; decisión D3 del plan MVP).
  *   6. Redondeo hacia abajo (entero ≥ 0).
  *
  * El daño solo se calcula para el bando que inflige: ganador del intercambio,
@@ -100,7 +100,8 @@ export function calcularDano(
   }
 
   let aplicaMinimoSpock = false;
-  if (ganaIntercambio && tipoAveAtacante === 'spock' && config.pasivaSpockActiva) {
+  // D3: la pasiva solo se aplica si hay daño base; con daño 0 el resultado es «Sin efecto».
+  if (ganaIntercambio && tipoAveAtacante === 'spock' && config.pasivaSpockActiva && dano > 0) {
     const minimo = hpMaxRival * config.minimoSpock;
     if (dano < minimo) {
       dano = minimo;

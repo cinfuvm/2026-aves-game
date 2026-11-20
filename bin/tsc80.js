@@ -199,7 +199,8 @@ function build({ run = false }) {
             "--keepcmd",
             `--fs=${process.cwd()}`,
             "--cmd",
-            `load game.js & load ${config.outfile} code & run`,
+            // D4: versión gratuita de TIC-80, sin cargar game.js (sprites). `load` de texto requiere PRO.
+            `import code ${config.outfile} & run`,
         ], {
             stdio: "inherit",
         });
