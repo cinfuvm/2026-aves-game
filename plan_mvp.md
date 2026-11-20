@@ -96,6 +96,8 @@ Cada paso depende del anterior.
 
 ## 7. Verificación del ejecutable
 
+*Estado (20 nov 2026): verificado. Las pruebas automáticas pasan (118), el cartucho se genera y carga en TIC-80 sin errores, y el equipo jugó una partida completa en TIC-80 con resultado satisfactorio.*
+
 1. `npm test` pasa (motor, con las pruebas de D3 actualizadas).
 2. `npm run game:build` termina sin errores y genera `game/build/output.js`.
 3. `npm run game:run` abre TIC-80 gratuito y carga el cartucho con `import code`. La consola muestra la importación y el código corre.
