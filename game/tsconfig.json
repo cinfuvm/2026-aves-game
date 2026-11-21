@@ -4,5 +4,7 @@
     "target": "es2020",
     "strict": true,
     "isolatedModules": true
-  }
+  },
+  "include": ["*.ts", "src/**/*.ts"],
+  "exclude": ["tests"]
 }
