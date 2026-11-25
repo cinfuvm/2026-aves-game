@@ -2,7 +2,7 @@
 
 Documentación para los equipos **B (interfaces)** y **C (CPU/torre)**: qué expone el motor, cómo usarlo y qué reglas respeta.
 
-> Fuentes: `plan_logica.md` (reglas de `pelea.md`), `docs/modules/prd/pages/reglas-batalla.adoc`.
+> Fuentes: `plan_motor_c.md` y `plan_desarrollo.md` (decisiones vigentes), `docs/modules/prd/pages/reglas-batalla.adoc`.
 > Las desviaciones respecto al PRD están numeradas (D-01…D-12) en `changes.md` (raíz del repo).
 
 ---
@@ -38,7 +38,7 @@ game/src/battle/
 | `TipoPPTLS` | `'piedra' \| 'papel' \| 'tijera' \| 'lagarto' \| 'spock'` |
 | `Rng` | `() => number`, número en `[0, 1)` |
 | `ResultadoPPTLS` | `'jugador' \| 'cpu' \| 'empate'` (quién gana el intercambio) |
-| `MovimientoFicha` / `AveFicha` | Datos estáticos (5 movimientos por ave) |
+| `MovimientoFicha` / `AveFicha` | Datos estáticos: 4 movimientos fijos por ave (1 característico + 3 predeterminados de la pool) |
 | `MovimientoActivo` | Movimiento en combate: `id`, `nombre`, `tipo`, `costeMp` |
 | `AveCombate` | Ave en combate: `hpMax`, `hpActual`, `mpMax`, `mpActual`, 4 `movimientos`, `estado` (`'activa' \| 'debilitada' \| 'rendida'`) |
 | `Equipo` | `aves[]` + `indiceActiva` |
@@ -53,17 +53,20 @@ game/src/battle/
 | Parámetro | Valor | Regla |
 |---|---|---|
 | `modo` | `'3v3'` (regla final). El ejecutable mínimo pasa `'1v1'` al crear la batalla (D1) | Aves por equipo |
-| `mpInicial` | 15 | MP compartido por ave (D-01) |
-| `hpMaxRango` | `[20, 50]` | HP máx aleatorio al entrar |
+| `mpInicial` | 20 | MP compartido por ave (D-01, plan_motor_c.md C6) |
+| `hpMaxRango` | `[30, 50]` | HP máx aleatorio al entrar (C9) |
 | `hpMaxRangoPiedra` | `[40, 50]` | Pasiva Piedra |
-| `costeMpRango` | `[1, 5]` | Coste aleatorio de cada movimiento |
+| `vidaPorNivel` | `10` | HP máx = rango + 10 × nivel del combate (C9) |
+| `nivelJugador` / `nivelCpu` | `0` / `0` | Nivel del combate de cada bando |
+| `costeMpRango` | `[1, 3]` | Coste aleatorio de cada movimiento (C6) |
 | `probCosteCeroPapel` | `0.25` | Pasiva Papel |
 | `regeneracionLagarto` | `3` | Pasiva Lagarto |
-| `factorEsfuerzo` | `0.15` | Daño ×(1 + coste×0.15) |
+| `factorEsfuerzo` | `0.1` | Daño ×(1 + coste×0.1) (C3) |
+| `probFallo` | `0.1` | Probabilidad de que un movimiento que ataca falle: gasta MP y turno, no hace daño (C5) |
 | `factorStab` | `1.5` | STAB |
 | `bonusTijera` | `5` | Pasiva Tijera al ganar |
-| `minimoSpock` | `0.3` | Pasiva Spock al ganar, solo si el daño es mayor que 0 (D3) |
-| `pasivaSpockActiva` | `true` | D3 (D-09): `false` desactiva la pasiva Spock |
+| `danoBaseMinFrac` | `0.1` | Daño base mínimo: 10 % del HP máx del rival (D-15) |
+| `danoBaseMaxFrac` | `0.5` | Daño base máximo: 50 % del HP máx del rival (D-15) |
 
 ---
 
@@ -86,24 +89,24 @@ PPTLS_TIPOS: readonly TipoPPTLS[]
 ## `damage.ts` — daño
 
 ```ts
-calcularDanoBase(hpMaxRival, rng): number  // entero en [0, HP máx del rival]
+calcularDanoBase(hpMaxRival, rng, config?): number  // entero en [10 %, 50 %] del HP máx del rival (D-15)
 calcularDano(hpMaxRival, movAtacante, tipoAveAtacante, ganaIntercambio, rng, config?): DetalleDano
 clasificarEfectividad(dano, hpMaxRival): ClasificacionEfectividad  // 'sin-efecto' | 'efectivo' | 'muy-efectivo'
 MENSAJE_EFECTIVIDAD  // «El ataque no tuvo efecto», «El ataque fue efectivo», «¡Es muy efectivo!»
 ```
 
-Orden de aplicación: base → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → Spock mín. 30 % al ganar con daño mayor que 0 → `floor` ≥ 0.
-El STAB depende solo de los tipos (aplica también en empate); las pasivas de Tijera/Spock exigen ganar el intercambio.
-Con daño base 0, Spock que gana produce «Sin efecto» (D3): el mínimo no se aplica.
+Orden de aplicación: base (10–50 % del HP máx del rival) → esfuerzo `×(1 + coste×0.1)` → STAB ×1.5 → Tijera +5 al ganar → `floor` ≥ 0. No hay techo por golpe (C2).
+El STAB depende solo de los tipos (aplica también en empate); la pasiva de Tijera exige ganar el intercambio.
+Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (C7).
 
 ## `state.ts` — estado y equipos
 
 ```ts
-validarFicha(ficha): string[]                        // [] = válida (5 movimientos, 1 del tipo propio)
-seleccionarMovimientos(ficha, rng, config?): MovimientoActivo[]  // 4 activos: 1 propio + 3 al azar; lanza si la ficha es inválida
-inicializarAve(ficha, rng, config?): AveCombate      // HP y MP aleatorios al entrar en combate
-inicializarEquipo(fichas, rng, config?): Equipo      // valida cantidad según modo
-inicializarBatalla(fichasJugador, fichasCpu, rng, config?): EstadoBatalla
+validarFicha(ficha): string[]                        // [] = válida (4 movimientos, 1 característico del tipo propio, ids únicos)
+seleccionarMovimientos(ficha, rng, config?): MovimientoActivo[]  // los 4 movimientos fijos de la ficha, con coste aleatorio (1–3); lanza si la ficha es inválida
+inicializarAve(ficha, rng, config?, nivel?): AveCombate  // HP (rango + vidaPorNivel × nivel) y MP al entrar en combate
+inicializarEquipo(fichas, rng, config?, nivel?): Equipo  // valida cantidad según modo
+inicializarBatalla(fichasJugador, fichasCpu, rng, config?): EstadoBatalla  // usa nivelJugador y nivelCpu
 aveActiva(equipo): AveCombate
 estaBloqueado(mov, ave): boolean                     // coste > MP restante
 movimientosUsables(ave): MovimientoActivo[]
@@ -123,7 +126,9 @@ clonarEstado(estado): EstadoBatalla  // copia profunda
 
 **Lanza un error** si la batalla terminó, el movimiento no pertenece al ave activa o está bloqueado por MP — la UI debe prevenir esas selecciones (CB-01, CB-09).
 
-Flujo interno: pago de MP (pasiva Papel) → PPTLS → daño (empate = ambos se dañan, D-02) → salidas (HP 0 → debilitada; sin MP usable → rendida) y relevo → regeneración Lagarto → fin → historial.
+Flujo interno: pago de MP (pasiva Papel) → PPTLS → fallo (movimiento que ataca; Spock que gana no falla) → daño (empate = ambos se dañan, D-02; un movimiento que falla no hace daño) → salidas (HP 0 → debilitada; sin MP usable → rendida) y relevo → regeneración Lagarto → fin → historial.
+
+Orden de consumo del `rng`: papel jugador → papel CPU → fallo jugador → fallo CPU → daño jugador → daño CPU. Sin fallo (`probFallo` 0) no se consume aleatoriedad para el fallo.
 
 ## `rendicion.ts` — rendición manual (RF-015, BR-012)
 
@@ -184,8 +189,20 @@ estado = nuevo; // el estado original no se muta: reemplazar la referencia
 PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
 ```
 
-## Datos que faltan (pendientes del equipo de contenido)
+## Movimientos y pool (D-17)
 
-- Fichas de `game/src/data/birds.ts`: Cóndor, Loica y Chincol (`FICHAS_MVP`). Faltan las otras 7 aves del PRD con el formato `AveFicha` (el motor es TypeScript, D-08).
-- El tipo propio de cada ave es el de su movimiento distintivo (supuesto S-01, D-14 en `changes.md`).
+Cada ave tiene **4 movimientos fijos**: 1 **característico** (`caracteristico: true`, único del ave y del tipo propio) y 3 **predeterminados** tomados de la pool compartida.
+
+- `game/src/data/movimientos.ts`: pool de 15 movimientos, 3 por tipo PPTLS. `desdePool(...ids)` devuelve copias de los movimientos de la pool.
+- `game/src/data/birds.ts`: fichas de Cóndor, Loica y Chincol. Cada una combina su característico con 3 predeterminados de la pool. Los predeterminados pueden repetirse entre aves; el característico no.
+- Los nombres de la pool son propuesta, tomada del PRD.
+
+## Vida por nivel (D-18)
+
+HP máx = rango base (30–50, o 40–50 para Piedra) + `vidaPorNivel` × nivel del combate. `nivelJugador` y `nivelCpu` fijan el nivel de cada bando; ambos son 0 por defecto. La torre definirá los niveles.
+
+## Datos pendientes
+
+- Fichas de `game/src/data/birds.ts`: solo Cóndor, Loica y Chincol (`FICHAS_MVP`). Faltan las otras 7 aves del PRD, con su característico y sus predeterminados (el motor es TypeScript, D-08).
+- El tipo propio de cada ave es el de su movimiento característico (supuesto S-01, D-14 en `changes.md`). Pendiente de confirmar con el Product Owner (T8).
 - Los tests usan fichas de prueba generadas (`fichaPrueba`); ver `game/tests/README.md`.

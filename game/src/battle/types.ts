@@ -1,6 +1,6 @@
 /**
  * Contrato del motor de batalla (Parte A) — equipo de lógica.
- * Fuente: plan_logica.md (reglas de pelea.md) y docs/modules/prd/pages/arquitectura.adoc.
+ * Fuente: plan_motor_c.md y plan_desarrollo.md (decisiones D-H a D-18), y docs/modules/prd/pages/arquitectura.adoc.
  *
  * Reglas del contrato:
  * - Ninguna función de este módulo usa la API de TIC-80 (cls, spr, btn, ...).
@@ -21,24 +21,29 @@ export type ResultadoPPTLS = 'jugador' | 'cpu' | 'empate';
 /** Clasificación del daño infligido según su magnitud (reglas-batalla.adoc). */
 export type ClasificacionEfectividad = 'sin-efecto' | 'efectivo' | 'muy-efectivo';
 
-/** Ficha estática de un movimiento (vive en data/birds). El coste de MP se asigna al entrar en combate. */
+/**
+ * Ficha estática de un movimiento (vive en data/). El coste de MP se asigna al entrar en combate.
+ * `caracteristico`: movimiento propio de un ave (no se comparte). Los predeterminados
+ * vienen de una pool compartida entre aves (D-C, plan_desarrollo.md).
+ */
 export interface MovimientoFicha {
   id: string;
   nombre: string;
   tipo: TipoPPTLS;
+  caracteristico?: boolean;
 }
 
 /**
  * Ficha estática de un ave.
- * Validación (plan_logica.md, parte A): debe existir al menos un movimiento
- * de `movimientos` cuyo tipo sea el tipo propio del ave; si no, la ficha se rechaza.
+ * Validación (plan_motor_c.md, paso 5): exactamente 4 movimientos fijos, uno de ellos
+ * característico y del tipo propio del ave.
  */
 export interface AveFicha {
   id: string;
   nombre: string;
-  /** Tipo propio del ave: define STAB, el movimiento garantizado y la pasiva. */
+  /** Tipo propio del ave: define STAB y el movimiento característico. */
   tipo: TipoPPTLS;
-  /** Exactamente 5 movimientos posibles. */
+  /** Exactamente 4 movimientos activos: 1 característico + 3 predeterminados. */
   movimientos: MovimientoFicha[];
 }
 
@@ -62,7 +67,7 @@ export interface AveCombate {
   hpActual: number;
   mpMax: number;
   mpActual: number;
-  /** 4 movimientos activos: 1 garantizado del tipo propio + 3 al azar de los 4 restantes. */
+  /** 4 movimientos activos fijos de la ficha: 1 característico + 3 predeterminados (plan_motor_c.md, paso 5). */
   movimientos: MovimientoActivo[];
   estado: 'activa' | 'debilitada' | 'rendida';
 }
@@ -74,27 +79,26 @@ export interface Equipo {
 }
 
 /**
- * Pasivas por tipo (plan_logica.md):
+ * Pasivas por tipo:
  * - piedra:  HP máx aleatorio en `hpMaxRangoPiedra` (40–50) en vez del rango base.
  * - tijera:  si gana el intercambio, daño fijo adicional de +5.
  * - papel:   `probCosteCeroPapel` (25 %) de que su movimiento no consuma MP.
  * - lagarto: recupera +3 HP al final del turno, sin superar su HP máx.
- * - spock:   si gana con daño mayor que 0, daño mínimo de 30 % del HP máx del rival.
- *            Con daño 0 el resultado es «Sin efecto» (decisión D3, changes.md D-09).
+ * - spock:   sin mínimo de daño (D-K). Si gana, su movimiento no puede fallar (C7).
  */
 export const NOMBRE_PASIVA: Record<TipoPPTLS, string> = {
   piedra: 'HP inicial 40–50',
   tijera: '+5 de daño al ganar',
   papel: '25 % de coste 0',
   lagarto: '+3 HP por turno',
-  spock: 'daño mínimo 30 % si hay daño',
+  spock: 'no falla si gana',
 };
 
 /** Configuración de una batalla. */
 export interface ConfigBatalla {
   /** 1v1 para la entrega parcial; 3v3 para la entrega final. */
   modo: '1v1' | '3v3';
-  /** MP compartido inicial del ave (15 provisional, plan_logica.md). */
+  /** MP compartido inicial del ave (20, D-H; antes 15). */
   mpInicial: number;
   /** Rango del HP máx aleatorio al entrar en combate. */
   hpMaxRango: [number, number];
@@ -112,29 +116,38 @@ export interface ConfigBatalla {
   factorStab: number;
   /** Daño fijo adicional de la pasiva Tijera cuando el ave gana el intercambio. */
   bonusTijera: number;
-  /** Fracción del HP máx rival como daño mínimo de la pasiva Spock cuando gana. */
-  minimoSpock: number;
-  /**
-   * D3 (changes.md, D-09): `true` aplica la pasiva Spock (solo con daño mayor que 0);
-   * `false` la desactiva y Spock sigue las reglas base.
-   */
-  pasivaSpockActiva: boolean;
+  /** Fracción mínima del HP máx rival que puede hacer el daño base (C1, plan_motor_c.md). */
+  danoBaseMinFrac: number;
+  /** Fracción máxima del HP máx rival que puede hacer el daño base (C1, plan_motor_c.md). */
+  danoBaseMaxFrac: number;
+  /** Probabilidad de que un movimiento que ataca falle: gasta MP y turno, no hace daño (C5). */
+  probFallo: number;
+  /** Vida extra por nivel del combate: HP máx = rango base + vidaPorNivel × nivel (C9). */
+  vidaPorNivel: number;
+  /** Nivel del combate para el equipo del jugador (0 = sin bono de vida). */
+  nivelJugador: number;
+  /** Nivel del combate para el equipo de la CPU (0 = sin bono de vida). */
+  nivelCpu: number;
 }
 
-/** Valores base acordados en plan_logica.md. */
+/** Valores base de la configuración vigente (plan_motor_c.md). */
 export const CONFIG_BASE: ConfigBatalla = {
   modo: '3v3',
-  mpInicial: 15,
-  hpMaxRango: [20, 50],
+  mpInicial: 20,
+  hpMaxRango: [30, 50],
   hpMaxRangoPiedra: [40, 50],
-  costeMpRango: [1, 5],
+  costeMpRango: [1, 3],
   probCosteCeroPapel: 0.25,
   regeneracionLagarto: 3,
-  factorEsfuerzo: 0.15,
+  factorEsfuerzo: 0.1,
   factorStab: 1.5,
   bonusTijera: 5,
-  minimoSpock: 0.3,
-  pasivaSpockActiva: true,
+  danoBaseMinFrac: 0.1,
+  danoBaseMaxFrac: 0.5,
+  probFallo: 0.1,
+  vidaPorNivel: 10,
+  nivelJugador: 0,
+  nivelCpu: 0,
 };
 
 /** Registro de un turno resuelto, para el historial visual de la Parte B. */

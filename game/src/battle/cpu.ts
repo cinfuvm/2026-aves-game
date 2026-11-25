@@ -1,6 +1,6 @@
 /**
  * Elección de movimiento del CPU (frontera con la Parte C).
- * Fuente: plan_logica.md §2-C y docs/modules/prd/pages/reglas-batalla.adoc («IA del CPU»).
+ * Fuente: plan_desarrollo.md (Área B) y docs/modules/prd/pages/reglas-batalla.adoc («IA del CPU»).
  *
  * Nivel base (MVP, BR del PRD): elección **uniformemente aleatoria** entre los
  * movimientos del ave activa del CPU que tengan MP suficiente. No hace trampa:

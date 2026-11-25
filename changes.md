@@ -1,6 +1,6 @@
 # Registro de cambios respecto al PRD
 
-Este archivo documenta, conforme se implementan, **todos los cambios que difieren de lo especificado en el PRD** (`docs/modules/prd/`). Fuente de las decisiones: `plan_logica.md` (basado en `pelea.md`) y acuerdos del equipo.
+Este archivo documenta, conforme se implementan, **todos los cambios que difieren de lo especificado en el PRD** (`docs/modules/prd/`). Fuente de las decisiones: `plan_desarrollo.md` y `plan_motor_c.md`, basados en `pelea.md` y acuerdos del equipo.
 
 Cada desviación indica el requisito o regla del PRD afectado para poder actualizar la documentación después.
 
@@ -10,28 +10,32 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 
 | ID | Tema | El PRD dice | Se implementa | Referencia PRD |
 |----|------|-------------|---------------|----------------|
-| D-01 | Recurso de movimientos | PP por movimiento, aleatorio 1–5, se consume 1 por uso (BR-003, BR-010). | **MP compartido por ave** (fondo único), inicial **15** (provisional). Si el MP restante es menor que el coste, el movimiento queda **bloqueado**. | BR-003, BR-010, sección «Puntos de poder (PP)» de `reglas-batalla.adoc` |
+| D-01 | Recurso de movimientos | PP por movimiento, aleatorio 1–5, se consume 1 por uso (BR-003, BR-010). | **MP compartido por ave** (fondo único), inicial **20** (D-H; antes 15). Si el MP restante es menor que el coste, el movimiento queda **bloqueado**. | BR-003, BR-010, sección «Puntos de poder (PP)» de `reglas-batalla.adoc` |
 | D-02 | Empate PPTLS | El empate no inflige daño, pero consume PP (BR-009). | **Ambas aves calculan y reciben daño** (`pelea.md`). | BR-009 |
-| D-03 | Cálculo de daño | Daño base aleatorio 0–HP máx del rival (BR-006). | Daño base + **multiplicador de esfuerzo** `×(1 + coste_MP × 0.15)` + **STAB ×1.5** si el tipo del movimiento coincide con el tipo del ave. | BR-006, sección «Cálculo de daño» |
-| D-04 | Pasivas por tipo | No existen. | Piedra: HP inicial 40–50. Tijera: +5 de daño si gana. Papel: 25 % de coste 0. Lagarto: +3 HP al fin del turno (sin pasar el máx). Spock: daño mínimo de 30 % del HP máx rival si gana. | `reglas-batalla.adoc` (capítulo nuevo) |
-| D-05 | Movimientos por ave | 4 activos fijos + 1 distintivo no usable. | **5 movimientos posibles**; al entrar en combate se activan **4 al azar**: 1 garantizado del tipo propio del ave + 3 de los 4 restantes. El coste de MP de cada movimiento es aleatorio. | `reglas-batalla.adoc` (estado de un ave), `contenido-aves.adoc` |
+| D-03 | Cálculo de daño | Daño base aleatorio 0–HP máx del rival (BR-006). | Daño base por porcentaje (D-15) + **multiplicador de esfuerzo** `×(1 + coste_MP × 0.1)` (D-H; antes 0.15) + **STAB ×1.5** si el tipo del movimiento coincide con el tipo del ave. | BR-006, sección «Cálculo de daño» |
+| D-04 | Pasivas por tipo | No existen. | Piedra: HP inicial 40–50. Tijera: +5 de daño si gana. Papel: 25 % de coste 0. Lagarto: +3 HP al fin del turno (sin pasar el máx). Spock: sin mínimo de daño desde D-16 (antes, mínimo de 30 %). | `reglas-batalla.adoc` (capítulo nuevo) |
+| D-05 | Movimientos por ave | 4 activos fijos + 1 distintivo no usable. | **Sustituido por D-17.** Antes: 5 posibles y 4 al azar, con uno del tipo propio garantizado. | `reglas-batalla.adoc` (estado de un ave), `contenido-aves.adoc` |
 | D-06 | Tamaño del equipo | Cada equipo tiene 4 aves (BR-001). | **3 contra 3** en la versión final; `CONFIG_BASE` usa `modo: '3v3'`. El **ejecutable mínimo** (plan_mvp.md, decisión D1) usa `modo: '1v1'`, pasado al crear la batalla. | BR-001 |
 | D-07 | Salida de un ave | Rendición automática cuando todos los PP llegan a cero (BR-010). | Un ave sale cuando su HP llega a 0 **o** cuando ningún movimiento es usable por MP insuficiente. | BR-010, BR-011, casos CB-05/CB-06 |
 | D-08 | Lenguaje de los módulos de batalla | `game/src/battle/*.js` (JavaScript). | **TypeScript** (`game/src/battle/*.ts`), coherente con el pipeline tsc80/esbuild del repo. | `arquitectura.adoc` (estructura del repositorio) |
-| D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Resuelto (decisión D3 del plan MVP):** la pasiva de Spock solo se aplica si el daño base es mayor que 0. Con daño 0, el resultado es «Sin efecto». Sigue siendo desactivable con `pasivaSpockActiva`. | BR-007 |
+| D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Sustituido por D-16.** Antes: la pasiva de Spock elevaba el daño al 30 % cuando el daño base era mayor que 0. | BR-007 |
+| D-15 | Daño base por porcentaje | Daño base aleatorio de 0 a HP máx del rival (BR-006). | **Daño base de 10 % a 50 %** del HP máx del rival (`danoBaseMinFrac` y `danoBaseMaxFrac`). Con HP mínimo de 20, el daño base nunca es 0. | BR-006 |
+| D-17 | Movimientos por ave (sustituye D-05) | Movimientos y distintivo del PRD (`contenido-aves.adoc`); sin selección de movimientos. | **4 movimientos fijos por ave**: 1 **característico** (único del ave, del tipo propio, en `MovimientoFicha.caracteristico`) + 3 **predeterminados** de una pool compartida de 15 movimientos (3 por tipo, `game/src/data/movimientos.ts`). Los predeterminados pueden repetirse entre aves; el característico no. Los nombres de la pool son propuesta. | `contenido-aves.adoc` |
+| D-16 | Pasiva Spock (sustituye D-09) | Daño 0 es «Sin efecto» (BR-007). | **Spock sin mínimo de daño.** Si gana, su movimiento no puede fallar (pendiente de implementar en la Parte C). Se quitaron `minimoSpock` y `pasivaSpockActiva`. Decisión D-K de `plan_desarrollo.md`. | BR-007 |
+| D-18 | Vida por nivel (C9) | HP base de 20 a 50 (BR-002). Sin niveles. | **HP entre 30 y 50, más 10 × nivel del combate.** Cada bando tiene su nivel (`nivelJugador`, `nivelCpu`). La pasiva Piedra sigue con su rango de 40 a 50, más el nivel. | BR-002 |
 | D-13 | Versión de TIC-80 y sprites | Sprites e imagen de cada ave (RF-004, `contenido-aves.adoc`); cartucho exportado a HTML (`arquitectura.adoc`). | **Ejecutable mínimo sin sprites**, con TIC-80 **gratuito** (decisión D4 del plan MVP). Todo se dibuja con formas y texto. El cargador usa `import code` en lugar de `load game.js`, porque la versión gratuita no carga texto con `load`. Los sprites quedan para una versión futura. | RF-004, `arquitectura.adoc` |
 | D-14 | Tipo propio del ave | El PRD no define el tipo propio de cada ave; sí indica el tipo de su movimiento distintivo. | **Supuesto S-01:** el tipo propio de cada ave es el tipo de su movimiento distintivo (Cóndor: Spock; Loica: Lagarto; Chincol: Papel). Así el movimiento garantizado (regla del equipo) coincide con el distintivo. Pendiente de confirmar por el Product Owner. | `contenido-aves.adoc` («Fichas de aves», «Cobertura de tipos») |
-| D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 5]** (provisional, decisión propia al no fijarlo `pelea.md`). | BR-003 |
+| D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 3]** (D-H; antes [1, 5]). | BR-003 |
 | D-11 | Pasiva Tijera «+5» | No aplica. | Interpretación: **+5 de daño fijo adicional** al daño calculado cuando el ave de tipo tijera gana el intercambio. | — |
 | D-12 | Redondeo del daño final | No se especifica. | El daño final se **redondea hacia abajo** (`floor`) a un entero ≥ 0, coherente con el estilo del PRD. | BR-006 |
 
 ## Pendientes de decisión (bloquean cambios futuros)
 
-1. **D-09 (Spock vs Sin efecto):** resuelto en el código (D3). Falta que el Product Owner lo confirme en `reglas-batalla.adoc`.
+1. **D-09 (Spock vs Sin efecto):** sustituido por D-16 en el código. Falta que el Product Owner lo confirme en `reglas-batalla.adoc`.
 2. **D-14 (tipo propio de las aves):** supuesto S-01. Falta que el Product Owner lo confirme; si cambia, solo hay que editar `game/src/data/birds.ts`.
-3. **Pokédex** (plan_logica.md §4.1): sin definir.
-4. **Torre de desafíos** (plan_logica.md §4.2): sin definir.
-5. **Actualización del PRD:** pendiente incorporar D-01 a D-14 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
+3. **Pokédex** (plan_desarrollo.md §4.1): sin definir.
+4. **Torre de desafíos** (plan_desarrollo.md §4.1): sin definir.
+5. **Actualización del PRD:** pendiente incorporar D-01 a D-18 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
 
 ---
 
@@ -118,6 +122,24 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - Limitación de la pantalla de batalla: los mensajes largos se cortan en el borde de 240 px. Pendiente de ajustar.
 - Tests: `game/tests/juego.test.ts` (10 casos). Total: 107 pruebas pasan.
 - Verificado: `tsc` sin errores; `npm run game:build` genera el cartucho; `npm run game:run` carga con `import code` sin errores en el log. **No se verificó visualmente**: no hay permiso para capturar la pantalla.
+
+### Paso 12 — Parte C: movimientos fijos y vida por nivel (plan_motor_c.md, pasos 5 y 6)
+
+- **Movimientos (D-17):** cada ficha tiene 4 movimientos fijos: 1 característico (propio del ave) + 3 predeterminados de la pool compartida. Se quitó la selección aleatoria. `validarFicha` exige 4 movimientos y 1 característico del tipo propio.
+- **Pool:** 15 movimientos, 3 por tipo, tomados del PRD. Los nombres son propuesta para revisar.
+- **Aves del MVP:** Cóndor (Vuelo Sagrado), Loica (Lengua de Néctar) y Chincol (Plumaje Camuflado) con sus característicos del PRD; cada una con 3 predeterminados de la pool.
+- **Vida (D-18):** HP = rango 30–50 (Piedra 40–50) + 10 × nivel. `ConfigBatalla` tiene `vidaPorNivel`, `nivelJugador` y `nivelCpu`, todos en 0 por defecto (sin bono de vida hasta que la torre defina los niveles).
+- **Pendiente:** T8 (el característico se toma como tipo propio, S-01). Si T8 cambia, cambia el tipo de cada ave.
+- Tests: 126 pruebas pasan.
+
+### Paso 11 — Parte C: configuración y fallo (plan_motor_c.md, pasos 3 y 4)
+
+- **Config (D-H):** esfuerzo 0.15 → **0.1**, MP inicial 15 → **20**, coste de movimientos [1, 5] → **[1, 3]**. Estas cifras las medí en `pruebas_balance_dano.md` (sección 6.2d).
+- **Fallo (C5):** `probFallo` = **0.1** en `ConfigBatalla`. Un movimiento que ataca (gana o empata) puede fallar: paga MP, el turno cuenta y no hace daño. Se registra como «El ataque falló».
+- **Spock (C7, D-16):** si Spock gana el intercambio, su movimiento no puede fallar.
+- **Orden del rng:** papel jugador → papel CPU → fallo jugador → fallo CPU → daño jugador → daño CPU. Con `probFallo` 0 no se consume aleatoriedad para el fallo.
+- Tests: 119 pruebas pasan. Las pruebas de reglas de `turn.test.ts` usan `probFallo: 0` para no depender del fallo; el fallo y Spock tienen su propio bloque de pruebas.
+- **Pendiente del paso 7:** re-medir el balance con el motor nuevo. Las cifras de `pruebas_balance_dano.md` son de la configuración previa.
 
 ### Paso 9 — Rendición en el motor (20 nov 2026)
 
