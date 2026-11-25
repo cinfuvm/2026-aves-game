@@ -38,7 +38,7 @@ game/src/battle/
 | `TipoPPTLS` | `'piedra' \| 'papel' \| 'tijera' \| 'lagarto' \| 'spock'` |
 | `Rng` | `() => number`, número en `[0, 1)` |
 | `ResultadoPPTLS` | `'jugador' \| 'cpu' \| 'empate'` (quién gana el intercambio) |
-| `MovimientoFicha` / `AveFicha` | Datos estáticos (5 movimientos por ave) |
+| `MovimientoFicha` / `AveFicha` | Datos estáticos: 4 movimientos fijos por ave (1 característico + 3 predeterminados de la pool) |
 | `MovimientoActivo` | Movimiento en combate: `id`, `nombre`, `tipo`, `costeMp` |
 | `AveCombate` | Ave en combate: `hpMax`, `hpActual`, `mpMax`, `mpActual`, 4 `movimientos`, `estado` (`'activa' \| 'debilitada' \| 'rendida'`) |
 | `Equipo` | `aves[]` + `indiceActiva` |
@@ -54,8 +54,10 @@ game/src/battle/
 |---|---|---|
 | `modo` | `'3v3'` (regla final). El ejecutable mínimo pasa `'1v1'` al crear la batalla (D1) | Aves por equipo |
 | `mpInicial` | 20 | MP compartido por ave (D-01, plan_motor_c.md C6) |
-| `hpMaxRango` | `[20, 50]` | HP máx aleatorio al entrar |
+| `hpMaxRango` | `[30, 50]` | HP máx aleatorio al entrar (C9) |
 | `hpMaxRangoPiedra` | `[40, 50]` | Pasiva Piedra |
+| `vidaPorNivel` | `10` | HP máx = rango + 10 × nivel del combate (C9) |
+| `nivelJugador` / `nivelCpu` | `0` / `0` | Nivel del combate de cada bando |
 | `costeMpRango` | `[1, 3]` | Coste aleatorio de cada movimiento (C6) |
 | `probCosteCeroPapel` | `0.25` | Pasiva Papel |
 | `regeneracionLagarto` | `3` | Pasiva Lagarto |
@@ -100,11 +102,11 @@ Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (
 ## `state.ts` — estado y equipos
 
 ```ts
-validarFicha(ficha): string[]                        // [] = válida (5 movimientos, 1 del tipo propio)
-seleccionarMovimientos(ficha, rng, config?): MovimientoActivo[]  // 4 activos: 1 propio + 3 al azar; lanza si la ficha es inválida
-inicializarAve(ficha, rng, config?): AveCombate      // HP y MP aleatorios al entrar en combate
-inicializarEquipo(fichas, rng, config?): Equipo      // valida cantidad según modo
-inicializarBatalla(fichasJugador, fichasCpu, rng, config?): EstadoBatalla
+validarFicha(ficha): string[]                        // [] = válida (4 movimientos, 1 característico del tipo propio, ids únicos)
+seleccionarMovimientos(ficha, rng, config?): MovimientoActivo[]  // los 4 movimientos fijos de la ficha, con coste aleatorio (1–3); lanza si la ficha es inválida
+inicializarAve(ficha, rng, config?, nivel?): AveCombate  // HP (rango + vidaPorNivel × nivel) y MP al entrar en combate
+inicializarEquipo(fichas, rng, config?, nivel?): Equipo  // valida cantidad según modo
+inicializarBatalla(fichasJugador, fichasCpu, rng, config?): EstadoBatalla  // usa nivelJugador y nivelCpu
 aveActiva(equipo): AveCombate
 estaBloqueado(mov, ave): boolean                     // coste > MP restante
 movimientosUsables(ave): MovimientoActivo[]

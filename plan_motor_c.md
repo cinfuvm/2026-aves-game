@@ -125,9 +125,9 @@ Verificación de balance: volver a correr `pruebas_balance_dano.md` con el motor
 2. **Daño** (3.1, 3.2): daño base por porcentaje, quitar Spock mínimo. Pruebas de `damage.test.ts` y `turn.test.ts`. **Hecho** (rango base 10–50 %, Spock sin mínimo; `turn.test.ts` reasignado con `rngBase`). El esfuerzo 0.1 queda para el paso 3.
 3. **Config** (3.2): valores de la sección 2. **Hecho**: esfuerzo 0.1, MP inicial 20, coste 1–3. Las pruebas de `turn.test.ts` usan `probFallo: 0` y las de `damage.test.ts` y `state.test.ts` se actualizaron a los nuevos valores.
 4. **Fallo y Spock** (3.3): tiradas de fallo, Spock sin fallo, nuevo orden del rng. **Hecho**: `probFallo` 0.1 en `ConfigBatalla`, tirada de fallo en `turn.ts` (con su orden de rng documentado), Spock que gana no falla, y 3 pruebas nuevas.
-5. **Movimientos** (3.4, 3.7): característico y pool. Pruebas de `state.test.ts` y `birds.test.ts`.
-6. **Nivel** (3.5): fórmula de vida. Pruebas de inicialización.
-7. **Balance**: volver a medir con `pruebas_balance_dano.md`.
+5. **Movimientos** (3.4, 3.7): característico y pool. **Hecho** (D-17): 4 movimientos fijos por ficha, pool de 15 en `game/src/data/movimientos.ts`, pruebas en `state.test.ts` y `birds.test.ts`.
+6. **Nivel** (3.5): fórmula de vida. **Hecho** (D-18): HP = rango + 10 × nivel, por bando.
+7. **Balance**: volver a medir con `pruebas_balance_dano.md`. **Hecho** (sección 8 de ese archivo).
 8. **Documentación**: `changes.md` (D-09 sustituido, D-05 sustituido, nuevos D), `game/src/battle/README.md`, `game/tests/README.md`, `plan_desarrollo.md`.
 
 Cada paso debe dejar la suite en verde antes de pasar al siguiente.

@@ -1,11 +1,12 @@
 /**
- * Estado de batalla (Parte A): fichas, inicialización, equipos, relevo y fin.
- * Fuente: plan_logica.md (reglas de pelea.md) + docs/modules/prd/pages/arquitectura.adoc.
+ * Estado de batalla: fichas, inicialización, equipos, relevo y fin.
+ * Fuente: plan_motor_c.md (pasos 5 y 6) y plan_desarrollo.md (D-C, D-D).
  *
  * Responsabilidades:
- * - Validar fichas (5 movimientos, al menos uno del tipo propio del ave).
- * - Seleccionar los 4 movimientos activos: 1 garantizado del tipo propio + 3 al azar.
- * - Inicializar HP y MP aleatorios al entrar en combate (MP compartido por ave).
+ * - Validar fichas: 4 movimientos fijos, uno de ellos característico y del tipo del ave.
+ * - Dar a cada movimiento un coste de MP aleatorio dentro de `costeMpRango`.
+ * - Inicializar HP y MP al entrar en combate. La vida depende del nivel del combate:
+ *   HP = rango base + vidaPorNivel × nivel (C9).
  * - Manejar el relevo de aves y evaluar el fin de la batalla.
  *
  * Ninguna función muta sus argumentos; las estructuras se construyen nuevas.
@@ -23,22 +24,27 @@ import {
   type Rng,
 } from './types';
 
+/** Movimientos activos de cada ave: 1 característico + 3 predeterminados (D-C). */
+export const MOVIMIENTOS_POR_AVE = 4;
+
 /** Errores de validación de una ficha (lista vacía = ficha válida). */
 export function validarFicha(ficha: AveFicha): string[] {
   const errores: string[] = [];
 
-  if (ficha.movimientos.length !== 5) {
+  if (ficha.movimientos.length !== MOVIMIENTOS_POR_AVE) {
     errores.push(
-      `debe tener exactamente 5 movimientos y tiene ${ficha.movimientos.length}`,
+      `debe tener exactamente ${MOVIMIENTOS_POR_AVE} movimientos y tiene ${ficha.movimientos.length}`,
     );
   }
 
-  const tieneMovimientoPropio = ficha.movimientos.some(
-    (mov) => mov.tipo === ficha.tipo,
-  );
-  if (!tieneMovimientoPropio) {
+  const caracteristicos = ficha.movimientos.filter((mov) => mov.caracteristico === true);
+  if (caracteristicos.length !== 1) {
     errores.push(
-      `ningún movimiento es del tipo propio del ave (${ficha.tipo})`,
+      `debe tener exactamente 1 movimiento característico y tiene ${caracteristicos.length}`,
+    );
+  } else if (caracteristicos[0].tipo !== ficha.tipo) {
+    errores.push(
+      `el movimiento característico debe ser del tipo propio del ave (${ficha.tipo})`,
     );
   }
 
@@ -54,22 +60,9 @@ export function validarFicha(ficha: AveFicha): string[] {
   return errores;
 }
 
-/** Mezcla de Fisher–Yates con el rng dado, sin mutar la lista original. */
-function mezclar<T>(lista: readonly T[], rng: Rng): T[] {
-  const copia = [...lista];
-  for (let i = copia.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [copia[i], copia[j]] = [copia[j], copia[i]];
-  }
-  return copia;
-}
-
 /**
- * Selecciona los 4 movimientos activos de un ave al entrar en combate:
- * - 1 garantizado del tipo propio del ave (al azar entre los propios, si hay varios).
- * - 3 al azar, sin repetición, de los movimientos restantes.
- * - El orden de los 4 se mezcla para variar la interfaz.
- * Cada movimiento recibe un coste de MP aleatorio dentro de `costeMpRango`.
+ * Movimientos activos de un ave al entrar en combate. Son fijos (los de la ficha):
+ * cada uno recibe un coste de MP aleatorio dentro de `costeMpRango`.
  *
  * Lanza un error si la ficha no supera `validarFicha`.
  */
@@ -83,15 +76,7 @@ export function seleccionarMovimientos(
     throw new Error(`Ficha rechazada (${ficha.id}): ${errores.join('; ')}`);
   }
 
-  const propios = ficha.movimientos.filter((mov) => mov.tipo === ficha.tipo);
-  const garantizado = propios[Math.floor(rng() * propios.length)];
-
-  const resto = ficha.movimientos.filter((mov) => mov !== garantizado);
-  const elegidos = mezclar(resto, rng).slice(0, 3);
-
-  const activos = mezclar([garantizado, ...elegidos], rng);
-
-  return activos.map((mov) => ({
+  return ficha.movimientos.map((mov) => ({
     id: mov.id,
     nombre: mov.nombre,
     tipo: mov.tipo,
@@ -101,7 +86,8 @@ export function seleccionarMovimientos(
 
 /**
  * Inicializa un ave al entrar en combate:
- * - HP máx aleatorio (pasiva Piedra: usa `hpMaxRangoPiedra`).
+ * - HP máx aleatorio en el rango base (pasiva Piedra: `hpMaxRangoPiedra`),
+ *   más `vidaPorNivel × nivel` (C9).
  * - HP actual igual al HP máx.
  * - MP compartido igual a `mpInicial`.
  * - 4 movimientos activos con coste de MP aleatorio.
@@ -110,10 +96,11 @@ export function inicializarAve(
   ficha: AveFicha,
   rng: Rng,
   config: ConfigBatalla = CONFIG_BASE,
+  nivel = 0,
 ): AveCombate {
   const [min, max] =
     ficha.tipo === 'piedra' ? config.hpMaxRangoPiedra : config.hpMaxRango;
-  const hpMax = enteroAleatorio(rng, min, max);
+  const hpMax = enteroAleatorio(rng, min, max) + config.vidaPorNivel * nivel;
 
   return {
     id: ficha.id,
@@ -134,13 +121,15 @@ export function avesPorModo(modo: '1v1' | '3v3'): number {
 }
 
 /**
- * Inicializa un equipo a partir de fichas. Valida la cantidad según el modo.
- * Lanza un error si alguna ficha es inválida o la cantidad no coincide.
+ * Inicializa un equipo a partir de fichas, con el nivel del combate de ese bando.
+ * Valida la cantidad según el modo. Lanza un error si alguna ficha es inválida
+ * o la cantidad no coincide.
  */
 export function inicializarEquipo(
   fichas: AveFicha[],
   rng: Rng,
   config: ConfigBatalla = CONFIG_BASE,
+  nivel = 0,
 ): Equipo {
   const esperado = avesPorModo(config.modo);
   if (fichas.length !== esperado) {
@@ -149,13 +138,14 @@ export function inicializarEquipo(
     );
   }
   return {
-    aves: fichas.map((ficha) => inicializarAve(ficha, rng, config)),
+    aves: fichas.map((ficha) => inicializarAve(ficha, rng, config, nivel)),
     indiceActiva: 0,
   };
 }
 
 /**
  * Crea el estado inicial de una batalla (turno 0, sin historial).
+ * El jugador usa `config.nivelJugador` y la CPU `config.nivelCpu` (C9).
  * Valida fichas y tamaños de ambos equipos.
  */
 export function inicializarBatalla(
@@ -165,8 +155,8 @@ export function inicializarBatalla(
   config: ConfigBatalla = CONFIG_BASE,
 ): EstadoBatalla {
   return {
-    jugador: inicializarEquipo(fichasJugador, rng, config),
-    cpu: inicializarEquipo(fichasCpu, rng, config),
+    jugador: inicializarEquipo(fichasJugador, rng, config, config.nivelJugador),
+    cpu: inicializarEquipo(fichasCpu, rng, config, config.nivelCpu),
     config,
     turno: 0,
     historial: [],

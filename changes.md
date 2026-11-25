@@ -14,13 +14,15 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 | D-02 | Empate PPTLS | El empate no inflige daño, pero consume PP (BR-009). | **Ambas aves calculan y reciben daño** (`pelea.md`). | BR-009 |
 | D-03 | Cálculo de daño | Daño base aleatorio 0–HP máx del rival (BR-006). | Daño base + **multiplicador de esfuerzo** `×(1 + coste_MP × 0.15)` + **STAB ×1.5** si el tipo del movimiento coincide con el tipo del ave. | BR-006, sección «Cálculo de daño» |
 | D-04 | Pasivas por tipo | No existen. | Piedra: HP inicial 40–50. Tijera: +5 de daño si gana. Papel: 25 % de coste 0. Lagarto: +3 HP al fin del turno (sin pasar el máx). Spock: daño mínimo de 30 % del HP máx rival si gana. | `reglas-batalla.adoc` (capítulo nuevo) |
-| D-05 | Movimientos por ave | 4 activos fijos + 1 distintivo no usable. | **5 movimientos posibles**; al entrar en combate se activan **4 al azar**: 1 garantizado del tipo propio del ave + 3 de los 4 restantes. El coste de MP de cada movimiento es aleatorio. | `reglas-batalla.adoc` (estado de un ave), `contenido-aves.adoc` |
+| D-05 | Movimientos por ave | 4 activos fijos + 1 distintivo no usable. | **Sustituido por D-17.** Antes: 5 posibles y 4 al azar, con uno del tipo propio garantizado. | `reglas-batalla.adoc` (estado de un ave), `contenido-aves.adoc` |
 | D-06 | Tamaño del equipo | Cada equipo tiene 4 aves (BR-001). | **3 contra 3** en la versión final; `CONFIG_BASE` usa `modo: '3v3'`. El **ejecutable mínimo** (plan_mvp.md, decisión D1) usa `modo: '1v1'`, pasado al crear la batalla. | BR-001 |
 | D-07 | Salida de un ave | Rendición automática cuando todos los PP llegan a cero (BR-010). | Un ave sale cuando su HP llega a 0 **o** cuando ningún movimiento es usable por MP insuficiente. | BR-010, BR-011, casos CB-05/CB-06 |
 | D-08 | Lenguaje de los módulos de batalla | `game/src/battle/*.js` (JavaScript). | **TypeScript** (`game/src/battle/*.ts`), coherente con el pipeline tsc80/esbuild del repo. | `arquitectura.adoc` (estructura del repositorio) |
 | D-09 | Pasiva Spock vs «Sin efecto» | Daño 0 se clasifica «Sin efecto» (BR-007). | **Sustituido por D-16.** Antes: la pasiva de Spock elevaba el daño al 30 % cuando el daño base era mayor que 0. | BR-007 |
 | D-15 | Daño base por porcentaje | Daño base aleatorio de 0 a HP máx del rival (BR-006). | **Daño base de 10 % a 50 %** del HP máx del rival (`danoBaseMinFrac` y `danoBaseMaxFrac`). Con HP mínimo de 20, el daño base nunca es 0. | BR-006 |
+| D-17 | Movimientos por ave (sustituye D-05) | Movimientos y distintivo del PRD (`contenido-aves.adoc`); sin selección de movimientos. | **4 movimientos fijos por ave**: 1 **característico** (único del ave, del tipo propio, en `MovimientoFicha.caracteristico`) + 3 **predeterminados** de una pool compartida de 15 movimientos (3 por tipo, `game/src/data/movimientos.ts`). Los predeterminados pueden repetirse entre aves; el característico no. Los nombres de la pool son propuesta. | `contenido-aves.adoc` |
 | D-16 | Pasiva Spock (sustituye D-09) | Daño 0 es «Sin efecto» (BR-007). | **Spock sin mínimo de daño.** Si gana, su movimiento no puede fallar (pendiente de implementar en la Parte C). Se quitaron `minimoSpock` y `pasivaSpockActiva`. Decisión D-K de `plan_desarrollo.md`. | BR-007 |
+| D-18 | Vida por nivel (C9) | HP base de 20 a 50 (BR-002). Sin niveles. | **HP entre 30 y 50, más 10 × nivel del combate.** Cada bando tiene su nivel (`nivelJugador`, `nivelCpu`). La pasiva Piedra sigue con su rango de 40 a 50, más el nivel. | BR-002 |
 | D-13 | Versión de TIC-80 y sprites | Sprites e imagen de cada ave (RF-004, `contenido-aves.adoc`); cartucho exportado a HTML (`arquitectura.adoc`). | **Ejecutable mínimo sin sprites**, con TIC-80 **gratuito** (decisión D4 del plan MVP). Todo se dibuja con formas y texto. El cargador usa `import code` en lugar de `load game.js`, porque la versión gratuita no carga texto con `load`. Los sprites quedan para una versión futura. | RF-004, `arquitectura.adoc` |
 | D-14 | Tipo propio del ave | El PRD no define el tipo propio de cada ave; sí indica el tipo de su movimiento distintivo. | **Supuesto S-01:** el tipo propio de cada ave es el tipo de su movimiento distintivo (Cóndor: Spock; Loica: Lagarto; Chincol: Papel). Así el movimiento garantizado (regla del equipo) coincide con el distintivo. Pendiente de confirmar por el Product Owner. | `contenido-aves.adoc` («Fichas de aves», «Cobertura de tipos») |
 | D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 5]** (provisional, decisión propia al no fijarlo `pelea.md`). | BR-003 |
@@ -120,6 +122,15 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - Limitación de la pantalla de batalla: los mensajes largos se cortan en el borde de 240 px. Pendiente de ajustar.
 - Tests: `game/tests/juego.test.ts` (10 casos). Total: 107 pruebas pasan.
 - Verificado: `tsc` sin errores; `npm run game:build` genera el cartucho; `npm run game:run` carga con `import code` sin errores en el log. **No se verificó visualmente**: no hay permiso para capturar la pantalla.
+
+### Paso 12 — Parte C: movimientos fijos y vida por nivel (plan_motor_c.md, pasos 5 y 6)
+
+- **Movimientos (D-17):** cada ficha tiene 4 movimientos fijos: 1 característico (propio del ave) + 3 predeterminados de la pool compartida. Se quitó la selección aleatoria. `validarFicha` exige 4 movimientos y 1 característico del tipo propio.
+- **Pool:** 15 movimientos, 3 por tipo, tomados del PRD. Los nombres son propuesta para revisar.
+- **Aves del MVP:** Cóndor (Vuelo Sagrado), Loica (Lengua de Néctar) y Chincol (Plumaje Camuflado) con sus característicos del PRD; cada una con 3 predeterminados de la pool.
+- **Vida (D-18):** HP = rango 30–50 (Piedra 40–50) + 10 × nivel. `ConfigBatalla` tiene `vidaPorNivel`, `nivelJugador` y `nivelCpu`, todos en 0 por defecto (sin bono de vida hasta que la torre defina los niveles).
+- **Pendiente:** T8 (el característico se toma como tipo propio, S-01). Si T8 cambia, cambia el tipo de cada ave.
+- Tests: 126 pruebas pasan.
 
 ### Paso 11 — Parte C: configuración y fallo (plan_motor_c.md, pasos 3 y 4)
 

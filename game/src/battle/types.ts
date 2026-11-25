@@ -21,24 +21,29 @@ export type ResultadoPPTLS = 'jugador' | 'cpu' | 'empate';
 /** Clasificación del daño infligido según su magnitud (reglas-batalla.adoc). */
 export type ClasificacionEfectividad = 'sin-efecto' | 'efectivo' | 'muy-efectivo';
 
-/** Ficha estática de un movimiento (vive en data/birds). El coste de MP se asigna al entrar en combate. */
+/**
+ * Ficha estática de un movimiento (vive en data/). El coste de MP se asigna al entrar en combate.
+ * `caracteristico`: movimiento propio de un ave (no se comparte). Los predeterminados
+ * vienen de una pool compartida entre aves (D-C, plan_desarrollo.md).
+ */
 export interface MovimientoFicha {
   id: string;
   nombre: string;
   tipo: TipoPPTLS;
+  caracteristico?: boolean;
 }
 
 /**
  * Ficha estática de un ave.
- * Validación (plan_logica.md, parte A): debe existir al menos un movimiento
- * de `movimientos` cuyo tipo sea el tipo propio del ave; si no, la ficha se rechaza.
+ * Validación (plan_motor_c.md, paso 5): exactamente 4 movimientos fijos, uno de ellos
+ * característico y del tipo propio del ave.
  */
 export interface AveFicha {
   id: string;
   nombre: string;
-  /** Tipo propio del ave: define STAB, el movimiento garantizado y la pasiva. */
+  /** Tipo propio del ave: define STAB y el movimiento característico. */
   tipo: TipoPPTLS;
-  /** Exactamente 5 movimientos posibles. */
+  /** Exactamente 4 movimientos activos: 1 característico + 3 predeterminados. */
   movimientos: MovimientoFicha[];
 }
 
@@ -62,7 +67,7 @@ export interface AveCombate {
   hpActual: number;
   mpMax: number;
   mpActual: number;
-  /** 4 movimientos activos: 1 garantizado del tipo propio + 3 al azar de los 4 restantes. */
+  /** 4 movimientos activos fijos de la ficha: 1 característico + 3 predeterminados (plan_motor_c.md, paso 5). */
   movimientos: MovimientoActivo[];
   estado: 'activa' | 'debilitada' | 'rendida';
 }
@@ -117,13 +122,19 @@ export interface ConfigBatalla {
   danoBaseMaxFrac: number;
   /** Probabilidad de que un movimiento que ataca falle: gasta MP y turno, no hace daño (C5). */
   probFallo: number;
+  /** Vida extra por nivel del combate: HP máx = rango base + vidaPorNivel × nivel (C9). */
+  vidaPorNivel: number;
+  /** Nivel del combate para el equipo del jugador (0 = sin bono de vida). */
+  nivelJugador: number;
+  /** Nivel del combate para el equipo de la CPU (0 = sin bono de vida). */
+  nivelCpu: number;
 }
 
 /** Valores base acordados en plan_logica.md. */
 export const CONFIG_BASE: ConfigBatalla = {
   modo: '3v3',
   mpInicial: 20,
-  hpMaxRango: [20, 50],
+  hpMaxRango: [30, 50],
   hpMaxRangoPiedra: [40, 50],
   costeMpRango: [1, 3],
   probCosteCeroPapel: 0.25,
@@ -134,6 +145,9 @@ export const CONFIG_BASE: ConfigBatalla = {
   danoBaseMinFrac: 0.1,
   danoBaseMaxFrac: 0.5,
   probFallo: 0.1,
+  vidaPorNivel: 10,
+  nivelJugador: 0,
+  nivelCpu: 0,
 };
 
 /** Registro de un turno resuelto, para el historial visual de la Parte B. */

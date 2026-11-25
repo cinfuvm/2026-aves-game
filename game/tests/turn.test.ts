@@ -37,8 +37,8 @@ function fichaPrueba(id: string, nombre: string, tipo: TipoPPTLS): AveFicha {
     nombre,
     tipo,
     movimientos: [
-      { id: `${id}-propio`, nombre: `Propio ${tipo}`, tipo },
-      ...otros.map((t) => ({ id: `${id}-${t}`, nombre: `Otro ${t}`, tipo: t })),
+      { id: `${id}-car`, nombre: `Característico ${tipo}`, tipo, caracteristico: true },
+      ...otros.slice(0, 3).map((t) => ({ id: `${id}-${t}`, nombre: `Otro ${t}`, tipo: t })),
     ],
   };
 }
