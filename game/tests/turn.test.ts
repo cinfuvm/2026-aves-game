@@ -51,7 +51,8 @@ const DIUCON = fichaPrueba('diucon', 'Diucón', 'tijera');
 const CHERCAN = fichaPrueba('chercan', 'Chercán', 'spock');
 const GAVILAN = fichaPrueba('gavilan', 'Gavilán', 'piedra');
 
-const config1v1 = { ...CONFIG_BASE, modo: '1v1' as const };
+// probFallo 0: estas pruebas verifican reglas, no la aleatoriedad del fallo (ver los tests de fallo).
+const config1v1 = { ...CONFIG_BASE, modo: '1v1' as const, probFallo: 0 };
 
 function mov(tipo: TipoPPTLS, costeMp = 1): MovimientoActivo {
   return { id: `m-${tipo}-${costeMp}`, nombre: `${tipo} ${costeMp}`, tipo, costeMp };
@@ -90,7 +91,10 @@ function preparar3v3(
   fichasJugador: AveFicha[] = [CONDOR, LOICA, CHINCOL],
   fichasCpu: AveFicha[] = [PIKAFLOR, DIUCON, CHERCAN],
 ): EstadoBatalla {
-  const estado = inicializarBatalla(fichasJugador, fichasCpu, crearRng(2));
+  const estado = inicializarBatalla(fichasJugador, fichasCpu, crearRng(2), {
+    ...CONFIG_BASE,
+    probFallo: 0,
+  });
   for (const lado of [estado.jugador, estado.cpu]) {
     lado.aves[0].hpMax = 40;
     lado.aves[0].hpActual = 40;
@@ -141,7 +145,7 @@ describe('validaciones de resolverTurno', () => {
 describe('resolución básica del intercambio', () => {
   it('gana el jugador: solo el CPU recibe daño, con números exactos', () => {
     // Jugador Loica (lagarto, sin pasiva de daño) usa Piedra (coste 2) vs Tijera.
-    // Base 10 → 10 × 1.3 = 13. Sin STAB (lagarto ≠ piedra).
+    // Base 10 → 10 × 1.2 = 12. Sin STAB (lagarto ≠ piedra).
     const estado = armar1v1(LOICA, GAVILAN, [mov('piedra', 2)], [mov('tijera', 1)]);
     const { estado: nuevo, entrada } = resolverTurno(
       estado,
@@ -151,9 +155,9 @@ describe('resolución básica del intercambio', () => {
     );
 
     expect(entrada.resultado).toBe('jugador');
-    expect(entrada.danoAlCpu).toBe(13);
+    expect(entrada.danoAlCpu).toBe(12);
     expect(entrada.danoAlJugador).toBe(0);
-    expect(aveActiva(nuevo.cpu).hpActual).toBe(27);
+    expect(aveActiva(nuevo.cpu).hpActual).toBe(28);
     expect(aveActiva(nuevo.jugador).hpActual).toBe(40);
     expect(aveActiva(nuevo.jugador).mpActual).toBe(13); // 15 − 2
     expect(aveActiva(nuevo.cpu).mpActual).toBe(14); // 15 − 1
@@ -187,7 +191,7 @@ describe('resolución básica del intercambio', () => {
 
   it('empate PPTLS: ambos bandos se dañan (D-02)', () => {
     // Ambos usan Piedra con aves no piedra (sin STAB).
-    // Jugador base 20 (×1.15 = 23), CPU base 4 (×1.15 = 4).
+    // Jugador base 20 (×1.1 = 22), CPU base 4 (×1.1 = 4).
     const estado = armar1v1(CONDOR, DIUCON, [mov('piedra', 1)], [mov('piedra', 1)]);
     const { estado: nuevo, entrada } = resolverTurno(
       estado,
@@ -197,9 +201,9 @@ describe('resolución básica del intercambio', () => {
     );
 
     expect(entrada.resultado).toBe('empate');
-    expect(entrada.danoAlCpu).toBe(23);
+    expect(entrada.danoAlCpu).toBe(22);
     expect(entrada.danoAlJugador).toBe(4);
-    expect(aveActiva(nuevo.cpu).hpActual).toBe(17);
+    expect(aveActiva(nuevo.cpu).hpActual).toBe(18);
     expect(aveActiva(nuevo.jugador).hpActual).toBe(36);
     expect(entrada.mensaje).toContain('Choque de piedras');
     expect(entrada.mpGastadoJugador).toBe(1);
@@ -239,7 +243,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
 
   it('la pasiva es del ave (tipo papel), no del movimiento: con movimiento de otro tipo también tira', () => {
     // Chincol (papel) usa Piedra (coste 2) y gana: sin STAB, sin pasivas de daño.
-    // Tirada 0.1 → coste 0; daño base 20 × 1.3 = 26.
+    // Tirada 0.1 → coste 0; daño base 20 × 1.2 = 24.
     const estado = armar1v1(CHINCOL, GAVILAN, [mov('piedra', 2)], [mov('tijera', 1)]);
     const { estado: nuevo, entrada } = resolverTurno(
       estado,
@@ -250,11 +254,11 @@ describe('pasiva Papel (25 % de coste 0)', () => {
 
     expect(entrada.mpGastadoJugador).toBe(0);
     expect(aveActiva(nuevo.jugador).mpActual).toBe(15);
-    expect(entrada.danoAlCpu).toBe(26);
+    expect(entrada.danoAlCpu).toBe(24);
   });
 
   it('un ave de tipo no papel no tira (no consume la primera tirada del rng)', () => {
-    // Jugador Loica (lagarto) gana con Piedra: base 4 × 1.3 = 5.2 → 5.
+    // Jugador Loica (lagarto) gana con Piedra: base 4 × 1.2 = 4.8 → 4.
     // Si un ave no papel consumiera una tirada, el daño sería otro número.
     const estado = preparar3v3(
       [mov('piedra', 2)],
@@ -270,7 +274,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
       rngSecuencia([rngBase(4)]), // daño base 4
     );
     expect(entrada.resultado).toBe('jugador');
-    expect(entrada.danoAlCpu).toBe(5);
+    expect(entrada.danoAlCpu).toBe(4);
   });
 });
 
@@ -316,10 +320,10 @@ describe('pasiva Lagarto (+3 HP al final del turno)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([rngBase(20)]), // base 20 × 1.15 × 1.5 (STAB) = 34.5 → 34 → hp 0
+      rngSecuencia([rngBase(20)]), // base 20 × 1.1 × 1.5 (STAB) = 33 → hp 0
     );
 
-    expect(entrada.danoAlCpu).toBe(34);
+    expect(entrada.danoAlCpu).toBe(33);
     expect(nuevo.cpu.aves[0].estado).toBe('debilitada');
     expect(nuevo.cpu.aves[0].hpActual).toBe(0);
     expect(entrada.eventos.some((e) => e.includes('pasiva lagarto'))).toBe(false);
@@ -350,10 +354,10 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([rngBase(20)]), // base 20 × 1.15 × 1.5 (STAB) = 34.5 → 34
+      rngSecuencia([rngBase(20)]), // base 20 × 1.1 × 1.5 (STAB) = 33
     );
 
-    expect(entrada.danoAlCpu).toBe(34);
+    expect(entrada.danoAlCpu).toBe(33);
     expect(nuevo.cpu.aves[0].hpActual).toBe(0);
     expect(nuevo.cpu.aves[0].estado).toBe('debilitada');
     expect(nuevo.terminada).toBe(true);
@@ -441,6 +445,63 @@ describe('salidas, relevo y fin de batalla', () => {
     expect(nuevo.cpu.indiceActiva).toBe(1);
     expect(aveActiva(nuevo.cpu).id).toBe('diucon');
     expect(nuevo.terminada).toBe(false);
+  });
+});
+
+describe('fallo (C5) y Spock que gana no falla (C7)', () => {
+  it('un movimiento que ataca puede fallar: paga MP, no hace daño y lo indica', () => {
+    const estado = armar1v1(PIKAFLOR, GAVILAN, [mov('piedra', 2)], [mov('tijera', 1)]);
+    estado.config = { ...estado.config, probFallo: 1 };
+
+    const { estado: nuevo, entrada } = resolverTurno(
+      estado,
+      estado.jugador.aves[0].movimientos[0],
+      estado.cpu.aves[0].movimientos[0],
+      rngSecuencia([0.5]), // tirada de fallo del jugador (siempre falla con probFallo 1)
+    );
+
+    expect(entrada.resultado).toBe('jugador');
+    expect(entrada.danoAlCpu).toBe(0);
+    expect(entrada.mpGastadoJugador).toBe(2);
+    expect(aveActiva(nuevo.jugador).mpActual).toBe(13);
+    expect(aveActiva(nuevo.cpu).hpActual).toBe(40);
+    expect(entrada.eventos).toContain('Picaflor falla su movimiento');
+    expect(entrada.mensaje).toContain('El ataque falló');
+  });
+
+  it('Spock que gana el intercambio no falla, aunque probFallo sea 1', () => {
+    const estado = armar1v1(CONDOR, DIUCON, [mov('spock', 1)], [mov('tijera', 1)]);
+    estado.config = { ...estado.config, probFallo: 1 };
+
+    const { entrada } = resolverTurno(
+      estado,
+      estado.jugador.aves[0].movimientos[0],
+      estado.cpu.aves[0].movimientos[0],
+      rngSecuencia([rngBase(10)]), // sin tirada de fallo: el daño usa el primer valor
+    );
+
+    expect(entrada.resultado).toBe('jugador');
+    // Base 10 × 1.1 × 1.5 (STAB) = 16.5 → 16
+    expect(entrada.danoAlCpu).toBe(16);
+    expect(entrada.eventos.some((e) => e.includes('falla'))).toBe(false);
+  });
+
+  it('en empate, Spock sí puede fallar (solo se protege cuando gana)', () => {
+    const estado = armar1v1(CONDOR, CHERCAN, [mov('spock', 1)], [mov('spock', 1)]);
+    estado.config = { ...estado.config, probFallo: 1 };
+
+    const { entrada } = resolverTurno(
+      estado,
+      estado.jugador.aves[0].movimientos[0],
+      estado.cpu.aves[0].movimientos[0],
+      rngSecuencia([0.5]),
+    );
+
+    expect(entrada.resultado).toBe('empate');
+    expect(entrada.danoAlCpu).toBe(0);
+    expect(entrada.danoAlJugador).toBe(0);
+    expect(entrada.eventos).toContain('Cóndor falla su movimiento');
+    expect(entrada.eventos).toContain('Chercán falla su movimiento');
   });
 });
 

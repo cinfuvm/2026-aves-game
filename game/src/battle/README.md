@@ -53,13 +53,14 @@ game/src/battle/
 | Parámetro | Valor | Regla |
 |---|---|---|
 | `modo` | `'3v3'` (regla final). El ejecutable mínimo pasa `'1v1'` al crear la batalla (D1) | Aves por equipo |
-| `mpInicial` | 15 | MP compartido por ave (D-01) |
+| `mpInicial` | 20 | MP compartido por ave (D-01, plan_motor_c.md C6) |
 | `hpMaxRango` | `[20, 50]` | HP máx aleatorio al entrar |
 | `hpMaxRangoPiedra` | `[40, 50]` | Pasiva Piedra |
-| `costeMpRango` | `[1, 5]` | Coste aleatorio de cada movimiento |
+| `costeMpRango` | `[1, 3]` | Coste aleatorio de cada movimiento (C6) |
 | `probCosteCeroPapel` | `0.25` | Pasiva Papel |
 | `regeneracionLagarto` | `3` | Pasiva Lagarto |
-| `factorEsfuerzo` | `0.15` | Daño ×(1 + coste×0.15) |
+| `factorEsfuerzo` | `0.1` | Daño ×(1 + coste×0.1) (C3) |
+| `probFallo` | `0.1` | Probabilidad de que un movimiento que ataca falle: gasta MP y turno, no hace daño (C5) |
 | `factorStab` | `1.5` | STAB |
 | `bonusTijera` | `5` | Pasiva Tijera al ganar |
 | `danoBaseMinFrac` | `0.1` | Daño base mínimo: 10 % del HP máx del rival (D-15) |
@@ -94,7 +95,7 @@ MENSAJE_EFECTIVIDAD  // «El ataque no tuvo efecto», «El ataque fue efectivo»
 
 Orden de aplicación: base (10–50 % del HP máx del rival) → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → `floor` ≥ 0.
 El STAB depende solo de los tipos (aplica también en empate); la pasiva de Tijera exige ganar el intercambio.
-Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (pendiente, paso 4 de plan_motor_c.md).
+Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (C7).
 
 ## `state.ts` — estado y equipos
 
@@ -123,7 +124,9 @@ clonarEstado(estado): EstadoBatalla  // copia profunda
 
 **Lanza un error** si la batalla terminó, el movimiento no pertenece al ave activa o está bloqueado por MP — la UI debe prevenir esas selecciones (CB-01, CB-09).
 
-Flujo interno: pago de MP (pasiva Papel) → PPTLS → daño (empate = ambos se dañan, D-02) → salidas (HP 0 → debilitada; sin MP usable → rendida) y relevo → regeneración Lagarto → fin → historial.
+Flujo interno: pago de MP (pasiva Papel) → PPTLS → fallo (movimiento que ataca; Spock que gana no falla) → daño (empate = ambos se dañan, D-02; un movimiento que falla no hace daño) → salidas (HP 0 → debilitada; sin MP usable → rendida) y relevo → regeneración Lagarto → fin → historial.
+
+Orden de consumo del `rng`: papel jugador → papel CPU → fallo jugador → fallo CPU → daño jugador → daño CPU. Sin fallo (`probFallo` 0) no se consume aleatoriedad para el fallo.
 
 ## `rendicion.ts` — rendición manual (RF-015, BR-012)
 

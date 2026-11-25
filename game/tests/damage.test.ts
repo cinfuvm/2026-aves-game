@@ -60,17 +60,17 @@ describe('calcularDanoBase', () => {
 });
 
 describe('calcularDano — daño base y multiplicador de esfuerzo', () => {
-  it('aplica ×(1 + coste × 0.15) sin STAB ni pasivas', () => {
-    // Base 10, coste 2 → 10 × 1.3 = 13. Ave lagarto con movimiento piedra (sin STAB, sin pasiva de daño).
+  it('aplica ×(1 + coste × 0.1) sin STAB ni pasivas', () => {
+    // Base 10, coste 2 → 10 × 1.2 = 12. Ave lagarto con movimiento piedra (sin STAB, sin pasiva de daño).
     const detalle = calcularDano(40, mov('piedra', 2), 'lagarto', false, rngConBase(10, 40));
     expect(detalle.danoBase).toBe(10);
-    expect(detalle.multiplicadorEsfuerzo).toBe(1.3);
+    expect(detalle.multiplicadorEsfuerzo).toBe(1.2);
     expect(detalle.aplicaStab).toBe(false);
-    expect(detalle.dano).toBe(13);
+    expect(detalle.dano).toBe(12);
   });
 
   it('el daño se redondea hacia abajo a un entero', () => {
-    // Base 10, coste 1 → 10 × 1.15 = 11.5 → 11.
+    // Base 10, coste 1 → 10 × 1.1 = 11.
     const detalle = calcularDano(40, mov('piedra', 1), 'lagarto', false, rngConBase(10, 40));
     expect(detalle.dano).toBe(11);
   });
@@ -94,52 +94,52 @@ describe('calcularDano — daño base y multiplicador de esfuerzo', () => {
 
 describe('calcularDano — STAB', () => {
   it('multiplica ×1.5 cuando el tipo del movimiento coincide con el tipo del ave', () => {
-    // Base 10, coste 2, STAB → 10 × 1.3 × 1.5 = 19.5 → 19.
+    // Base 10, coste 2, STAB → 10 × 1.2 × 1.5 = 18.
     const detalle = calcularDano(40, mov('papel', 2), 'papel', false, rngConBase(10, 40));
     expect(detalle.aplicaStab).toBe(true);
-    expect(detalle.dano).toBe(19);
+    expect(detalle.dano).toBe(18);
   });
 
   it('no aplica STAB con tipos distintos', () => {
     const detalle = calcularDano(40, mov('papel', 2), 'piedra', false, rngConBase(10, 40));
     expect(detalle.aplicaStab).toBe(false);
-    expect(detalle.dano).toBe(13);
+    expect(detalle.dano).toBe(12);
   });
 });
 
 describe('calcularDano — pasiva Tijera (+5 al ganar, D-11)', () => {
   it('suma el bonus fijo al ganar, con STAB', () => {
-    // Base 10, coste 1, STAB → 10 × 1.15 × 1.5 = 17.25; +5 = 22.25 → 22.
+    // Base 10, coste 1, STAB → 10 × 1.1 × 1.5 = 16.5; +5 = 21.5 → 21.
     const detalle = calcularDano(40, mov('tijera', 1), 'tijera', true, rngConBase(10, 40));
     expect(detalle.bonusTijera).toBe(5);
-    expect(detalle.dano).toBe(22);
+    expect(detalle.dano).toBe(21);
   });
 
   it('suma el bonus al ganar incluso sin STAB', () => {
-    // Base 10, coste 2, sin STAB → 13; +5 = 18.
+    // Base 10, coste 2, sin STAB → 12; +5 = 17.
     const detalle = calcularDano(40, mov('piedra', 2), 'tijera', true, rngConBase(10, 40));
     expect(detalle.bonusTijera).toBe(5);
-    expect(detalle.dano).toBe(18);
+    expect(detalle.dano).toBe(17);
   });
 
   it('no aplica el bonus en empate ni al perder el intercambio', () => {
     const perdiendo = calcularDano(40, mov('tijera', 1), 'tijera', false, rngConBase(10, 40));
     expect(perdiendo.bonusTijera).toBe(0);
-    // El STAB depende solo de los tipos, no de ganar: 10 × 1.15 × 1.5 = 17.25 → 17.
-    expect(perdiendo.dano).toBe(17);
+    // El STAB depende solo de los tipos, no de ganar: 10 × 1.1 × 1.5 = 16.5 → 16.
+    expect(perdiendo.dano).toBe(16);
   });
 });
 
 describe('calcularDano — pasiva Spock (D-K: sin mínimo de daño)', () => {
   it('no eleva el daño: con base mínima y STAB, el daño es el calculado', () => {
-    // Base 4, coste 1, STAB → 4 × 1.15 × 1.5 = 6.9 → 6. Antes había un mínimo del 30 %.
+    // Base 4, coste 1, STAB → 4 × 1.1 × 1.5 = 6.6 → 6. Antes había un mínimo del 30 %.
     const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(4, 40));
     expect(detalle.aplicaStab).toBe(true);
     expect(detalle.dano).toBe(6);
   });
 
   it('sin STAB y con base mínima, el daño sigue siendo el calculado', () => {
-    // Base 4, coste 1, sin STAB → 4 × 1.15 = 4.6 → 4.
+    // Base 4, coste 1, sin STAB → 4 × 1.1 = 4.4 → 4.
     const detalle = calcularDano(40, mov('piedra', 1), 'spock', true, rngConBase(4, 40));
     expect(detalle.dano).toBe(4);
   });

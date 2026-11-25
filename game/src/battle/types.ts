@@ -115,22 +115,25 @@ export interface ConfigBatalla {
   danoBaseMinFrac: number;
   /** Fracción máxima del HP máx rival que puede hacer el daño base (C1, plan_motor_c.md). */
   danoBaseMaxFrac: number;
+  /** Probabilidad de que un movimiento que ataca falle: gasta MP y turno, no hace daño (C5). */
+  probFallo: number;
 }
 
 /** Valores base acordados en plan_logica.md. */
 export const CONFIG_BASE: ConfigBatalla = {
   modo: '3v3',
-  mpInicial: 15,
+  mpInicial: 20,
   hpMaxRango: [20, 50],
   hpMaxRangoPiedra: [40, 50],
-  costeMpRango: [1, 5],
+  costeMpRango: [1, 3],
   probCosteCeroPapel: 0.25,
   regeneracionLagarto: 3,
-  factorEsfuerzo: 0.15,
+  factorEsfuerzo: 0.1,
   factorStab: 1.5,
   bonusTijera: 5,
   danoBaseMinFrac: 0.1,
   danoBaseMaxFrac: 0.5,
+  probFallo: 0.1,
 };
 
 /** Registro de un turno resuelto, para el historial visual de la Parte B. */

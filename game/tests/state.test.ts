@@ -165,10 +165,10 @@ describe('inicializarAve', () => {
     }
   });
 
-  it('MP compartido inicial igual a mpInicial (15)', () => {
+  it('MP compartido inicial igual a mpInicial (20)', () => {
     const ave = inicializarAve(CHINCOL, crearRng(9));
-    expect(ave.mpMax).toBe(15);
-    expect(ave.mpActual).toBe(15);
+    expect(ave.mpMax).toBe(20);
+    expect(ave.mpActual).toBe(20);
     expect(ave.movimientos).toHaveLength(4);
   });
 

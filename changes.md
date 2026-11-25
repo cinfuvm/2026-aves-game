@@ -121,6 +121,15 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - Tests: `game/tests/juego.test.ts` (10 casos). Total: 107 pruebas pasan.
 - Verificado: `tsc` sin errores; `npm run game:build` genera el cartucho; `npm run game:run` carga con `import code` sin errores en el log. **No se verificó visualmente**: no hay permiso para capturar la pantalla.
 
+### Paso 11 — Parte C: configuración y fallo (plan_motor_c.md, pasos 3 y 4)
+
+- **Config (D-H):** esfuerzo 0.15 → **0.1**, MP inicial 15 → **20**, coste de movimientos [1, 5] → **[1, 3]**. Estas cifras las medí en `pruebas_balance_dano.md` (sección 6.2d).
+- **Fallo (C5):** `probFallo` = **0.1** en `ConfigBatalla`. Un movimiento que ataca (gana o empata) puede fallar: paga MP, el turno cuenta y no hace daño. Se registra como «El ataque falló».
+- **Spock (C7, D-16):** si Spock gana el intercambio, su movimiento no puede fallar.
+- **Orden del rng:** papel jugador → papel CPU → fallo jugador → fallo CPU → daño jugador → daño CPU. Con `probFallo` 0 no se consume aleatoriedad para el fallo.
+- Tests: 119 pruebas pasan. Las pruebas de reglas de `turn.test.ts` usan `probFallo: 0` para no depender del fallo; el fallo y Spock tienen su propio bloque de pruebas.
+- **Pendiente del paso 7:** re-medir el balance con el motor nuevo. Las cifras de `pruebas_balance_dano.md` son de la configuración previa.
+
 ### Paso 9 — Rendición en el motor (20 nov 2026)
 
 - Creado `game/src/battle/rendicion.ts`: `rendirAveActiva(estado, lado)`. El ave activa pasa a `'rendida'`, entra la siguiente (si hay) y se evalúa el fin de la batalla. No consume turno, MP ni historial.

@@ -123,8 +123,8 @@ Verificación de balance: volver a correr `pruebas_balance_dano.md` con el motor
 
 1. **Pendientes de 5.1 a 5.3** resueltos (T8 con el Product Owner).
 2. **Daño** (3.1, 3.2): daño base por porcentaje, quitar Spock mínimo. Pruebas de `damage.test.ts` y `turn.test.ts`. **Hecho** (rango base 10–50 %, Spock sin mínimo; `turn.test.ts` reasignado con `rngBase`). El esfuerzo 0.1 queda para el paso 3.
-3. **Config** (3.2): valores de la sección 2. Verificar que las pruebas de la capa anterior siguen pasando.
-4. **Fallo y Spock** (3.3): tiradas de fallo, Spock sin fallo, nuevo orden del rng. Pruebas de `turn.test.ts`.
+3. **Config** (3.2): valores de la sección 2. **Hecho**: esfuerzo 0.1, MP inicial 20, coste 1–3. Las pruebas de `turn.test.ts` usan `probFallo: 0` y las de `damage.test.ts` y `state.test.ts` se actualizaron a los nuevos valores.
+4. **Fallo y Spock** (3.3): tiradas de fallo, Spock sin fallo, nuevo orden del rng. **Hecho**: `probFallo` 0.1 en `ConfigBatalla`, tirada de fallo en `turn.ts` (con su orden de rng documentado), Spock que gana no falla, y 3 pruebas nuevas.
 5. **Movimientos** (3.4, 3.7): característico y pool. Pruebas de `state.test.ts` y `birds.test.ts`.
 6. **Nivel** (3.5): fórmula de vida. Pruebas de inicialización.
 7. **Balance**: volver a medir con `pruebas_balance_dano.md`.

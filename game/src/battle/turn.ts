@@ -23,8 +23,11 @@
  * Orden de consumo del `rng` (documentado para tests deterministas):
  *   1) tirada de pasiva Papel del jugador (solo si su ave es de tipo papel),
  *   2) tirada de pasiva Papel del CPU (solo si su ave es de tipo papel),
- *   3) daño jugador → CPU (si el jugador gana o hay empate),
- *   4) daño CPU → jugador (si el CPU gana o hay empate).
+ *   3) tirada de fallo del jugador (si su movimiento ataca, probFallo > 0 y no es
+ *      Spock que gana),
+ *   4) tirada de fallo del CPU (mismas condiciones),
+ *   5) daño jugador → CPU (si el jugador ataca y no falla),
+ *   6) daño CPU → jugador (si el CPU ataca y no falla).
  * Relevos y regeneraciones no consumen aleatoriedad.
  */
 
@@ -44,8 +47,10 @@ import {
   type Equipo,
   type EstadoBatalla,
   type MovimientoActivo,
+  type ConfigBatalla,
   type ResultadoTurno,
   type Rng,
+  type TipoPPTLS,
 } from './types';
 
 export { crearRng };
@@ -117,6 +122,25 @@ function pagarMp(
   }
   ave.mpActual -= movimiento.costeMp;
   return movimiento.costeMp;
+}
+
+/** Mensaje cuando el movimiento que ataca falla (C5). */
+const MENSAJE_FALLO = 'El ataque falló';
+
+/**
+ * Indica si el movimiento que ataca falla (C5, plan_motor_c.md).
+ * Spock que gana el intercambio no falla (C7). Sin probabilidad de fallo no se
+ * consume aleatoriedad.
+ */
+function puedeFallar(
+  tipoAve: TipoPPTLS,
+  ganaIntercambio: boolean,
+  config: ConfigBatalla,
+  rng: Rng,
+): boolean {
+  if (config.probFallo <= 0) return false;
+  if (tipoAve === 'spock' && ganaIntercambio) return false;
+  return rng() < config.probFallo;
 }
 
 /** Pasiva Lagarto: regenera HP al final del turno sin superar el HP máx. */
@@ -210,35 +234,52 @@ export function resolverTurno(
   const resultado = compararPPTLS(jugadorReal.tipo, cpuReal.tipo);
   const pptls = mensajePPTLS(jugadorReal.tipo, cpuReal.tipo);
 
-  // 4) Daño (D-02: en empate ambos bandos infligen y reciben).
+  // 4) Fallo (C5, C7): el movimiento que ataca puede fallar. Spock que gana no falla.
+  const jugadorAtaca = resultado === 'jugador' || resultado === 'empate';
+  const cpuAtaca = resultado === 'cpu' || resultado === 'empate';
+  const jugadorFalla =
+    jugadorAtaca && puedeFallar(nJugador.tipo, resultado === 'jugador', nuevo.config, rng);
+  const cpuFalla = cpuAtaca && puedeFallar(nCpu.tipo, resultado === 'cpu', nuevo.config, rng);
+  if (jugadorFalla) eventos.push(`${nJugador.nombre} falla su movimiento`);
+  if (cpuFalla) eventos.push(`${nCpu.nombre} falla su movimiento`);
+
+  // 5) Daño (D-02: en empate ambos bandos infligen y reciben).
   let danoAlCpu = 0;
   let danoAlJugador = 0;
   let clasifCpu: string | undefined;
   let clasifJugador: string | undefined;
 
-  if (resultado === 'jugador' || resultado === 'empate') {
-    const detalleCpu = calcularDano(
-      nCpu.hpMax,
-      jugadorReal,
-      nJugador.tipo,
-      resultado === 'jugador',
-      rng,
-      nuevo.config,
-    );
-    danoAlCpu = detalleCpu.dano;
-    clasifCpu = MENSAJE_EFECTIVIDAD[detalleCpu.clasificacion];
+  if (jugadorAtaca) {
+    if (jugadorFalla) {
+      clasifCpu = MENSAJE_FALLO;
+    } else {
+      const detalleCpu = calcularDano(
+        nCpu.hpMax,
+        jugadorReal,
+        nJugador.tipo,
+        resultado === 'jugador',
+        rng,
+        nuevo.config,
+      );
+      danoAlCpu = detalleCpu.dano;
+      clasifCpu = MENSAJE_EFECTIVIDAD[detalleCpu.clasificacion];
+    }
   }
-  if (resultado === 'cpu' || resultado === 'empate') {
-    const detalleJugador = calcularDano(
-      nJugador.hpMax,
-      cpuReal,
-      nCpu.tipo,
-      resultado === 'cpu',
-      rng,
-      nuevo.config,
-    );
-    danoAlJugador = detalleJugador.dano;
-    clasifJugador = MENSAJE_EFECTIVIDAD[detalleJugador.clasificacion];
+  if (cpuAtaca) {
+    if (cpuFalla) {
+      clasifJugador = MENSAJE_FALLO;
+    } else {
+      const detalleJugador = calcularDano(
+        nJugador.hpMax,
+        cpuReal,
+        nCpu.tipo,
+        resultado === 'cpu',
+        rng,
+        nuevo.config,
+      );
+      danoAlJugador = detalleJugador.dano;
+      clasifJugador = MENSAJE_EFECTIVIDAD[detalleJugador.clasificacion];
+    }
   }
 
   // 5) Aplicar daño (nunca por debajo de 0).

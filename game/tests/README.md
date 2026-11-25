@@ -17,14 +17,14 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 
 ---
 
-## Qué se prueba (8 archivos, 116 casos)
+## Qué se prueba (8 archivos, 119 casos)
 
 | Archivo | Módulo probado | Casos | En qué consiste |
 |---|---|---|---|
 | `pptls.test.ts` | `pptls.ts` | 8 | Las 25 combinaciones de la matriz contra `reglas-batalla.adoc`; cada tipo gana 2 / pierde 2 / empata 1; simetría; mensajes mnemotécnicos y de empate |
-| `damage.test.ts` | `damage.ts` | 18 | Daño base entre 10 % y 50 % del HP máx (nunca 0); multiplicador de esfuerzo `×(1+coste×0.15)`; STAB ×1.5; pasiva Tijera (+5 al ganar, con/sin STAB); pasiva Spock sin mínimo de daño (D-16); límites de efectividad; monotonía por coste; cotas superiores |
+| `damage.test.ts` | `damage.ts` | 18 | Daño base entre 10 % y 50 % del HP máx (nunca 0); multiplicador de esfuerzo `×(1+coste×0.1)`; STAB ×1.5; pasiva Tijera (+5 al ganar, con/sin STAB); pasiva Spock sin mínimo de daño (D-16); límites de efectividad; monotonía por coste; cotas superiores |
 | `state.test.ts` | `state.ts` | 26 | Validación de fichas (5 movimientos, tipo propio, ids únicos); selección de 4 activos con el garantizado presente (50 semillas); costes de MP en rango; HP 20–50 y Piedra 40–50; MP 15 compartido; determinismo por semilla; tamaños 1v1/3v3; bloqueo por MP; relevo; los 4 resultados de `evaluarFin` |
-| `turn.test.ts` | `turn.ts` | 22 | Validaciones (batalla terminada, movimiento ajeno, MP insuficiente); números exactos de los 3 resultados PPTLS; pasiva Papel (tirada baja/alta, ave vs movimiento, no-tirada de aves no papel); pasiva Lagarto (tope, espacio, no revive, otros tipos); CB-03 (HP 0), CB-05 (prioridad debilitamiento), CB-08 (empate técnico); rendición por MP con relevo; historial acumulativo; inmutabilidad del estado |
+| `turn.test.ts` | `turn.ts` | 25 | Fallo (paga MP, sin daño, en empate ambos pueden fallar) y Spock que gana no falla (C5, C7); validaciones (batalla terminada, movimiento ajeno, MP insuficiente); números exactos de los 3 resultados PPTLS; pasiva Papel (tirada baja/alta, ave vs movimiento, no-tirada de aves no papel); pasiva Lagarto (tope, espacio, no revive, otros tipos); CB-03 (HP 0), CB-05 (prioridad debilitamiento), CB-08 (empate técnico); rendición por MP con relevo; historial acumulativo; inmutabilidad del estado |
 | `cpu.test.ts` | `cpu.ts` | 10 | Nunca elige movimientos bloqueados; cubre todos los usables; respeta el ave activa tras relevo; determinismo por semilla; `null` sin MP; perfil base explícito e implícito |
 | `juego.test.ts` | `src/juego/flujo.ts` | 14 | Estados seleccion → batalla → revelación → resultado; cursores con vuelta; batalla 1v1; movimiento bloqueado por MP sin turno; revelación sin gastar MP antes de confirmar; confirmación que resuelve el turno; fin de batalla con el ganador del motor; rendición; reinicio; acciones fuera de pantalla |
 | `rendicion.test.ts` | `rendicion.ts` | 7 | Rendir en 1v1 termina con victoria del rival (y viceversa); sin turno, MP ni historial; no muta el estado; en 3v3 entra la siguiente ave; rendir las 3 termina la batalla; error si la batalla ya terminó |
@@ -99,7 +99,9 @@ Relevos y regeneraciones no consumen aleatoriedad.
 
 - Un `describe` por función o tema; el nombre del caso menciona la regla o el caso borde (CB-xx) cuando aplica.
 - Los tests no mutan el estado de fábrica: `resolverTurno` ya devuelve copia, pero los helpers que precargan estadísticas mutan **antes** de llamar al motor, y eso está bien porque el motor clona.
-- Si un test de "números exactos" falla, revisa primero si una pasiva está interviniendo (STAB, Spock, Lagarto) antes de asumir un bug del motor.
+- Si un test de "números exactos" falla, revisa primero si una pasiva está interviniendo (STAB, Lagarto) antes de asumir un bug del motor.
+- Las pruebas de `turn.test.ts` usan `probFallo: 0` para no depender del fallo. El fallo se prueba aparte en el bloque «fallo (C5) y Spock que gana no falla (C7)».
+- `rngBase(base)` (en `turn.test.ts`) devuelve el valor del rng que produce un daño base exacto para HP 40, con los límites de C1.
 
 ## Qué queda fuera de la suite
 
