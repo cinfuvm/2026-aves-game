@@ -18,6 +18,16 @@ function rngSecuencia(valores: number[]): Rng {
   return () => valores[Math.min(i++, valores.length - 1)];
 }
 
+/**
+ * Valor del rng que produce el daño base `base` con los límites de C1 para HP 40
+ * (10 % = 4 a 50 % = 20). enteroAleatorio(rng, min, max) = min + floor(rng × (max − min + 1)).
+ */
+function rngBase(base: number): number {
+  const min = Math.floor(40 * CONFIG_BASE.danoBaseMinFrac);
+  const max = Math.floor(40 * CONFIG_BASE.danoBaseMaxFrac);
+  return (base - min + 0.5) / (max - min + 1);
+}
+
 function fichaPrueba(id: string, nombre: string, tipo: TipoPPTLS): AveFicha {
   const otros = (['piedra', 'papel', 'tijera', 'lagarto', 'spock'] as TipoPPTLS[]).filter(
     (t) => t !== tipo,
@@ -137,7 +147,7 @@ describe('resolución básica del intercambio', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.25]), // base = floor(0.25 × 41) = 10
+      rngSecuencia([rngBase(10)]), // base 10
     );
 
     expect(entrada.resultado).toBe('jugador');
@@ -164,7 +174,7 @@ describe('resolución básica del intercambio', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.9, 0.1]), // 1: tirada papel CPU; 2: daño base = floor(0.1 × 41) = 4
+      rngSecuencia([0.9, rngBase(4)]), // 1: tirada papel CPU; 2: daño base 4
     );
 
     expect(entrada.resultado).toBe('cpu');
@@ -183,7 +193,7 @@ describe('resolución básica del intercambio', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.5, 0.1]), // jugador: floor(0.5×41)=20; cpu: floor(0.1×41)=4
+      rngSecuencia([rngBase(20), rngBase(4)]), // jugador: base 20; cpu: base 4
     );
 
     expect(entrada.resultado).toBe('empate');
@@ -206,7 +216,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.1, 0.25]), // 1: tirada papel jugador; 2: daño CPU base 10 → 11
+      rngSecuencia([0.1, rngBase(10)]), // 1: tirada papel jugador; 2: daño CPU base 10 → 11
     );
 
     expect(entrada.mpGastadoJugador).toBe(0);
@@ -222,7 +232,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.9, 0.25]),
+      rngSecuencia([0.9, rngBase(10)]),
     );
     expect(entrada.mpGastadoJugador).toBe(3);
   });
@@ -235,7 +245,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.1, 0.5]),
+      rngSecuencia([0.1, rngBase(20)]),
     );
 
     expect(entrada.mpGastadoJugador).toBe(0);
@@ -244,7 +254,7 @@ describe('pasiva Papel (25 % de coste 0)', () => {
   });
 
   it('un ave de tipo no papel no tira (no consume la primera tirada del rng)', () => {
-    // Jugador Loica (lagarto) gana con Piedra: base 2 × 1.3 = 2.6 → 2.
+    // Jugador Loica (lagarto) gana con Piedra: base 4 × 1.3 = 5.2 → 5.
     // Si un ave no papel consumiera una tirada, el daño sería otro número.
     const estado = preparar3v3(
       [mov('piedra', 2)],
@@ -257,24 +267,25 @@ describe('pasiva Papel (25 % de coste 0)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.05]), // daño base floor(0.05 × 41) = 2
+      rngSecuencia([rngBase(4)]), // daño base 4
     );
     expect(entrada.resultado).toBe('jugador');
-    expect(entrada.danoAlCpu).toBe(2);
+    expect(entrada.danoAlCpu).toBe(5);
   });
 });
 
 describe('pasiva Lagarto (+3 HP al final del turno)', () => {
   it('regenera con tope en el HP máx y registra el evento', () => {
-    // CPU Loica (lagarto) con HP 39: +3 quedaría en 42 → tope 40 (recupera 1).
-    const estado = armar1v1(PIKAFLOR, LOICA, [mov('piedra', 1)], [mov('tijera', 1)]);
+    // CPU Loica (lagarto) gana con Lagarto contra Papel: no recibe daño.
+    // Con HP 39, +3 quedaría en 42 → tope 40 (recupera 1).
+    const estado = armar1v1(PIKAFLOR, LOICA, [mov('papel', 1)], [mov('lagarto', 1)]);
     estado.cpu.aves[0].hpActual = 39;
 
     const { estado: nuevo, entrada } = resolverTurno(
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.0001]), // base 0 → daño 0 (sin efecto)
+      rngSecuencia([rngBase(4)]), // daño base 4 contra el jugador
     );
 
     expect(aveActiva(nuevo.cpu).hpActual).toBe(40);
@@ -284,14 +295,15 @@ describe('pasiva Lagarto (+3 HP al final del turno)', () => {
   });
 
   it('regenera 3 HP si hay espacio', () => {
-    const estado = armar1v1(PIKAFLOR, LOICA, [mov('piedra', 1)], [mov('tijera', 1)]);
+    // CPU Loica (lagarto) gana con Lagarto contra Papel: sin daño, HP 30 → 33.
+    const estado = armar1v1(PIKAFLOR, LOICA, [mov('papel', 1)], [mov('lagarto', 1)]);
     estado.cpu.aves[0].hpActual = 30;
 
     const { estado: nuevo } = resolverTurno(
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.0001]),
+      rngSecuencia([rngBase(4)]),
     );
     expect(aveActiva(nuevo.cpu).hpActual).toBe(33);
   });
@@ -304,7 +316,7 @@ describe('pasiva Lagarto (+3 HP al final del turno)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.5]), // base 20 × 1.15 × 1.5 (STAB) = 34.5 → 34 → hp 0
+      rngSecuencia([rngBase(20)]), // base 20 × 1.15 × 1.5 (STAB) = 34.5 → 34 → hp 0
     );
 
     expect(entrada.danoAlCpu).toBe(34);
@@ -322,7 +334,7 @@ describe('pasiva Lagarto (+3 HP al final del turno)', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.0001]),
+      rngSecuencia([rngBase(4)]),
     );
     expect(aveActiva(nuevo.jugador).hpActual).toBe(30);
     expect(entrada.eventos.some((e) => e.includes('pasiva lagarto'))).toBe(false);
@@ -338,10 +350,10 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.9]), // base 36 × 1.15 × 1.5 (STAB) = 62.1 → 62
+      rngSecuencia([rngBase(20)]), // base 20 × 1.15 × 1.5 (STAB) = 34.5 → 34
     );
 
-    expect(entrada.danoAlCpu).toBe(62);
+    expect(entrada.danoAlCpu).toBe(34);
     expect(nuevo.cpu.aves[0].hpActual).toBe(0);
     expect(nuevo.cpu.aves[0].estado).toBe('debilitada');
     expect(nuevo.terminada).toBe(true);
@@ -360,7 +372,7 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.1341]), // base 5 → 5.75 → 5 → hp 0
+      rngSecuencia([rngBase(5)]), // base 5 → 5.75 → 5 → hp 0
     );
 
     expect(nuevo.jugador.aves[0].estado).toBe('debilitada');
@@ -370,7 +382,7 @@ describe('salidas, relevo y fin de batalla', () => {
   });
 
   it('D-07: sin movimientos usables por MP → rendida y relevo en 3v3', () => {
-    // El jugador gana el intercambio con daño 0 pero agota su MP.
+    // El jugador gana el intercambio y hace daño, pero agota su MP.
     const estado = preparar3v3(
       [mov('piedra', 2)],
       [mov('tijera', 1)],
@@ -383,10 +395,10 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.0001]), // base 0 → sin efecto
+      rngSecuencia([rngBase(4)]), // base 4 × 1.3 × 1.5 (STAB) = 7.8 → 7
     );
 
-    expect(entrada.danoAlCpu).toBe(0);
+    expect(entrada.danoAlCpu).toBe(7);
     expect(nuevo.jugador.aves[0].estado).toBe('rendida');
     expect(entrada.eventos.some((e) => e.includes('se rinde'))).toBe(true);
     expect(nuevo.jugador.indiceActiva).toBe(1);
@@ -404,7 +416,7 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.05]), // base 2 → 2.3 → 2 → jugador hp 0
+      rngSecuencia([rngBase(4)]), // base 4 → 4.6 → 4 → jugador hp 0
     );
 
     expect(nuevo.jugador.aves[0].estado).toBe('debilitada');
@@ -421,7 +433,7 @@ describe('salidas, relevo y fin de batalla', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.3]), // base 12 × 1.15 = 13.8 → 13 (≥ 12: no aplica el mínimo de Spock)
+      rngSecuencia([rngBase(12)]), // base 12 × 1.15 = 13.8 → 13
     );
 
     expect(entrada.danoAlCpu).toBe(13);
@@ -439,13 +451,13 @@ describe('historial e inmutabilidad', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.25]),
+      rngSecuencia([rngBase(10)]),
     );
     const { estado: trasTurno2, entrada } = resolverTurno(
       trasTurno1,
       trasTurno1.jugador.aves[0].movimientos[0],
       trasTurno1.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.25]),
+      rngSecuencia([rngBase(10)]),
     );
 
     expect(trasTurno2.turno).toBe(2);
@@ -461,7 +473,7 @@ describe('historial e inmutabilidad', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.25]),
+      rngSecuencia([rngBase(10)]),
     );
     expect(entrada.movJugador.tipo).toBe('piedra');
     expect(entrada.movCpu.tipo).toBe('tijera');
@@ -476,7 +488,7 @@ describe('historial e inmutabilidad', () => {
       estado,
       estado.jugador.aves[0].movimientos[0],
       estado.cpu.aves[0].movimientos[0],
-      rngSecuencia([0.9]),
+      rngSecuencia([rngBase(20)]),
     );
     expect(JSON.stringify(estado)).toBe(antes);
   });

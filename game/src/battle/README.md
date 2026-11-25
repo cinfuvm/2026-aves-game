@@ -62,8 +62,8 @@ game/src/battle/
 | `factorEsfuerzo` | `0.15` | Daño ×(1 + coste×0.15) |
 | `factorStab` | `1.5` | STAB |
 | `bonusTijera` | `5` | Pasiva Tijera al ganar |
-| `minimoSpock` | `0.3` | Pasiva Spock al ganar, solo si el daño es mayor que 0 (D3) |
-| `pasivaSpockActiva` | `true` | D3 (D-09): `false` desactiva la pasiva Spock |
+| `danoBaseMinFrac` | `0.1` | Daño base mínimo: 10 % del HP máx del rival (D-15) |
+| `danoBaseMaxFrac` | `0.5` | Daño base máximo: 50 % del HP máx del rival (D-15) |
 
 ---
 
@@ -86,15 +86,15 @@ PPTLS_TIPOS: readonly TipoPPTLS[]
 ## `damage.ts` — daño
 
 ```ts
-calcularDanoBase(hpMaxRival, rng): number  // entero en [0, HP máx del rival]
+calcularDanoBase(hpMaxRival, rng, config?): number  // entero en [10 %, 50 %] del HP máx del rival (D-15)
 calcularDano(hpMaxRival, movAtacante, tipoAveAtacante, ganaIntercambio, rng, config?): DetalleDano
 clasificarEfectividad(dano, hpMaxRival): ClasificacionEfectividad  // 'sin-efecto' | 'efectivo' | 'muy-efectivo'
 MENSAJE_EFECTIVIDAD  // «El ataque no tuvo efecto», «El ataque fue efectivo», «¡Es muy efectivo!»
 ```
 
-Orden de aplicación: base → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → Spock mín. 30 % al ganar con daño mayor que 0 → `floor` ≥ 0.
-El STAB depende solo de los tipos (aplica también en empate); las pasivas de Tijera/Spock exigen ganar el intercambio.
-Con daño base 0, Spock que gana produce «Sin efecto» (D3): el mínimo no se aplica.
+Orden de aplicación: base (10–50 % del HP máx del rival) → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → `floor` ≥ 0.
+El STAB depende solo de los tipos (aplica también en empate); la pasiva de Tijera exige ganar el intercambio.
+Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (pendiente, paso 4 de plan_motor_c.md).
 
 ## `state.ts` — estado y equipos
 

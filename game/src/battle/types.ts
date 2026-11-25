@@ -79,15 +79,14 @@ export interface Equipo {
  * - tijera:  si gana el intercambio, daño fijo adicional de +5.
  * - papel:   `probCosteCeroPapel` (25 %) de que su movimiento no consuma MP.
  * - lagarto: recupera +3 HP al final del turno, sin superar su HP máx.
- * - spock:   si gana con daño mayor que 0, daño mínimo de 30 % del HP máx del rival.
- *            Con daño 0 el resultado es «Sin efecto» (decisión D3, changes.md D-09).
+ * - spock:   sin mínimo de daño (D-K). Si gana, su movimiento no puede fallar (C7).
  */
 export const NOMBRE_PASIVA: Record<TipoPPTLS, string> = {
   piedra: 'HP inicial 40–50',
   tijera: '+5 de daño al ganar',
   papel: '25 % de coste 0',
   lagarto: '+3 HP por turno',
-  spock: 'daño mínimo 30 % si hay daño',
+  spock: 'no falla si gana',
 };
 
 /** Configuración de una batalla. */
@@ -112,13 +111,10 @@ export interface ConfigBatalla {
   factorStab: number;
   /** Daño fijo adicional de la pasiva Tijera cuando el ave gana el intercambio. */
   bonusTijera: number;
-  /** Fracción del HP máx rival como daño mínimo de la pasiva Spock cuando gana. */
-  minimoSpock: number;
-  /**
-   * D3 (changes.md, D-09): `true` aplica la pasiva Spock (solo con daño mayor que 0);
-   * `false` la desactiva y Spock sigue las reglas base.
-   */
-  pasivaSpockActiva: boolean;
+  /** Fracción mínima del HP máx rival que puede hacer el daño base (C1, plan_motor_c.md). */
+  danoBaseMinFrac: number;
+  /** Fracción máxima del HP máx rival que puede hacer el daño base (C1, plan_motor_c.md). */
+  danoBaseMaxFrac: number;
 }
 
 /** Valores base acordados en plan_logica.md. */
@@ -133,8 +129,8 @@ export const CONFIG_BASE: ConfigBatalla = {
   factorEsfuerzo: 0.15,
   factorStab: 1.5,
   bonusTijera: 5,
-  minimoSpock: 0.3,
-  pasivaSpockActiva: true,
+  danoBaseMinFrac: 0.1,
+  danoBaseMaxFrac: 0.5,
 };
 
 /** Registro de un turno resuelto, para el historial visual de la Parte B. */

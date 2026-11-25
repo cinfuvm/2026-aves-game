@@ -9,13 +9,22 @@ import {
 import { crearRng } from '../src/battle/rng';
 import { CONFIG_BASE, type MovimientoActivo, type Rng, type TipoPPTLS } from '../src/battle/types';
 
+/** Límites del daño base para un HP máximo rival (C1: 10 % a 50 %). */
+function limitesBase(hpMaxRival: number): [number, number] {
+  return [
+    Math.floor(hpMaxRival * CONFIG_BASE.danoBaseMinFrac),
+    Math.floor(hpMaxRival * CONFIG_BASE.danoBaseMaxFrac),
+  ];
+}
+
 /**
  * RNG fijo para forzar un daño base exacto.
- * calcularDanoBase usa enteroAleatorio(rng, 0, hpMaxRival) = floor(rng × (hpMax + 1)),
- * por lo que un valor en el centro del "sub-intervalo" de `base` lo fuerza con seguridad.
+ * calcularDanoBase usa enteroAleatorio(rng, min, max) = min + floor(rng × (max − min + 1)),
+ * así que un valor en el centro del sub-intervalo de `base` lo fuerza con seguridad.
  */
 function rngConBase(base: number, hpMaxRival: number): Rng {
-  return () => (base + 0.5) / (hpMaxRival + 1);
+  const [min, max] = limitesBase(hpMaxRival);
+  return () => (base - min + 0.5) / (max - min + 1);
 }
 
 function mov(tipo: TipoPPTLS, costeMp = 1): MovimientoActivo {
@@ -23,21 +32,29 @@ function mov(tipo: TipoPPTLS, costeMp = 1): MovimientoActivo {
 }
 
 describe('calcularDanoBase', () => {
-  it('devuelve enteros en [0, hpMaxRival] con un rng determinista', () => {
+  it('devuelve enteros en [10 %, 50 %] del HP máximo del rival', () => {
     const rng = crearRng(12345);
+    const [min, max] = limitesBase(42);
     for (let i = 0; i < 1000; i++) {
       const dano = calcularDanoBase(42, rng);
-      expect(dano).toBeGreaterThanOrEqual(0);
-      expect(dano).toBeLessThanOrEqual(42);
+      expect(dano).toBeGreaterThanOrEqual(min);
+      expect(dano).toBeLessThanOrEqual(max);
       expect(Number.isInteger(dano)).toBe(true);
     }
   });
 
   it('usa siempre el HP máximo del rival, no el HP actual', () => {
-    // Con hpMaxRival 50 el rango supera al HP actual de un rival debilitado.
     const rng = crearRng(777);
+    const [, max] = limitesBase(50);
     for (let i = 0; i < 500; i++) {
-      expect(calcularDanoBase(50, rng)).toBeLessThanOrEqual(50);
+      expect(calcularDanoBase(50, rng)).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it('nunca produce 0: el mínimo es el 10 % del HP máximo', () => {
+    const rng = crearRng(31);
+    for (let i = 0; i < 500; i++) {
+      expect(calcularDanoBase(20, rng)).toBeGreaterThanOrEqual(2);
     }
   });
 });
@@ -58,10 +75,12 @@ describe('calcularDano — daño base y multiplicador de esfuerzo', () => {
     expect(detalle.dano).toBe(11);
   });
 
-  it('un daño base 0 con un ave sin pasiva de daño queda en 0', () => {
-    const detalle = calcularDano(40, mov('piedra', 3), 'lagarto', false, rngConBase(0, 40));
-    expect(detalle.dano).toBe(0);
-    expect(detalle.clasificacion).toBe('sin-efecto');
+  it('con el daño base mínimo (10 % de 40 = 4) el golpe nunca queda en 0', () => {
+    // Base 4, coste 3 → 4 × 1.45 = 5.8 → 5.
+    const detalle = calcularDano(40, mov('piedra', 3), 'lagarto', false, rngConBase(4, 40));
+    expect(detalle.danoBase).toBe(4);
+    expect(detalle.dano).toBe(5);
+    expect(detalle.clasificacion).toBe('efectivo');
   });
 
   it('nunca devuelve daño negativo', () => {
@@ -111,40 +130,18 @@ describe('calcularDano — pasiva Tijera (+5 al ganar, D-11)', () => {
   });
 });
 
-describe('calcularDano — pasiva Spock (mínimo 30 %, D3)', () => {
-  it('no aplica el mínimo con daño base 0: el resultado es «Sin efecto» (D3)', () => {
-    const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(0, 40));
-    expect(detalle.aplicaMinimoSpock).toBe(false);
-    expect(detalle.dano).toBe(0);
-    expect(detalle.clasificacion).toBe('sin-efecto');
+describe('calcularDano — pasiva Spock (D-K: sin mínimo de daño)', () => {
+  it('no eleva el daño: con base mínima y STAB, el daño es el calculado', () => {
+    // Base 4, coste 1, STAB → 4 × 1.15 × 1.5 = 6.9 → 6. Antes había un mínimo del 30 %.
+    const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(4, 40));
+    expect(detalle.aplicaStab).toBe(true);
+    expect(detalle.dano).toBe(6);
   });
 
-  it('eleva el daño al mínimo cuando el daño calculado queda debajo', () => {
-    // Base 5, coste 1, STAB → 5 × 1.15 × 1.5 = 8.625 < 12 → 12.
-    const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(5, 40));
-    expect(detalle.aplicaMinimoSpock).toBe(true);
-    expect(detalle.dano).toBe(12);
-  });
-
-  it('no altera un daño que ya supera el mínimo', () => {
-    // Base 20, coste 1, STAB → 34.5 ≥ 12 → 34.
-    const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(20, 40));
-    expect(detalle.aplicaMinimoSpock).toBe(false);
-    expect(detalle.dano).toBe(34);
-  });
-
-  it('no aplica en empate ni al perder el intercambio', () => {
-    const empate = calcularDano(40, mov('spock', 1), 'spock', false, rngConBase(0, 40));
-    expect(empate.dano).toBe(0);
-    expect(empate.clasificacion).toBe('sin-efecto');
-  });
-
-  it('se puede desactivar con pasivaSpockActiva (mientras se decide D-09)', () => {
-    const config = { ...CONFIG_BASE, pasivaSpockActiva: false };
-    const detalle = calcularDano(40, mov('spock', 1), 'spock', true, rngConBase(0, 40), config);
-    expect(detalle.aplicaMinimoSpock).toBe(false);
-    expect(detalle.dano).toBe(0);
-    expect(detalle.clasificacion).toBe('sin-efecto');
+  it('sin STAB y con base mínima, el daño sigue siendo el calculado', () => {
+    // Base 4, coste 1, sin STAB → 4 × 1.15 = 4.6 → 4.
+    const detalle = calcularDano(40, mov('piedra', 1), 'spock', true, rngConBase(4, 40));
+    expect(detalle.dano).toBe(4);
   });
 });
 
@@ -176,12 +173,12 @@ describe('calcularDano — propiedades generales', () => {
     }
   });
 
-  it('el daño nunca supera el HP máx del rival + bonus de pasivas', () => {
+  it('el daño nunca supera 50 % del HP máx × esfuerzo máximo × STAB (+ Tijera)', () => {
     const rng = crearRng(4242);
+    // HP 30: base máx 15; coste 5 → ×1.75; STAB ×1.5 → 39.375 → 39.
     for (let i = 0; i < 500; i++) {
       const detalle = calcularDano(30, mov('spock', 5), 'spock', true, rng);
-      // Sin Spock el máximo sería 30 × 1.75 × 1.5; con el mínimo 30 % acotado, nunca pasa de ese techo.
-      expect(detalle.dano).toBeLessThanOrEqual(Math.floor(30 * 1.75 * 1.5));
+      expect(detalle.dano).toBeLessThanOrEqual(39);
     }
   });
 });
