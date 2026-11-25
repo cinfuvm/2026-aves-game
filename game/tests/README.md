@@ -80,7 +80,7 @@ function preparar3v3(movsJ, movsC, mpJ?, mpC?, fichasJ?, fichasC?): EstadoBatall
 
 **Truco importante al elegir aves de prueba:** cada tipo trae pasivas que cambian los números —
 piedra (HP inicial), papel (tirada de MP, consume la 1.ª tirada del rng), tijera (+5 si gana),
-lagarto (+3 HP al final del turno), spock (daño mín. 30 % si gana y hay daño base; con base 0 es «Sin efecto»).
+lagarto (+3 HP al final del turno), spock (sin mínimo de daño; si gana, su movimiento no puede fallar, D-16).
 Para un caso de "números limpios" elige tipos **sin la pasiva que interferiría**
 (p. ej. para probar daño sin pasivas: atacante lagarto o piedra; el defensor piedra/tijera según quién gane).
 

@@ -2,7 +2,7 @@
 
 Documentación para los equipos **B (interfaces)** y **C (CPU/torre)**: qué expone el motor, cómo usarlo y qué reglas respeta.
 
-> Fuentes: `plan_logica.md` (reglas de `pelea.md`), `docs/modules/prd/pages/reglas-batalla.adoc`.
+> Fuentes: `plan_motor_c.md` y `plan_desarrollo.md` (decisiones vigentes), `docs/modules/prd/pages/reglas-batalla.adoc`.
 > Las desviaciones respecto al PRD están numeradas (D-01…D-12) en `changes.md` (raíz del repo).
 
 ---
@@ -95,7 +95,7 @@ clasificarEfectividad(dano, hpMaxRival): ClasificacionEfectividad  // 'sin-efect
 MENSAJE_EFECTIVIDAD  // «El ataque no tuvo efecto», «El ataque fue efectivo», «¡Es muy efectivo!»
 ```
 
-Orden de aplicación: base (10–50 % del HP máx del rival) → esfuerzo `×(1 + coste×0.15)` → STAB ×1.5 → Tijera +5 al ganar → `floor` ≥ 0.
+Orden de aplicación: base (10–50 % del HP máx del rival) → esfuerzo `×(1 + coste×0.1)` → STAB ×1.5 → Tijera +5 al ganar → `floor` ≥ 0. No hay techo por golpe (C2).
 El STAB depende solo de los tipos (aplica también en empate); la pasiva de Tijera exige ganar el intercambio.
 Spock no tiene mínimo de daño (D-16). Si gana, su movimiento no puede fallar (C7).
 
@@ -189,8 +189,20 @@ estado = nuevo; // el estado original no se muta: reemplazar la referencia
 PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
 ```
 
-## Datos que faltan (pendientes del equipo de contenido)
+## Movimientos y pool (D-17)
 
-- Fichas de `game/src/data/birds.ts`: Cóndor, Loica y Chincol (`FICHAS_MVP`). Faltan las otras 7 aves del PRD con el formato `AveFicha` (el motor es TypeScript, D-08).
-- El tipo propio de cada ave es el de su movimiento distintivo (supuesto S-01, D-14 en `changes.md`).
+Cada ave tiene **4 movimientos fijos**: 1 **característico** (`caracteristico: true`, único del ave y del tipo propio) y 3 **predeterminados** tomados de la pool compartida.
+
+- `game/src/data/movimientos.ts`: pool de 15 movimientos, 3 por tipo PPTLS. `desdePool(...ids)` devuelve copias de los movimientos de la pool.
+- `game/src/data/birds.ts`: fichas de Cóndor, Loica y Chincol. Cada una combina su característico con 3 predeterminados de la pool. Los predeterminados pueden repetirse entre aves; el característico no.
+- Los nombres de la pool son propuesta, tomada del PRD.
+
+## Vida por nivel (D-18)
+
+HP máx = rango base (30–50, o 40–50 para Piedra) + `vidaPorNivel` × nivel del combate. `nivelJugador` y `nivelCpu` fijan el nivel de cada bando; ambos son 0 por defecto. La torre definirá los niveles.
+
+## Datos pendientes
+
+- Fichas de `game/src/data/birds.ts`: solo Cóndor, Loica y Chincol (`FICHAS_MVP`). Faltan las otras 7 aves del PRD, con su característico y sus predeterminados (el motor es TypeScript, D-08).
+- El tipo propio de cada ave es el de su movimiento característico (supuesto S-01, D-14 en `changes.md`). Pendiente de confirmar con el Product Owner (T8).
 - Los tests usan fichas de prueba generadas (`fichaPrueba`); ver `game/tests/README.md`.

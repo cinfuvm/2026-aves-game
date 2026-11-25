@@ -1,6 +1,6 @@
 /**
  * Resolución de turnos (Parte A).
- * Fuente: plan_logica.md (reglas de pelea.md) + docs/modules/prd/pages/reglas-batalla.adoc,
+ * Fuente: plan_motor_c.md + docs/modules/prd/pages/reglas-batalla.adoc,
  * con las desviaciones D-01, D-02, D-04, D-07, D-11 y D-15 de changes.md.
  * D-09 (Spock) se sustituyó por D-16: Spock ya no tiene mínimo de daño.
  *

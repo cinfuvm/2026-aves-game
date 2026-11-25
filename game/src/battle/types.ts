@@ -1,6 +1,6 @@
 /**
  * Contrato del motor de batalla (Parte A) — equipo de lógica.
- * Fuente: plan_logica.md (reglas de pelea.md) y docs/modules/prd/pages/arquitectura.adoc.
+ * Fuente: plan_motor_c.md y plan_desarrollo.md (decisiones D-H a D-18), y docs/modules/prd/pages/arquitectura.adoc.
  *
  * Reglas del contrato:
  * - Ninguna función de este módulo usa la API de TIC-80 (cls, spr, btn, ...).
@@ -79,7 +79,7 @@ export interface Equipo {
 }
 
 /**
- * Pasivas por tipo (plan_logica.md):
+ * Pasivas por tipo:
  * - piedra:  HP máx aleatorio en `hpMaxRangoPiedra` (40–50) en vez del rango base.
  * - tijera:  si gana el intercambio, daño fijo adicional de +5.
  * - papel:   `probCosteCeroPapel` (25 %) de que su movimiento no consuma MP.
@@ -98,7 +98,7 @@ export const NOMBRE_PASIVA: Record<TipoPPTLS, string> = {
 export interface ConfigBatalla {
   /** 1v1 para la entrega parcial; 3v3 para la entrega final. */
   modo: '1v1' | '3v3';
-  /** MP compartido inicial del ave (15 provisional, plan_logica.md). */
+  /** MP compartido inicial del ave (20, D-H; antes 15). */
   mpInicial: number;
   /** Rango del HP máx aleatorio al entrar en combate. */
   hpMaxRango: [number, number];
@@ -130,7 +130,7 @@ export interface ConfigBatalla {
   nivelCpu: number;
 }
 
-/** Valores base acordados en plan_logica.md. */
+/** Valores base de la configuración vigente (plan_motor_c.md). */
 export const CONFIG_BASE: ConfigBatalla = {
   modo: '3v3',
   mpInicial: 20,
