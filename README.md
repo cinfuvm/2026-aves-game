@@ -112,7 +112,7 @@ En la configuración del repositorio de GitHub:
 |---|---|---|
 | Audiovisual | Justin Vidaure | Ignacio Latorre (Líder de Gestión de Audiovisual), Vicente Araya, Sebastián Hugueño, Daniel Castro |
 | Lógica | José Luis | Mauricio Zuñiga, Marcelo Guzmán (Líder de Gestión de Lógica) |
-| Gestión y Documentación | Johan Cortés | José Araya |
+| Gestión y Documentación | Johan Cortés | José Araya, Maximiliano Mateo |
 
 ## Licencia y créditos
 
