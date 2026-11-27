@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  actualizarMusica,
   detenerPista,
   escribirBanco,
   iniciarPista,
@@ -80,9 +81,10 @@ describe('reproducción', () => {
     avanzar(api, ENCUENTRO_ENEMIGO.velocidad * 32);
     const alFinal = sfxs.length;
     expect(alFinal).toBeGreaterThan(0);
-    expect(pistaActual()).toBeNull();
+    expect(pistaActual()).toBe('encuentroEnemigo');
     avanzar(api, 200);
     expect(sfxs.length).toBe(alFinal);
+    expect(pistaActual()).toBe('encuentroEnemigo');
   });
 
   it('victoria-pelea también toca una sola vez y se detiene', () => {
@@ -92,7 +94,7 @@ describe('reproducción', () => {
     const alFinal = sfxs.length;
     avanzar(api, 200);
     expect(sfxs.length).toBe(alFinal);
-    expect(pistaActual()).toBeNull();
+    expect(pistaActual()).toBe('victoriaPelea');
   });
 
   it('melodia1 vuelve a empezar al terminar sus 128 pasos (bucle completo)', () => {
@@ -130,6 +132,34 @@ describe('reproducción', () => {
     avanzar(api, 50);
     expect(sfxs.length).toBe(antes);
     expect(pistaActual()).toBeNull();
+  });
+});
+
+describe('actualizarMusica (como lo llama main.ts en cada frame)', () => {
+  it('una pista de una vez no se reinicia mientras la pantalla no cambie', () => {
+    detenerPista(); // el estado del reproductor es global: empezar sin pista cargada
+    const { api, sfxs } = apiFalsa();
+    // Una pasada completa de encuentro-enemigo tiene estas llamadas de sfx.
+    const pasada = apiFalsa();
+    iniciarPista(pasada.api, ENCUENTRO_ENEMIGO);
+    avanzar(pasada.api, ENCUENTRO_ENEMIGO.velocidad * 40);
+    const unaVez = pasada.sfxs.length;
+    detenerPista(); // la pasada de referencia dejó la pista terminada en el estado global
+
+    // En la pantalla de selección, muchos frames seguidos.
+    for (let i = 0; i < 2000; i++) actualizarMusica(api, 'seleccion', null);
+    expect(sfxs.length).toBe(unaVez);
+  });
+
+  it('al cambiar de pantalla la pista nueva empieza desde el primer paso', () => {
+    detenerPista();
+    const { api, sfxs } = apiFalsa();
+    actualizarMusica(api, 'seleccion', null);
+    avanzar(api, 1);
+    const despuesDeUno = sfxs.length;
+    actualizarMusica(api, 'batalla', null);
+    expect(sfxs.length).toBeGreaterThan(despuesDeUno);
+    expect(pistaActual()).toBe('pelea');
   });
 });
 

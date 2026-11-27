@@ -54,14 +54,7 @@ import {
   FONDO_BLOQUE_TILES,
 } from "./src/data/sprites"
 import type { AveCombate, Equipo, Rng, TipoPPTLS } from "./src/battle/types"
-import {
-  detenerPista,
-  iniciarPista,
-  pistaActual,
-  pistaParaPantalla,
-  tickMusica,
-  type ApiSonido,
-} from "./src/audio/musica"
+import { actualizarMusica, type ApiSonido } from "./src/audio/musica"
 
 // Botones de TIC-80
 const ARRIBA = 0
@@ -127,19 +120,8 @@ function BOOT() {
 // Sonido de TIC-80 para el reproductor de música (src/audio/musica.ts).
 const SONIDO: ApiSonido = { poke, sfx }
 
-// Cambia la pista según la pantalla y avanza la música un tick.
-function actualizarMusica() {
-  const deseada = pistaParaPantalla(juego.pantalla, juego.resultado)
-  if (deseada) {
-    if (pistaActual() !== deseada.nombre) iniciarPista(SONIDO, deseada)
-  } else if (pistaActual() !== null) {
-    detenerPista()
-  }
-  tickMusica(SONIDO)
-}
-
 function TIC() {
-  actualizarMusica()
+  actualizarMusica(SONIDO, juego.pantalla, juego.resultado)
   leerEntrada()
   dibujar()
 }

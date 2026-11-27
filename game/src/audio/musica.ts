@@ -67,9 +67,12 @@ export function detenerPista(): void {
   actual = null;
 }
 
-/** Nombre de la pista que está sonando, o null. */
+/**
+ * Nombre de la última pista cargada, o null. Sigue devolviendo el nombre aunque
+ * la pista ya haya terminado (una pista de una vez no debe reiniciarse en cada frame).
+ */
 export function pistaActual(): string | null {
-  return actual && !terminada ? actual.nombre : null;
+  return actual ? actual.nombre : null;
 }
 
 /** Avanza la música un tick. Llamar una vez por frame. */
@@ -109,6 +112,25 @@ function avanzar(p: Pista): void {
       else paso = siguiente;
       break;
   }
+}
+
+/**
+ * Cambia la pista según la pantalla y avanza la música un tick. Llamar una vez por frame.
+ * Solo reinicia la pista cuando cambia el nombre deseado, así una pista de una vez
+ * no se repite mientras la pantalla siga igual.
+ */
+export function actualizarMusica(
+  api: ApiSonido,
+  pantalla: string,
+  resultado: 'jugador' | 'cpu' | 'empate' | null,
+): void {
+  const deseada = pistaParaPantalla(pantalla, resultado);
+  if (deseada) {
+    if (pistaActual() !== deseada.nombre) iniciarPista(api, deseada);
+  } else if (pistaActual() !== null) {
+    detenerPista();
+  }
+  tickMusica(api);
 }
 
 /** Pista que corresponde a cada pantalla (ver game/src/juego/flujo.ts). */
