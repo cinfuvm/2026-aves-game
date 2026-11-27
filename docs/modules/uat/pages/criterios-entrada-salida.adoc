@@ -1,0 +1,90 @@
+= Criterios de entrada y salida
+:toc: left
+:description: Condiciones para iniciar, suspender, reanudar y cerrar el UAT.
+
+== Criterios de entrada
+
+El UAT puede comenzar cuando se cumplen todas estas condiciones:
+
+* [ ] Existe una versión candidata desplegada y accesible en la URL de producción o preview.
+* [ ] La versión está identificada con commit o tag.
+* [ ] El workflow de build y despliegue terminó correctamente.
+* [ ] La pasada de humo está aprobada.
+* [ ] El ambiente, los navegadores y los dispositivos están disponibles.
+* [ ] Los datos de prueba y el modo de depuración están documentados y funcionando.
+* [ ] El equipo de QA conoce el PRD, las reglas de batalla y los casos UAT.
+* [ ] El registro de resultados y la plantilla de defectos están preparados.
+* [ ] El manual de usuario y la documentación están publicados.
+* [ ] No hay defectos bloqueantes conocidos sin mitigación.
+* [ ] Los assets de las diez aves están integrados.
+
+== Criterios de salida
+
+El UAT se cierra cuando:
+
+* [ ] El 100 % de los casos *Must* está ejecutado y aprobado.
+* [ ] Al menos el 90 % de los casos totales está aprobado o justificado.
+* [ ] No quedan defectos críticos (S1) ni altos (S2) abiertos.
+* [ ] Los defectos medios (S3) están corregidos o aceptados formalmente por el Product Owner.
+* [ ] La matriz de trazabilidad está completa y actualizada.
+* [ ] La evidencia de los casos ejecutados está adjunta.
+* [ ] La PWA y la documentación están publicadas y verificadas.
+* [ ] El acta de aceptación está firmada.
+* [ ] El release 1.0 está etiquetado y disponible.
+
+== Criterios de suspensión
+
+El UAT se suspende si:
+
+* El ambiente no está disponible o la build no carga.
+* Un defecto bloqueante impide ejecutar más del 30 % de los casos.
+* La versión desplegada no coincide con la versión evaluada.
+* Faltan assets, datos o documentación crítica.
+* El equipo de QA no puede acceder a la URL o a los dispositivos.
+* Una decisión de alcance pendiente impide validar un requisito *Must*.
+
+== Criterios de reanudación
+
+El UAT se reanuda cuando:
+
+* El defecto bloqueante está corregido y verificado.
+* El ambiente y la versión son estables y están identificados.
+* QA confirma que los casos bloqueados pueden ejecutarse.
+* Los datos o assets faltantes están disponibles.
+* El Product Owner resolvió la decisión de alcance pendiente.
+
+== Criterios de aceptación con observaciones
+
+Se puede aceptar con observaciones si:
+
+* Los defectos abiertos son de severidad baja (S4/S5) o medios (S3) con mitigación.
+* Existe un plan y fecha para corregirlos.
+* El Product Owner firma la aceptación condicional.
+* Los requisitos *Must* están completos.
+* La experiencia principal no está comprometida.
+
+== Roles en el cierre
+
+[cols="1,2",options="header"]
+|===
+| Rol | Responsabilidad en el cierre
+
+| Product Owner | Aprueba el resultado, acepta observaciones y firma el acta.
+| Líder de QA | Verifica criterios, consolida métricas y recomienda aceptación.
+| Líder técnico | Confirma correcciones, build y release.
+| DevOps | Confirma despliegue, URLs y disponibilidad.
+| Usuario de validación | Entrega retroalimentación de usabilidad.
+|===
+
+== Checklist de cierre
+
+* [ ] Ejecutar los casos *Must* y registrar resultados.
+* [ ] Revisar defectos abiertos y su severidad.
+* [ ] Confirmar que no hay defectos S1/S2.
+* [ ] Actualizar la matriz de trazabilidad.
+* [ ] Adjuntar evidencias.
+* [ ] Completar el resumen de métricas.
+* [ ] Redactar observaciones y condiciones.
+* [ ] Firmar el acta.
+* [ ] Etiquetar el release.
+* [ ] Publicar el tráiler y comunicar el lanzamiento.

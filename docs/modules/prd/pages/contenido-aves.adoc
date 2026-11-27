@@ -1,0 +1,373 @@
+= Contenido: aves y movimientos
+:toc: left
+:toclevels: 3
+:description: Las diez aves chilenas, sus descripciones, movimientos, tipos PPTLS, personalidad y recursos.
+
+== Criterios de contenido
+
+* Diez aves chilenas, cada una con imagen, sonido, descripción y ficha únicos.
+* Cada ave tiene cinco movimientos: cuatro activos y uno distintivo no usable en batalla.
+* Cada ave cubre los cinco tipos PPTLS en su repertorio, con exactamente un movimiento por tipo.
+* Los nombres de movimientos y las personalidades son originales y coherentes con la especie.
+* Las descripciones no copian texto de terceros y citan la fuente científica cuando corresponda.
+* Las imágenes y sonidos tienen licencia compatible con publicación pública.
+
+== Modelo de datos
+
+[source,json]
+----
+{
+  "id": "condor",
+  "nombre": "Cóndor",
+  "nombreCientifico": "Vultur gryphus",
+  "descripcion": "El ave voladora más grande del mundo...",
+  "imagen": "assets/birds/condor/portrait.png",
+  "sprite": "assets/birds/condor/sprite.png",
+  "sonido": "assets/birds/condor/sound.ogg",
+  "movimientos": [
+    {
+      "id": "planeo-pesado",
+      "nombre": "Planeo Pesado",
+      "tipo": "piedra",
+      "personalidad": "Solemne",
+      "descripcion": "Caída controlada que aplasta al rival.",
+      "activo": true
+    },
+    {
+      "id": "vuelo-sagrado",
+      "nombre": "Vuelo Sagrado",
+      "tipo": "spock",
+      "personalidad": "Majestuoso",
+      "descripcion": "Elevación ritual que desafía la gravedad.",
+      "activo": false,
+      "distintivo": true
+    }
+  ]
+}
+----
+
+== Resumen de las aves
+
+[cols="1,2,2,1",options="header"]
+|===
+| ID | Ave | Nombre científico | Tipo distintivo
+
+| condor | Cóndor | _Vultur gryphus_ | Spock
+| loica | Loica | _Leistes loyca_ | Lagarto
+| chincol | Chincol | _Zonotrichia capensis_ | Papel
+| diucon | Diucón | _Xolmis pyrope_ | Tijera
+| picaflor | Picaflor | _Sephanoides sephaniodes_ | Piedra
+| chercan | Chercán | _Troglodytes aedon_ | Spock
+| tiuque | Tiuque | _Milvago chimango_ | Lagarto
+| queltehue | Queltehue | _Vanellus chilensis_ | Papel
+| pinguino | Pingüino de Humboldt | _Spheniscus humboldti_ | Tijera
+| tucuquere | Tucúquere | _Bubo magellanicus_ | Spock
+|===
+
+== Fichas de aves
+
+=== Cóndor
+
+[cols="1,3"]
+|===
+| Nombre científico | _Vultur gryphus_
+| Descripción | El ave voladora más grande del mundo y símbolo de la cordillera de los Andes. Su planeo domina las alturas y su presencia impone respeto.
+| Imagen | Retrato y sprite con alas extendidas; paleta gris, negro y blanco.
+| Sonido | Graznido grave y resonante.
+| Personalidad | Solemne, majestuoso, paciente.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Planeo Pesado | Piedra | Solemne | Cae en picada y aplasta con su peso. | Sí
+| Corriente de Montaña | Papel | Sabio | Envuelve al rival con una corriente de aire andino. | Sí
+| Garra Cortante | Tijera | Impetuoso | Corte descendente con garras afiladas. | Sí
+| Carroñeo | Lagarto | Oportunista | Ataca desde el suelo cuando el rival baja la guardia. | Sí
+| Vuelo Sagrado | Spock | Majestuoso | Elevación ritual que desafía la gravedad. | No (distintivo)
+|===
+
+=== Loica
+
+[cols="1,3"]
+|===
+| Nombre científico | _Leistes loyca_
+| Descripción | Ave de praderas y campos abiertos, reconocible por su pecho rojo y su canto melodioso. Defiende su territorio con energía.
+| Imagen | Retrato con pecho rojo intenso; sprite posado sobre pasto.
+| Sonido | Trino claro y ascendente.
+| Personalidad | Vivaz, romántica, territorial.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Salto de Pradera | Piedra | Enérgico | Salto que impacta con el peso del cuerpo. | Sí
+| Nido Oculto | Papel | Protector | Envuelve al rival con pasto y ramas de su nido. | Sí
+| Picotazo | Tijera | Vivaz | Picotazo rápido y preciso. | Sí
+| Lengua de Néctar | Lagarto | Goloso | Lengua especializada que atrapa insectos y néctar. | No (distintivo)
+| Canto de Alba | Spock | Romántico | Trino que desconcierta y confunde al rival. | Sí
+|===
+
+=== Chincol
+
+[cols="1,3"]
+|===
+| Nombre científico | _Zonotrichia capensis_
+| Descripción | Pequeño paseriforme muy común en jardines, plazas y matorrales. De canto alegre y comportamiento curioso, parece estar en todas partes.
+| Imagen | Retrato con corona y collar característicos; sprite saltando.
+| Sonido | Trino corto y repetido.
+| Personalidad | Curioso, juguetón, tenaz.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Saltito | Piedra | Curioso | Saltito seco que golpea el suelo. | Sí
+| Plumaje Camuflado | Papel | Tímido | Se cubre con sus alas y confunde al rival. | No (distintivo)
+| Trino Veloz | Tijera | Juguetón | Ráfaga de trinos cortantes. | Sí
+| Picoteo Constante | Lagarto | Tenaz | Serie de picotazos menudos que desgastan. | Sí
+| Canto de Lluvia | Spock | Nostálgico | Canto que anuncia la lluvia y desconcierta. | Sí
+|===
+
+=== Diucón
+
+[cols="1,3"]
+|===
+| Nombre científico | _Xolmis pyrope_
+| Descripción | Ave de ojos rojos intensos que habita bosques y matorrales. Caza insectos en vuelo y se posa en ramas altas para vigilar.
+| Imagen | Retrato con ojos rojos destacados; sprite en vuelo rasante.
+| Sonido | Silbido agudo y breve.
+| Personalidad | Audaz, preciso, intenso.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Aterrizaje Firme | Piedra | Decidido | Impacto con las patas al posarse. | Sí
+| Abrigo de Plumas | Papel | Cauteloso | Se envuelve en sus plumas para resistir. | Sí
+| Vuelo Rasante | Tijera | Audaz | Pasa rozando al rival con las alas. | No (distintivo)
+| Caza de Insectos | Lagarto | Preciso | Captura insectos en pleno vuelo. | Sí
+| Mirada de Fuego | Spock | Intenso | Sus ojos rojos hipnotizan al rival. | Sí
+|===
+
+=== Picaflor
+
+[cols="1,3"]
+|===
+| Nombre científico | _Sephanoides sephaniodes_
+| Descripción | Joya alada de los bosques chilenos. Bate sus alas a gran velocidad, se suspende en el aire y se alimenta del néctar de las flores.
+| Imagen | Retrato iridiscente; sprite suspendido junto a una flor.
+| Sonido | Zumbido de alas y chirrido agudo.
+| Personalidad | Nervioso, grácil, certero.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Golpe de Aire | Piedra | Impulsivo | Corriente descendente generada por sus alas. | No (distintivo)
+| Suspensión | Papel | Grácil | Se mantiene inmóvil en el aire y confunde. | Sí
+| Aleteo Vertiginoso | Tijera | Nervioso | Aleteo que corta el aire. | Sí
+| Néctar Vivificador | Lagarto | Dulce | Absorbe energía de las flores. | Sí
+| Pico de Aguja | Spock | Certero | Pico fino que perfora con precisión. | Sí
+|===
+
+=== Chercán
+
+[cols="1,3"]
+|===
+| Nombre científico | _Troglodytes aedon_
+| Descripción | Ave inquieta y escurridiza de matorrales y jardines. Construye nidos de musgo y canta con una fuerza sorprendente para su tamaño.
+| Imagen | Retrato con cola erguida; sprite entre ramas.
+| Sonido | Trino rápido y vibrante.
+| Personalidad | Escurridizo, desafiante, hogareño.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Empuje Terrestre | Piedra | Terco | Empuja con las patas desde el suelo. | Sí
+| Nido de Musgo | Papel | Hogareño | Enreda al rival en musgo húmedo. | Sí
+| Cola Erguida | Tijera | Desafiante | Golpe con la cola levantada. | Sí
+| Salto de Matorral | Lagarto | Escurridizo | Se escabulle entre ramas y ataca. | Sí
+| Trino Escondido | Spock | Misterioso | Canto que parece venir de todas partes. | No (distintivo)
+|===
+
+=== Tiuque
+
+[cols="1,3"]
+|===
+| Nombre científico | _Milvago chimango_
+| Descripción | Rapaz oportunista de campos y ciudades. Planea en círculos, observa con paciencia y se alimenta de carroña y pequeños animales.
+| Imagen | Retrato con pico ganchudo; sprite planeando en círculos.
+| Sonido | Graznido áspero y repetido.
+| Personalidad | Calculador, oportunista, vigilante.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Garra de Rapaz | Piedra | Feroz | Garra que sujeta y golpea. | Sí
+| Ala Protectora | Papel | Estratégico | Envuelve al rival con sus alas. | Sí
+| Vuelo de Acecho | Tijera | Calculador | Planeo silencioso y ataque cortante. | Sí
+| Carroña Compartida | Lagarto | Oportunista | Distrae con restos y ataca por sorpresa. | No (distintivo)
+| Planeo Circular | Spock | Vigilante | Círculos en el cielo que marean al rival. | Sí
+|===
+
+=== Queltehue
+
+[cols="1,3"]
+|===
+| Nombre científico | _Vanellus chilensis_
+| Descripción | Centinela de humedales y praderas. Defiende su nido con vuelos en picada y alarmas ruidosas que alertan a todo el entorno.
+| Imagen | Retrato con cresta y espolones; sprite en picada.
+| Sonido | Alarma estridente y repetida.
+| Personalidad | Valiente, territorial, protector.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Patada de Suelo | Piedra | Territorial | Patada firme contra el invasor. | Sí
+| Nido en el Suelo | Papel | Protector | Atrae al rival hacia su nido y lo confunde. | No (distintivo)
+| Picado Defensivo | Tijera | Valiente | Descenso en picada con el pico por delante. | Sí
+| Lengua de Humedal | Lagarto | Oportunista | Captura presas en el barro. | Sí
+| Alarma Ensordecedora | Spock | Alarmista | Grito que alerta y desconcierta a todos. | Sí
+|===
+
+=== Pingüino de Humboldt
+
+[cols="1,3"]
+|===
+| Nombre científico | _Spheniscus humboldti_
+| Descripción | Ave marina del Pacífico sur. Nada con agilidad, se sumerge en busca de peces y anida en acantilados e islas de la costa chilena.
+| Imagen | Retrato con antifaz y pico robusto; sprite nadando.
+| Sonido | Graznido nasal y corto.
+| Personalidad | Veloz, resistente, temerario.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Embestida | Piedra | Testarudo | Impacto frontal con el cuerpo. | Sí
+| Plumaje Impermeable | Papel | Resistente | Se cubre con plumas impermeables. | Sí
+| Nado Torpedo | Tijera | Veloz | Se lanza como un torpedo. | No (distintivo)
+| Buceo Profundo | Lagarto | Paciente | Desaparece y ataca desde abajo. | Sí
+| Salto de Acantilado | Spock | Temerario | Salto que sorprende desde las rocas. | Sí
+|===
+
+=== Tucúquere
+
+[cols="1,3"]
+|===
+| Nombre científico | _Bubo magellanicus_
+| Descripción | Búho de la noche austral. De vuelo silencioso y mirada penetrante, habita bosques y quebradas y caza cuando cae la oscuridad.
+| Imagen | Retrato con penachos y ojos amarillos; sprite posado en una rama.
+| Sonido | Ululato grave y pausado.
+| Personalidad | Sigiloso, sabio, misterioso.
+|===
+
+[cols="2,1,2,3,1",options="header"]
+|===
+| Movimiento | Tipo | Personalidad | Efecto narrativo | Activo
+
+| Impacto de Rama | Piedra | Contundente | Golpe con una rama o el cuerpo. | Sí
+| Vuelo Fantasma | Papel | Misterioso | Se envuelve en la noche y desaparece. | Sí
+| Garra Silenciosa | Tijera | Sigiloso | Ataque nocturno con garras. | Sí
+| Presa Nocturna | Lagarto | Cazador | Captura presas en la oscuridad. | Sí
+| Mirada Nocturna | Spock | Sabio | Mirada que paraliza al rival. | No (distintivo)
+|===
+
+== Cobertura de tipos por ave
+
+[cols="1,1,1,1,1,1",options="header"]
+|===
+| Ave | Piedra | Papel | Tijera | Lagarto | Spock
+
+| Cóndor | Activo | Activo | Activo | Activo | Distintivo
+| Loica | Activo | Activo | Activo | Distintivo | Activo
+| Chincol | Activo | Distintivo | Activo | Activo | Activo
+| Diucón | Activo | Activo | Distintivo | Activo | Activo
+| Picaflor | Distintivo | Activo | Activo | Activo | Activo
+| Chercán | Activo | Activo | Activo | Activo | Distintivo
+| Tiuque | Activo | Activo | Activo | Distintivo | Activo
+| Queltehue | Activo | Distintivo | Activo | Activo | Activo
+| Pingüino de Humboldt | Activo | Activo | Distintivo | Activo | Activo
+| Tucúquere | Activo | Activo | Activo | Activo | Distintivo
+|===
+
+== Recursos requeridos
+
+=== Gráficos
+
+* Retrato de cada ave para la ficha y la selección (10).
+* Sprite de batalla de cada ave (10).
+* Íconos de los cinco tipos PPTLS (5), reutilizables.
+* Fondo de inicio, selección, batalla y pantallas de resultado.
+* Efectos visuales de ataque, daño, debilitamiento y relevo.
+
+=== Audio
+
+[cols="2,2,2",options="header"]
+|===
+| Recurso | Cantidad | Uso
+
+| Música 1 | 1 | Pantalla de inicio.
+| Música 2 | 1 | Selección de equipo.
+| Música 3 | 1 | Batalla.
+| Música 4 | 1 | Pantalla de ganador.
+| Música 5 | 1 | Pantalla de perdedor.
+| Sonido de ave | 10 | Ficha y entrada a combate.
+| Efectos de interfaz | 3–5 | Seleccionar, confirmar, cancelar.
+| Efectos de batalla | 4–6 | Atacar, dañar, debilitar, rendirse.
+|===
+
+=== Convención de nombres
+
+[source,text]
+----
+assets/
+├── birds/
+│   ├── condor/
+│   │   ├── portrait.png
+│   │   ├── sprite.png
+│   │   ├── sound.ogg
+│   │   └── data.json
+│   └── ...
+├── icons/
+│   ├── piedra.png
+│   ├── papel.png
+│   ├── tijera.png
+│   ├── lagarto.png
+│   └── spock.png
+├── music/
+│   ├── 01-inicio.ogg
+│   ├── 02-seleccion.ogg
+│   ├── 03-batalla.ogg
+│   ├── 04-ganador.ogg
+│   └── 05-perdedor.ogg
+└── sfx/
+    ├── seleccionar.ogg
+    ├── atacar.ogg
+    └── debilitar.ogg
+----
+
+== Checklist de contenido
+
+* [ ] Las diez aves tienen retrato, sprite, sonido y descripción.
+* [ ] Cada ave tiene cinco movimientos con nombre y personalidad.
+* [ ] Cada ave tiene exactamente un movimiento por tipo PPTLS.
+* [ ] Cada ave tiene cuatro movimientos activos y uno distintivo.
+* [ ] Los nombres de movimientos no se repiten entre aves.
+* [ ] Las descripciones son originales y citan fuentes.
+* [ ] Las imágenes y sonidos tienen licencia y están en `CREDITS.md`.
+* [ ] Los archivos respetan la convención de nombres.
+* [ ] El contenido se revisó con el equipo de arte y audio.

@@ -1,0 +1,150 @@
+= Ambiente y datos de prueba
+:toc: left
+:description: URLs, versiones, matriz de dispositivos, datos deterministas y preparación del ambiente.
+
+== Ambiente de ejecución
+
+[cols="1,2,2",options="header"]
+|===
+| Ambiente | URL / referencia | Uso
+
+| Local | `http://localhost:8080` | Desarrollo y pruebas rápidas.
+| Preview | URL de GitHub Pages de la rama o artefacto | Revisión previa a producción.
+| Producción | URL pública de GitHub Pages | UAT final y entrega.
+| Documentación | URL de Antora en GitHub Pages | Validación de PRD y UAT.
+| Manual | URL del manual web | Validación de contenido y enlaces.
+| Tráiler | URL de YouTube | Validación del entregable audiovisual.
+|===
+
+[NOTE]
+====
+Las URLs definitivas se completan al configurar GitHub Pages. El equipo debe registrar la URL y el commit/tag evaluado antes de cada pasada de UAT.
+====
+
+== Versiones
+
+[cols="1,2",options="header"]
+|===
+| Elemento | Versión / referencia
+
+| Juego | Tag o commit evaluado (registrar en el acta).
+| PWA | Versión de caché del service worker.
+| Documentación | Build de Antora del mismo tag.
+| Manual | Build del mismo tag.
+| Navegadores | Últimas dos versiones estables al momento de la prueba.
+| TIC-80 | Versión usada para exportar el cartucho.
+|===
+
+== Matriz de dispositivos y navegadores
+
+[cols="1,1,2,1",options="header"]
+|===
+| Plataforma | Navegador | Resolución / dispositivo | Prioridad
+
+| Escritorio | Chrome | 1920 × 1080 | Alta
+| Escritorio | Firefox | 1366 × 768 | Alta
+| Escritorio | Edge | 1920 × 1080 | Media
+| Escritorio | Safari (macOS) | 1440 × 900 | Alta
+| Android | Chrome | 360 × 800 (gama media) | Alta
+| Android | Firefox | 360 × 800 | Media
+| iOS | Safari | iPhone 12/13/14 | Alta
+| iOS | Chrome | iPhone 12/13/14 | Media
+| Tablet | Chrome/Safari | 768 × 1024 | Media
+| PWA instalada | Chrome Android | Pantalla completa | Alta
+| PWA instalada | Safari iOS | Pantalla completa | Alta
+|===
+
+== Preparación del ambiente
+
+1. Confirmar que el workflow de GitHub Actions terminó correctamente.
+2. Verificar que la URL publicada corresponde al tag evaluado.
+3. Limpiar caché y datos del sitio antes de la pasada de humo.
+4. Desregistrar el service worker si se detecta una versión antigua.
+5. Activar la consola del navegador y dejar visible el panel de red.
+6. Preparar la hoja de registro y la carpeta de evidencias.
+7. Confirmar el estado de silencio del equipo y el volumen.
+8. Tener a mano los datos de prueba y el modo de depuración.
+
+== Datos de prueba deterministas
+
+El modo de depuración permite fijar valores para que los casos sean reproducibles:
+
+[source,text]
+----
+?debug=1&hpJugador=20&hpCpu=50&pp=1&dano=0
+?debug=1&hpJugador=35&hpCpu=35&pp=5&dano=18&cpuMove=papel
+?debug=1&hpJugador=50&hpCpu=20&pp=3&dano=26&cpuMove=piedra
+----
+
+[cols="1,2,2",options="header"]
+|===
+| Parámetro | Valores | Efecto
+
+| `debug` | `1` | Activa el modo de depuración.
+| `hpJugador` | 20–50 | Fija el HP máximo del jugador.
+| `hpCpu` | 20–50 | Fija el HP máximo del CPU.
+| `pp` | 1–5 | Fija el PP de todos los movimientos.
+| `dano` | 0–50 | Fuerza el daño del próximo turno.
+| `cpuMove` | `piedra`, `papel`, `tijera`, `lagarto`, `spock` | Fuerza el tipo del movimiento del CPU en el próximo turno.
+| `seed` | entero | Fija la semilla de aleatoriedad para replicar una secuencia.
+|===
+
+[IMPORTANT]
+====
+El modo de depuración es solo para QA. Debe ignorarse en la experiencia normal y no mostrarse en la interfaz. Se recomienda que solo se active con el parámetro explícito y que no altere la lógica de producción.
+====
+
+== Conjuntos de datos
+
+=== Equipo A — Cobertura de tipos
+
+* Cóndor (sin Spock activo).
+* Loica (sin Lagarto activo).
+* Chincol (sin Papel activo).
+* Diucón (sin Tijera activo).
+
+=== Equipo B — Aves repetidas por tipo
+
+* Cóndor.
+* Chercán.
+* Tucúquere.
+* Chincol.
+
+=== Equipo C — Aves con distintivo Spock
+
+* Cóndor.
+* Chercán.
+* Tucúquere.
+* Queltehue.
+
+=== Datos límite
+
+* HP 20 y PP 1: batalla corta, propensa a rendición por PP.
+* HP 50 y PP 5: batalla larga, con más turnos.
+* Daño 0: verifica el mensaje *Sin efecto*.
+* Daño 50 % exacto: verifica que no se clasifique como *Muy efectivo*.
+* Daño 50 % + 1: verifica *Muy efectivo*.
+* Daño igual al HP máximo: verifica debilitamiento inmediato.
+
+== Gestión del estado
+
+* No hay cuentas ni persistencia; recargar la página reinicia el juego.
+* El service worker puede conservar una versión anterior; verificar la versión de caché.
+* El audio se reinicia tras recargar; la primera interacción es necesaria.
+* El estado de silencio se conserva durante la sesión, no entre recargas (salvo que se implemente almacenamiento local).
+* Si se agrega almacenamiento local, debe existir una forma de limpiarlo desde el navegador.
+
+== Limitaciones conocidas del ambiente
+
+* Los emuladores móviles no reproducen con exactitud el rendimiento real.
+* Las políticas de audio varían entre navegadores.
+* La instalación PWA no está disponible en todos los contextos (por ejemplo, algunos navegadores de escritorio o ventanas privadas).
+* GitHub Pages puede tardar unos minutos en reflejar un despliegue.
+* La caché del navegador puede ocultar una versión nueva; se debe forzar recarga.
+
+== Registro de evidencia
+
+* Nombre sugerido: `UAT-<ID>_<fecha>_<resultado>.<png|mp4|txt>`.
+* Incluir el ID del caso, la fecha, el navegador y la versión evaluada.
+* Guardar las evidencias en una carpeta compartida o adjuntarlas al registro.
+* No incluir datos personales en las capturas.

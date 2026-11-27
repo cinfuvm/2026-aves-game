@@ -1,0 +1,184 @@
+= Registro de resultados
+:toc: left
+:description: Plantilla de registro de ejecución, resumen de métricas y acta de aceptación.
+
+== Instrucciones
+
+1. Copiar las tablas de este documento a la hoja de cálculo o al tablero del equipo.
+2. Registrar un resultado por caso: Aprobado, Fallido, Bloqueado o No aplica.
+3. Adjuntar la evidencia con el formato `UAT-<ID>_<fecha>_<resultado>.<ext>`.
+4. Si el caso falla, crear un defecto y referenciar su ID.
+5. Actualizar la xref:uat:matriz-trazabilidad.adoc[matriz de trazabilidad].
+6. Completar el resumen de métricas y el acta al final.
+
+== Resumen por módulo
+
+[cols="2,1,1,1,1,1,1",options="header"]
+|===
+| Módulo | Total | Ejecutados | Aprobados | Fallidos | Bloqueados | % Aprobado
+
+| Inicio y selección | 13 | | | | | 
+| Batalla | 23 | | | | | 
+| Resultados y audio | 13 | | | | | 
+| PWA y rendimiento | 10 | | | | | 
+| Documentación y repositorio | 9 | | | | | 
+| **Total** | **68** | | | | | 
+|===
+
+== Registro de casos
+
+[cols="1,2,1,1,1,1,2",options="header"]
+|===
+| ID | Caso | Resultado | Evidencia | Defecto | Ejecutor | Fecha
+
+| UAT-INI-001 | Carga de pantalla de inicio | | | | | 
+| UAT-INI-002 | Música 1 y control de audio | | | | | 
+| UAT-INI-003 | Enlace al manual y comienzo | | | | | 
+| UAT-SEL-001 | Catálogo de diez aves | | | | | 
+| UAT-SEL-002 | Ficha de ave completa | | | | | 
+| UAT-SEL-003 | Sonido único de ave | | | | | 
+| UAT-SEL-004 | Selección de cuatro y orden | | | | | 
+| UAT-SEL-005 | Bloqueo de quinta ave | | | | | 
+| UAT-SEL-006 | Deselección | | | | | 
+| UAT-SEL-007 | Bloqueo con menos de cuatro | | | | | 
+| UAT-SEL-008 | Confirmación e inicio de batalla | | | | | 
+| UAT-SEL-009 | Música 2 y silencio | | | | | 
+| UAT-SEL-010 | Responsive y touch en selección | | | | | 
+| UAT-BAT-001 | HP inicial 20–50 | | | | | 
+| UAT-BAT-002 | PP inicial 1–5 | | | | | 
+| UAT-BAT-003 | HUD completo | | | | | 
+| UAT-BAT-004 | Ejecución inmediata del turno | | | | | 
+| UAT-BAT-005 | PPTLS: gana el jugador | | | | | 
+| UAT-BAT-006 | PPTLS: gana el CPU | | | | | 
+| UAT-BAT-007 | PPTLS: empate | | | | | 
+| UAT-BAT-008 | Clasificación de daño | | | | | 
+| UAT-BAT-009 | PP consumido y deshabilitado | | | | | 
+| UAT-BAT-010 | HP 0 y relevo | | | | | 
+| UAT-BAT-011 | PP 0 y rendición automática | | | | | 
+| UAT-BAT-012 | Rendición manual | | | | | 
+| UAT-BAT-013 | Rendición de la última ave | | | | | 
+| UAT-BAT-014 | CPU elige movimientos válidos | | | | | 
+| UAT-BAT-015 | CPU sin PP | | | | | 
+| UAT-BAT-016 | Historial de turnos | | | | | 
+| UAT-BAT-017 | Música de batalla | | | | | 
+| UAT-BAT-018 | Pantalla de ganador | | | | | 
+| UAT-BAT-019 | Pantalla de perdedor | | | | | 
+| UAT-BAT-020 | Empate técnico | | | | | 
+| UAT-BAT-021 | HP nunca negativo | | | | | 
+| UAT-BAT-022 | Bloqueo durante la animación | | | | | 
+| UAT-BAT-023 | Matriz PPTLS completa (25 combinaciones) | | | | | 
+| UAT-RES-001 | Pantalla de ganador con resumen | | | | | 
+| UAT-RES-002 | Pantalla de perdedor con resumen | | | | | 
+| UAT-RES-003 | Jugar de nuevo | | | | | 
+| UAT-RES-004 | Volver al inicio | | | | | 
+| UAT-AUD-001 | Música por pantalla | | | | | 
+| UAT-AUD-002 | Silencio persistente | | | | | 
+| UAT-AUD-003 | Sonidos únicos de aves | | | | | 
+| UAT-AUD-004 | Efectos de batalla | | | | | 
+| UAT-AUD-005 | Transiciones de música | | | | | 
+| UAT-ACC-001 | Navegación por teclado | | | | | 
+| UAT-ACC-002 | Contraste y tipos no solo por color | | | | | 
+| UAT-ACC-003 | Alternativa visual a avisos sonoros | | | | | 
+| UAT-USA-001 | Sesión de usabilidad | | | | | 
+| UAT-PWA-001 | Manifiesto e instalación | | | | | 
+| UAT-PWA-002 | Offline con service worker | | | | | 
+| UAT-PWA-003 | PWA instalada offline | | | | | 
+| UAT-PWA-004 | Despliegue en GitHub Pages | | | | | 
+| UAT-PWA-005 | Falla visible del workflow | | | | | 
+| UAT-PWA-006 | Actualización de versión | | | | | 
+| UAT-PERF-001 | Lighthouse | | | | | 
+| UAT-PERF-002 | Rendimiento en móvil | | | | | 
+| UAT-PERF-003 | Compatibilidad de navegadores | | | | | 
+| UAT-PERF-004 | Tamaño de recursos | | | | | 
+| UAT-DOC-001 | Manual accesible y completo | | | | | 
+| UAT-DOC-002 | Contenido del manual coincide | | | | | 
+| UAT-DOC-003 | Documentación Antora publicada | | | | | 
+| UAT-DOC-004 | Build local de Antora | | | | | 
+| UAT-DOC-005 | Tráiler publicado | | | | | 
+| UAT-DOC-006 | Créditos y licencias | | | | | 
+| UAT-REP-001 | Clonar y construir | | | | | 
+| UAT-REP-002 | Workflows y permisos | | | | | 
+| UAT-REP-003 | Sin secretos ni datos personales | | | | | 
+|===
+
+== Resumen de defectos
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Severidad | Abiertos | Corregidos | Verificados | Aceptados
+
+| S1 | | | | 
+| S2 | | | | 
+| S3 | | | | 
+| S4 | | | | 
+| S5 | | | | 
+| **Total** | | | | 
+|===
+
+== Métricas finales
+
+[cols="2,1,2",options="header"]
+|===
+| Métrica | Valor | Meta
+
+| Casos totales | | 68
+| Casos ejecutados | | 68
+| Casos aprobados | | ≥ 90 %
+| Casos *Must* aprobados | | 100 %
+| Casos fallidos | | 0 abiertos
+| Casos bloqueados | | 0
+| Defectos S1 abiertos | | 0
+| Defectos S2 abiertos | | 0
+| Defectos S3 abiertos | | 0 o aceptados
+| Cobertura de requisitos *Must* | | 100 %
+| PWA Lighthouse | | Aprobado
+|===
+
+== Observaciones
+
+[cols="1,4"]
+|===
+| Observación | Detalle
+
+| 1 | 
+| 2 | 
+| 3 | 
+| 4 | 
+| 5 | 
+|===
+
+== Acta de aceptación
+
+[cols="1,2"]
+|===
+| Proyecto | Aves de Chile: Duelo Alado
+| Versión evaluada | 
+| Commit / tag | 
+| Fecha de ejecución | 
+| Ambiente | 
+| Navegadores / dispositivos | 
+| Casos ejecutados | 
+| Casos aprobados | 
+| Casos fallidos | 
+| Defectos abiertos | 
+| Resultado | Aprobado / Aprobado con observaciones / Rechazado
+| Condiciones | 
+| Riesgos residuales | 
+| Product Owner | Nombre y firma: ______________________
+| Líder de QA | Nombre y firma: ______________________
+| Líder técnico | Nombre y firma: ______________________
+| DevOps | Nombre y firma: ______________________
+| Fecha de aprobación | 
+|===
+
+== Declaración de aceptación
+
+Con la firma de este acta, el Product Owner declara que el producto **Aves de Chile: Duelo Alado** en la versión evaluada cumple los criterios de aceptación definidos en el PRD y el UAT, y autoriza su publicación como versión 1.0, con las observaciones y condiciones registradas.
+
+== Anexos
+
+* Evidencias de ejecución (capturas, videos, logs).
+* Reporte de Lighthouse.
+* Registro de defectos.
+* Matriz de trazabilidad actualizada.
+* Enlaces a la PWA, manual, documentación y tráiler.

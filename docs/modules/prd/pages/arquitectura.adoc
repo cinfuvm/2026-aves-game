@@ -1,0 +1,321 @@
+= Arquitectura técnica
+:toc: left
+:toclevels: 3
+:description: Arquitectura del juego TIC-80, PWA, pipeline CI/CD, estructura del repositorio y estrategia de pruebas.
+
+== Vista general
+
+El producto se compone de cuatro capas:
+
+. **Juego TIC-80:** cartucho con la lógica, escenas, gráficos y audio, programado en JavaScript.
+. **Exportación HTML:** el cartucho se exporta a un HTML autónomo que ejecuta el runtime de TIC-80 en el navegador.
+. **PWA:** una carcasa web con manifiesto, service worker, íconos y acceso al manual; contiene el juego exportado.
+. **Publicación:** GitHub Actions construye los artefactos y los publica en GitHub Pages.
+
+[source,text]
+----
+┌──────────────────────────────────────────────────────────────┐
+│                        Navegador / PWA                       │
+│                                                              │
+│  index.html ──► manifiesto + service worker + shell          │
+│       │                                                      │
+│       ├──► Juego exportado de TIC-80 (canvas/runtime)        │
+│       ├──► Manual de usuario (sitio estático)                │
+│       └──► Enlaces a documentación y tráiler                 │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ HTTPS
+┌──────────────────────────▼───────────────────────────────────┐
+│                       GitHub Pages                           │
+│  /            → PWA del juego                                │
+│  /manual/     → Manual de usuario                            │
+│  /docs/       → Documentación Antora (PRD + UAT)             │
+└──────────────────────────▲───────────────────────────────────┘
+                           │ deploy
+┌──────────────────────────┴───────────────────────────────────┐
+│                    GitHub Actions (CI/CD)                    │
+│  lint → test → build cart → export HTML → build PWA/docs     │
+└──────────────────────────────────────────────────────────────┘
+----
+
+== Componentes
+
+[cols="1,2,2",options="header"]
+|===
+| Componente | Responsabilidad | Tecnología
+
+| Juego | Escenas, batalla, selección, audio, entrada. | TIC-80 + JavaScript.
+| Datos de aves | Fichas, movimientos, tipos, descripciones y assets. | Archivos JS/JSON + recursos.
+| Motor de batalla | Reglas PPTLS, daño, PP, rendición, relevo y fin de partida. | JavaScript puro y testeable.
+| PWA shell | Carga, instalación, caché, offline y enlaces. | HTML, CSS, JS, manifiesto, service worker.
+| Manual web | Instrucciones, reglas, aves y FAQ. | Sitio estático (HTML/CSS o generador simple).
+| Documentación | PRD y UAT. | Antora + AsciiDoc.
+| CI/CD | Build, tests, exportación y despliegue. | GitHub Actions, GitHub Pages.
+| Tráiler | Video promocional. | Producción audiovisual + YouTube.
+|===
+
+== Estructura propuesta del repositorio
+
+[source,text]
+----
+.
+├── game/                     # Proyecto TIC-80
+│   ├── src/
+│   │   ├── main.js           # Punto de entrada y bucle TIC()
+│   │   ├── scenes/
+│   │   │   ├── title.js
+│   │   │   ├── team-select.js
+│   │   │   ├── battle.js
+│   │   │   └── result.js
+│   │   ├── battle/
+│   │   │   ├── pptls.js
+│   │   │   ├── damage.js
+│   │   │   ├── turn.js
+│   │   │   └── state.js
+│   │   ├── data/
+│   │   │   └── birds.js
+│   │   ├── audio/
+│   │   │   └── audio.js
+│   │   └── ui/
+│   │       └── widgets.js
+│   ├── assets/               # Sprites, mapa, música y sfx del cartucho
+│   ├── tests/                # Pruebas unitarias de la lógica
+│   └── build/                # Cartucho y HTML exportado (ignorado por git)
+├── pwa/
+│   ├── index.html            # Shell de la PWA
+│   ├── manifest.webmanifest
+│   ├── sw.js
+│   ├── icons/
+│   └── game.html             # Juego exportado por TIC-80
+├── manual/                   # Manual de usuario web
+├── docs/                     # Documentación Antora (PRD + UAT)
+├── .github/workflows/        # CI/CD de juego y documentación
+├── CREDITS.md
+├── README.md
+└── package.json
+----
+
+== Máquina de estados de pantallas
+
+[source,text]
+----
+BOOT
+  │
+  ▼
+TITLE ──────────────► TEAM_SELECT ──────────► BATTLE
+  ▲                        │                    │
+  │                        │                    ├──► WIN
+  │                        │                    ├──► LOSE
+  │                        │                    └──► DRAW
+  │                        │                         │
+  └────────────────────────┴─────────────────────────┘
+                    (volver al inicio / jugar de nuevo)
+----
+
+=== Estados
+
+[cols="1,2,2",options="header"]
+|===
+| Estado | Responsabilidad | Música
+
+| `BOOT` | Inicialización de datos, audio y recursos. | Silencio.
+| `TITLE` | Pantalla de título, botón comenzar, acceso al manual y audio. | Música 1.
+| `TEAM_SELECT` | Catálogo, ficha, selección de cuatro aves y confirmación. | Música 2.
+| `BATTLE` | Turnos, HUD, historial, rendición y relevo. | Música 3.
+| `WIN` | Resultado victorioso, resumen y opciones. | Música 4.
+| `LOSE` | Resultado derrota, resumen y opciones. | Música 5.
+| `DRAW` | Resultado de empate técnico y revancha. | Música 5 o variante.
+|===
+
+La transición entre estados debe detener la música anterior antes de iniciar la siguiente. El estado de silencio del usuario se conserva.
+
+== Motor de batalla
+
+La lógica de batalla debe ser independiente de la interfaz y de TIC-80 para permitir pruebas automatizadas.
+
+[cols="2,3",options="header"]
+|===
+| Módulo | Funciones principales
+
+| `pptls.js` | `compararPPTLS(tipoA, tipoB)` → `'jugador'`, `'cpu'` o `'empate'`; `mensajePPTLS(tipoA, tipoB)`.
+| `damage.js` | `calcularDano(hpMaxRival, rng)`; `clasificarEfectividad(dano, hpMaxRival)`.
+| `turn.js` | `resolverTurno(estado, movJugador, movCpu, rng)`; consumo de PP; aplicación de daño; historial.
+| `state.js` | `crearEquipo(aves)`, `inicializarHP`, `inicializarPP`, `siguienteAve`, `evaluarFin`.
+| `battle.js` | Orquestación de la escena: entrada, animaciones, HUD y transiciones.
+|===
+
+=== Inyección de aleatoriedad
+
+Para facilitar pruebas y el modo de depuración, las funciones reciben una fuente de aleatoriedad (`rng`) inyectable. En producción se usa `Math.random`; en pruebas se usa una secuencia determinista.
+
+[source,javascript]
+----
+function crearRng(seed) {
+  let estado = seed >>> 0;
+  return function rng() {
+    estado = (estado * 1664525 + 1013904223) >>> 0;
+    return estado / 0x100000000;
+  };
+}
+----
+
+=== Flujo de datos
+
+[source,text]
+----
+birds.js ──► TEAM_SELECT ──► equipoJugador (4 aves)
+                                  │
+                                  ▼
+                          inicializarBatalla()
+                                  │
+                                  ▼
+                         estadoBatalla {
+                           jugador: [aves con HP/PP],
+                           cpu:     [aves con HP/PP],
+                           turno, historial, resultado
+                         }
+                                  │
+             ┌────────────────────┴────────────────────┐
+             ▼                                         ▼
+     resolverTurno()                           evaluarFin()
+             │                                         │
+             ▼                                         ▼
+     actualizar HUD/historial                  WIN / LOSE / DRAW
+----
+
+== Datos y assets
+
+* Los datos de las aves viven en `game/src/data/birds.js` y se empaquetan en el cartucho.
+* Los assets se referencian por ID para evitar rutas frágiles en GitHub Pages.
+* Las imágenes se diseñan con la paleta de TIC-80 y se optimizan para sprites pequeños.
+* El audio se carga en los bancos de sonido y música de TIC-80.
+* La PWA mantiene una copia de los recursos estáticos cacheados por el service worker.
+* `CREDITS.md` registra autoría, licencia y fuente de cada recurso.
+
+== Audio
+
+* Cinco pistas de música, una por pantalla (con variante para empate si aplica).
+* Un sonido único por ave, reproducible en la ficha y al entrar a combate.
+* Efectos de sonido para selección, confirmación, ataque, daño, debilitamiento y rendición.
+* El audio se inicializa después de la primera interacción del usuario.
+* El control de silencio se aplica a música y efectos, y se conserva durante la sesión.
+* Las transiciones de pantalla detienen la pista anterior antes de iniciar la nueva.
+
+== PWA
+
+=== Manifiesto
+
+[source,json]
+----
+{
+  "name": "Aves de Chile: Duelo Alado",
+  "short_name": "Duelo Alado",
+  "description": "Batallas por turnos con aves de Chile.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+----
+
+=== Service worker
+
+* Estrategia *precache* para el shell, el juego exportado, el manifiesto, los íconos y los assets críticos.
+* Estrategia *cache-first* para recursos estáticos y *network-first* para el documento principal, con fallback a caché.
+* Versión de caché basada en el hash del build o en la versión del release.
+* Actualización: al detectar una nueva versión, se avisa al usuario y se activa al recargar.
+* El alcance del service worker debe funcionar tanto en la raíz del dominio como en un subdirectorio de GitHub Pages.
+
+=== Rutas en GitHub Pages
+
+* Usar rutas relativas (`./`) en el manifiesto, el service worker y los enlaces internos.
+* Evitar rutas absolutas que rompan el despliegue en `usuario.github.io/repositorio/`.
+* Probar el build en un subdirectorio, no solo en la raíz.
+
+== CI/CD
+
+=== Pipeline del juego y la PWA
+
+[source,text]
+----
+push a main
+   │
+   ├─► checkout
+   ├─► setup node
+   ├─► npm ci
+   ├─► lint
+   ├─► test (unitarios de batalla)
+   ├─► build del cartucho TIC-80
+   ├─► export HTML
+   ├─► copiar a pwa/game.html
+   ├─► build del manual
+   └─► deploy a GitHub Pages
+----
+
+=== Consideraciones para TIC-80 en CI
+
+* Descargar una versión estable del binario de TIC-80 para Linux o usar una imagen de contenedor fijada por versión.
+* Ejecutar la exportación en modo CLI, por ejemplo: `tic80 --cli --export html game/build/juego.tic`.
+* Versionar el binario o la imagen para que el build sea reproducible.
+* Si la exportación no es posible en CI, definir un paso manual documentado y validar el artefacto antes del despliegue.
+* Guardar el HTML exportado como artefacto del workflow para trazabilidad.
+
+=== Pipeline de documentación
+
+* Workflow independiente `.github/workflows/docs.yml`.
+* Construye Antora y publica el sitio en GitHub Pages.
+* Se ejecuta en push a `main` y de forma manual.
+
+== Ambientes
+
+[cols="1,2,2",options="header"]
+|===
+| Ambiente | Propósito | URL
+
+| Local | Desarrollo y pruebas rápidas. | `http://localhost:8080`
+| Preview | Revisión de ramas o pull requests. | URL temporal de Pages o artefacto.
+| Producción | Entrega pública y UAT final. | GitHub Pages.
+|===
+
+== Estrategia de pruebas
+
+[cols="1,2,2",options="header"]
+|===
+| Nivel | Alcance | Herramienta
+
+| Unitario | PPTLS, daño, PP, fin de batalla, inicialización. | Runner de JavaScript (Vitest/Jest o similar).
+| Integración | Flujo de selección → batalla → resultado. | Pruebas de lógica + pruebas manuales.
+| UAT | Pantallas, audio, PWA, responsive, accesibilidad. | Casos documentados en el módulo UAT.
+| Regresión | Funcionalidad existente tras cambios. | Suite automatizada + checklist manual.
+| Humo | Build recién desplegado. | Checklist corto en producción.
+|===
+
+== Decisiones de arquitectura
+
+[cols="1,2,2",options="header"]
+|===
+| ID | Decisión | Justificación
+
+| ADR-01 | Usar TIC-80 y JavaScript como exige el proyecto. | Requisito del curso y portabilidad a HTML.
+| ADR-02 | Exportar el cartucho a HTML y envolverlo en una PWA. | Permite instalación, offline y despliegue estático.
+| ADR-03 | Separar la lógica de batalla de la vista. | Facilita pruebas y reduce regresiones.
+| ADR-04 | Inyectar la fuente de aleatoriedad. | Permite pruebas deterministas y modo de depuración.
+| ADR-05 | Usar rutas relativas en la PWA. | Compatibilidad con GitHub Pages en subdirectorio.
+| ADR-06 | Publicar manual y documentación como sitios estáticos. | Sin backend, bajo costo y fácil mantenimiento.
+| ADR-07 | Un repositorio único para juego, PWA, manual y docs. | Simplifica CI/CD y la revisión del proyecto.
+|===
+
+== Requisitos para el equipo de código
+
+* Mantener la lógica de batalla en módulos puros y testeables.
+* No duplicar reglas entre la vista y el motor.
+* Documentar cualquier cambio de regla en el PRD y en los casos UAT.
+* Revisar el rendimiento en móvil antes de cada release.
+* No incluir secretos ni credenciales en el repositorio.
+* Mantener el build reproducible y documentado.

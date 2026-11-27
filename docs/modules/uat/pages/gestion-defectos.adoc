@@ -1,0 +1,146 @@
+= Gestión de defectos
+:toc: left
+:description: Severidad, prioridad, plantilla, flujo y ejemplos de defectos del UAT.
+
+== Objetivo
+
+Registrar, clasificar, priorizar y dar seguimiento a los defectos encontrados durante el UAT, asegurando que los problemas críticos se corrijan antes del lanzamiento y que las decisiones sobre defectos menores queden documentadas.
+
+== Identificación
+
+Formato: `DEF-###`. Ejemplo: `DEF-001`.
+
+== Severidad
+
+[cols="1,2,3",options="header"]
+|===
+| Nivel | Nombre | Descripción y ejemplos
+
+| S1 | Bloqueante | El juego no carga, no se puede iniciar una partida, no se puede completar una batalla, hay pérdida de datos o un crash constante.
+| S2 | Crítico | Una funcionalidad central falla: PPTLS incorrecto, HP/PP no se actualizan, no se muestra el resultado, no se puede seleccionar equipo, PWA no carga offline.
+| S3 | Mayor | Funcionalidad importante con solución alternativa: un sonido no se reproduce, una animación falla, un texto incorrecto en una pantalla secundaria, problema de layout en un dispositivo.
+| S4 | Menor | Problema visual o de texto que no impide jugar: alineación, color, typo, ícono desalineado.
+| S5 | Trivial | Sugerencia o mejora estética sin impacto funcional.
+|===
+
+== Prioridad
+
+[cols="1,2,2",options="header"]
+|===
+| Nivel | Nombre | Criterio
+
+| P1 | Inmediata | Bloquea el UAT o el lanzamiento; se corrige el mismo día.
+| P2 | Alta | Debe corregirse antes del release; se corrige en 48 horas.
+| P3 | Media | Se corrige antes del release si el tiempo lo permite; si no, se acepta con observación.
+| P4 | Baja | Se pospone a una versión futura; se registra en el backlog.
+|===
+
+== Matriz de severidad y prioridad
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Severidad \ Prioridad | P1 | P2 | P3 | P4
+
+| S1 | Corregir ya | Corregir ya | No aplica | No aplica
+| S2 | Corregir ya | Corregir antes del release | Corregir antes del release | No aplica
+| S3 | No aplica | Corregir antes del release | Corregir o aceptar | Backlog
+| S4 | No aplica | No aplica | Corregir o aceptar | Backlog
+| S5 | No aplica | No aplica | Aceptar | Backlog
+|===
+
+== Plantilla de defecto
+
+[cols="1,3"]
+|===
+| Campo | Contenido
+
+| ID | `DEF-###`
+| Título | Resumen breve y específico.
+| Fecha | `AAAA-MM-DD`
+| Reportado por | Nombre y rol.
+| Versión / commit | Tag o commit evaluado.
+| Ambiente | URL, navegador, sistema operativo y dispositivo.
+| Caso UAT relacionado | `UAT-XXX-###`
+| Severidad | S1–S5.
+| Prioridad | P1–P4.
+| Precondición | Estado inicial necesario.
+| Pasos para reproducir | Lista numerada y precisa.
+| Resultado esperado | Comportamiento según el PRD.
+| Resultado observado | Comportamiento real.
+| Evidencia | Captura, video, log o enlace.
+| Frecuencia | Siempre, intermitente o una vez.
+| Asignado a | Responsable de la corrección.
+| Estado | Nuevo, En triage, En progreso, Corregido, Listo para retest, Cerrado, Reabierto, Diferido.
+| Notas | Contexto adicional.
+|===
+
+== Flujo de vida
+
+[source,text]
+----
+Nuevo
+  │
+  ▼
+En triage ──► Diferido (backlog)
+  │
+  ▼
+En progreso
+  │
+  ▼
+Corregido
+  │
+  ▼
+Listo para retest
+  │
+  ├──► Cerrado (retest aprobado)
+  └──► Reabierto (retest fallido)
+----
+
+== Reglas de triage
+
+* Todo defecto S1/S2 se revisa el mismo día.
+* Todo defecto debe tener caso UAT, evidencia y pasos reproducibles.
+* Un defecto sin evidencia puede ser rechazado o devuelto al reportante.
+* Si un defecto se debe a una decisión de diseño, se documenta y se cierra como *No es un defecto* con justificación.
+* Si un defecto afecta un requisito *Must*, se prioriza sobre cualquier *Should*.
+* Los defectos diferidos se registran en el backlog con fecha y responsable.
+
+== Ejemplos
+
+=== DEF-001 — El daño se aplica al jugador cuando gana el intercambio
+
+* **Caso:** UAT-BAT-005.
+* **Severidad:** S2.
+* **Pasos:** Iniciar batalla con `?debug=1&cpuMove=papel&dano=10`; usar Tijera; revisar HP.
+* **Esperado:** el HP del CPU baja en 10.
+* **Observado:** el HP del jugador baja en 10.
+* **Causa probable:** inversión del ganador en la resolución PPTLS.
+* **Acción:** corregir `resolverTurno` y agregar prueba unitaria.
+
+=== DEF-002 — La música no se detiene al cambiar de pantalla
+
+* **Caso:** UAT-AUD-001.
+* **Severidad:** S3.
+* **Pasos:** Iniciar el juego, entrar a selección y luego a batalla.
+* **Esperado:** solo suena la música de la pantalla actual.
+* **Observado:** la música 1 se superpone con la música 2.
+* **Acción:** detener la pista anterior en la transición de escena.
+
+=== DEF-003 — El botón de rendirse no pide confirmación
+
+* **Caso:** UAT-BAT-012.
+* **Severidad:** S3.
+* **Esperado:** confirmación antes de rendir.
+* **Observado:** la rendición es inmediata.
+* **Acción:** agregar diálogo de confirmación y actualizar el caso si cambia el flujo.
+
+== Reporte final
+
+Al cierre del UAT, el registro debe incluir:
+
+* Total de defectos por severidad.
+* Total por estado.
+* Defectos abiertos y su aceptación.
+* Defectos corregidos y verificados.
+* Tiempo promedio de corrección.
+* Riesgos residuales.

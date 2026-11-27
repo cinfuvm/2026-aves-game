@@ -1,0 +1,62 @@
+= Casos: PWA y documentación
+:toc: left
+:description: Casos de aceptación de la PWA, despliegue, rendimiento, manual de usuario, documentación Antora, tráiler y créditos.
+
+== Casos de PWA y despliegue
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-PWA-001 | Alta | RF-023 | Juego publicado en GitHub Pages. Chrome Android o escritorio compatible. | 1) Abrir la URL. 2) Revisar el manifiesto en DevTools. 3) Instalar la aplicación. 4) Abrir la PWA instalada. | El manifiesto es válido (nombre, íconos, colores, `display`); el navegador ofrece instalar; la PWA abre en modo independiente y carga el juego.
+| UAT-PWA-002 | Alta | RF-023 | Juego cargado al menos una vez con conexión. | 1) Abrir DevTools → Application → Service Workers. 2) Activar modo offline. 3) Recargar. 4) Jugar una partida completa. | El juego carga desde el caché; se puede seleccionar equipo y completar una batalla sin red; no aparecen errores críticos.
+| UAT-PWA-003 | Alta | RF-023, RNF-005 | PWA instalada. | 1) Cerrar la aplicación. 2) Abrirla sin conexión. 3) Navegar por las pantallas. | La PWA abre y permite jugar offline; los assets están cacheados; el juego no queda en blanco.
+| UAT-PWA-004 | Alta | RF-026, RNF-014 | Repositorio con workflow. | 1) Hacer push a `main`. 2) Revisar GitHub Actions. 3) Abrir la URL publicada. 4) Verificar rutas relativas. | El workflow termina exitoso; el juego y la documentación se publican; las rutas funcionan en la raíz o subdirectorio de Pages; no hay 404 en assets.
+| UAT-PWA-005 | Media | RF-026 | Workflow configurado. | 1) Provocar un error de build en una rama de prueba. 2) Revisar Actions. 3) Revertir. | El workflow falla de forma visible y no publica una versión rota; el error es identificable en el log.
+| UAT-PWA-006 | Media | RF-023 | Nueva versión desplegada. | 1) Abrir la PWA con una versión anterior en caché. 2) Recargar. 3) Verificar la actualización. | La nueva versión se activa al recargar; no se queda indefinidamente en la versión anterior; se informa al usuario si es necesario.
+|===
+
+== Casos de rendimiento y compatibilidad
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-PERF-001 | Media | RNF-003, RNF-004 | Build de producción. Chrome DevTools. | 1) Ejecutar Lighthouse en modo móvil. 2) Revisar PWA, rendimiento y accesibilidad. 3) Repetir en escritorio. | La PWA es instalable y cumple los criterios de Lighthouse; el rendimiento es aceptable; no hay errores graves de accesibilidad.
+| UAT-PERF-002 | Alta | RNF-002, RNF-003 | Dispositivo móvil de gama media. | 1) Jugar una batalla completa. 2) Observar fluidez y respuesta táctil. 3) Revisar la temperatura y el consumo. | El juego se mantiene fluido (≥ 30 fps), responde al touch sin retrasos perceptibles y no se cierra.
+| UAT-PERF-003 | Alta | RNF-001, RF-028 | Navegadores de la matriz. | 1) Abrir y jugar en Chrome, Firefox, Safari y Edge. 2) Repetir en Android e iOS. | El juego carga y es jugable en todos los navegadores de la matriz; las diferencias visuales son menores y no bloquean la partida.
+| UAT-PERF-004 | Media | RNF-006 | Build de producción. | 1) Revisar el tamaño de los recursos en Network. 2) Verificar la carga inicial. 3) Revisar el caché. | La carga inicial es razonable (≤ 5 MB comprimida); los recursos grandes están optimizados; el caché no es excesivo.
+|===
+
+== Casos de documentación y manual
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-DOC-001 | Alta | RF-024 | Manual publicado. | 1) Abrir el manual desde el juego y desde el README. 2) Navegar por las secciones. 3) Verificar los enlaces. | El manual abre en una URL pública; incluye inicio, selección, batalla, reglas PPTLS, aves, controles y FAQ; los enlaces funcionan.
+| UAT-DOC-002 | Alta | RF-024 | Manual publicado. | 1) Revisar la tabla de las diez aves. 2) Verificar movimientos, tipos y descripciones. 3) Comparar con el juego. | La tabla coincide con el contenido del juego; no hay aves faltantes ni movimientos incorrectos; las descripciones son legibles.
+| UAT-DOC-003 | Alta | ENT-05 | Documentación publicada. | 1) Abrir la URL de Antora. 2) Navegar por PRD y UAT. 3) Probar enlaces internos y externos. 4) Revisar la matriz de trazabilidad. | El sitio construye y navega correctamente; PRD y UAT están completos; los enlaces funcionan; la matriz cubre los requisitos *Must*.
+| UAT-DOC-004 | Media | ENT-05 | Repositorio local. | 1) Ejecutar `npm run docs:build`. 2) Revisar la salida. 3) Ejecutar `npm run docs:serve`. | El build termina sin errores; el sitio se sirve localmente; no hay advertencias críticas de AsciiDoc o Antora.
+| UAT-DOC-005 | Media | RF-025 | Tráiler publicado. | 1) Abrir la URL de YouTube. 2) Reproducir el video. 3) Verificar el contenido y la duración. | El tráiler es público, dura entre 60 y 90 segundos, muestra el título, las aves, la selección y la batalla, y usa audio del juego.
+| UAT-DOC-006 | Media | RNF-015 | Repositorio. | 1) Abrir `CREDITS.md`. 2) Verificar autoría y licencia de cada asset. 3) Revisar que no falten recursos. | Todos los assets tienen autor, licencia y fuente; no hay recursos sin atribución; la licencia es compatible con la publicación.
+|===
+
+== Casos de repositorio y entrega
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-REP-001 | Alta | ENT-01, RF-026 | Repositorio público. | 1) Clonar en un entorno limpio. 2) Seguir el README. 3) Ejecutar build y tests. | El proyecto se instala y construye siguiendo el README; los tests pasan; no se requieren pasos no documentados.
+| UAT-REP-002 | Media | ENT-06 | Repositorio con Actions. | 1) Revisar los workflows. 2) Confirmar que el despliegue de docs y juego está separado. 3) Revisar permisos. | Los workflows están documentados, usan permisos mínimos y publican en Pages; el equipo puede reproducir el despliegue.
+| UAT-REP-003 | Media | RNF-010 | Repositorio. | 1) Buscar secretos y credenciales. 2) Revisar dependencias. 3) Revisar la configuración de Pages. | No hay secretos en el repositorio; las dependencias son razonables; no se exponen datos personales.
+|===
+
+== Notas de ejecución
+
+* Las pruebas de instalación PWA requieren HTTPS y un navegador compatible; GitHub Pages cumple con HTTPS.
+* En iOS, la instalación se realiza desde *Compartir → Añadir a pantalla de inicio*; no siempre aparece un aviso automático.
+* Limpiar la caché y desregistrar el service worker antes de probar una versión nueva.
+* Las pruebas de Lighthouse deben ejecutarse en modo incógnito y sin extensiones.
+* Registrar la URL y el tag evaluado en la evidencia.

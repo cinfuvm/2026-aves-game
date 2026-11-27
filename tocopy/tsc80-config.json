@@ -1,0 +1,6 @@
+{
+  "ticExecutable": "path/to/tic/executable/file",
+  "entry": "main.ts",
+  "outfile": "build/output.js",
+  "minify": false
+}

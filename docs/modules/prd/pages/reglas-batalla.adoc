@@ -1,0 +1,324 @@
+= Sistema de batalla
+:toc: left
+:toclevels: 3
+:description: Reglas formales de batalla, matriz PPTLS, cálculo de daño, PP, rendición, relevo y condiciones de término.
+
+== Principios de diseño
+
+La batalla combina dos capas:
+
+. **Ventaja de tipo (PPTLS):** determina quién puede infligir daño en el turno.
+. **Estadísticas tipo Pokémon:** HP, PP, movimientos y relevo de aves.
+
+El objetivo es que el jugador entienda rápidamente por qué gana o pierde un intercambio, sin necesidad de una tabla compleja. La aleatoriedad aporta rejugabilidad, pero las reglas de ventaja son deterministas y visibles.
+
+== Identificadores de reglas
+
+[cols="1,2",options="header"]
+|===
+| ID | Regla
+
+| BR-001 | Cada equipo tiene exactamente cuatro aves.
+| BR-002 | El HP máximo de cada ave se asigna aleatoriamente entre 20 y 50 al entrar en combate.
+| BR-003 | El PP máximo de cada movimiento se asigna aleatoriamente entre 1 y 5 al entrar en combate.
+| BR-004 | Cada movimiento tiene un tipo PPTLS fijo y visible; cada ave tiene cuatro movimientos activos.
+| BR-005 | El ganador del intercambio PPTLS inflige daño; el perdedor no inflige daño.
+| BR-006 | El daño se calcula aleatoriamente entre 0 y el HP máximo del rival.
+| BR-007 | Un daño de 0 se clasifica como *Sin efecto*.
+| BR-008 | Un daño mayor al 50 % del HP máximo del rival se clasifica como *Muy efectivo*.
+| BR-009 | Un empate PPTLS no inflige daño, pero ambos movimientos consumen PP.
+| BR-010 | Un ave se rinde automáticamente cuando todos sus PP llegan a cero.
+| BR-011 | Un ave se debilita y sale de combate cuando su HP llega a cero.
+| BR-012 | El jugador puede rendir su ave activa antes de elegir un movimiento.
+| BR-013 | La batalla termina cuando un equipo no tiene aves disponibles; si ambos se quedan sin aves en el mismo turno, hay empate técnico.
+|===
+
+== Definiciones
+
+[cols="1,3",options="header"]
+|===
+| Término | Definición
+
+| Ave activa | Ave actualmente en combate. Hay una por equipo.
+| HP máximo | Puntos vitales asignados aleatoriamente al entrar en combate (20–50).
+| HP actual | Puntos vitales restantes. Comienza igual al HP máximo.
+| PP máximo | Usos máximos asignados aleatoriamente a cada movimiento al entrar en combate (1–5 en el MVP).
+| PP actual | Usos restantes del movimiento. Disminuye en uno por turno si se usa.
+| Movimiento activo | Movimiento usable en batalla. Cada ave tiene cuatro.
+| Tipo PPTLS | Piedra, Papel, Tijera, Lagarto o Spock.
+| Turno | Selección simultánea de movimientos, resolución PPTLS, daño y consumo de PP.
+| Rendición | Salida voluntaria o automática de la ave activa.
+| Debilitamiento | Salida de la ave porque su HP llegó a cero.
+| Relevo | Entrada de la siguiente ave del equipo.
+|===
+
+== Estado de un ave en combate
+
+Cada ave entra a la batalla con la siguiente estructura:
+
+[source,json]
+----
+{
+  "birdId": "condor",
+  "nombre": "Cóndor",
+  "hpMax": 42,
+  "hpActual": 42,
+  "movimientos": [
+    { "id": "garra-cortante", "tipo": "tijera", "ppMax": 4, "ppActual": 4 },
+    { "id": "planeo-pesado",  "tipo": "piedra", "ppMax": 3, "ppActual": 3 },
+    { "id": "corriente",      "tipo": "papel",  "ppMax": 2, "ppActual": 2 },
+    { "id": "carronero",      "tipo": "lagarto","ppMax": 5, "ppActual": 5 }
+  ],
+  "estado": "activa"
+}
+----
+
+El movimiento distintivo (quinto movimiento) no se incluye en el estado de batalla y no puede usarse.
+
+== Flujo de un turno
+
+. El jugador elige uno de los movimientos activos de su ave con `ppActual > 0`.
+. El CPU elige aleatoriamente uno de sus movimientos activos con `ppActual > 0`.
+. Ambos movimientos consumen un PP (`ppActual -= 1`).
+. Se compara el tipo del movimiento del jugador con el del CPU usando la matriz PPTLS.
+. Se determina el ganador del intercambio:
+   * Si el jugador gana, el jugador inflige daño al CPU.
+   * Si el CPU gana, el CPU inflige daño al jugador.
+   * Si empatan, no se inflige daño.
+. Si hay ganador, se calcula el daño y se clasifica la efectividad.
+. Se aplica el daño al HP del perdedor del intercambio (nunca por debajo de cero).
+. Se actualiza el historial y se muestra el resultado del turno.
+. Se evalúan las salidas:
+   * Si el HP del perdedor llegó a cero, el ave se debilita y entra la siguiente.
+   * Si un ave se quedó sin PP en todos sus movimientos, se rinde automáticamente y entra la siguiente.
+. Se verifica si la batalla terminó.
+. Se habilita el siguiente turno.
+
+[NOTE]
+====
+El consumo de PP ocurre siempre, incluso si el daño es cero o si el turno termina en empate. Un turno siempre implica un PP menos por cada movimiento utilizado.
+====
+
+== Matriz PPTLS
+
+=== Reglas mnemotécnicas
+
+* **Piedra** aplasta Tijera y aplasta Lagarto.
+* **Papel** cubre Piedra y refuta Spock.
+* **Tijera** corta Papel y decapita Lagarto.
+* **Lagarto** envenena Spock y come Papel.
+* **Spock** rompe Tijera y vaporiza Piedra.
+
+=== Matriz de resultados
+
+`G` = gana el atacante, `P` = pierde el atacante, `E` = empate.
+
+[cols="1,1,1,1,1,1",options="header"]
+|===
+| Atacante / Defensor | Piedra | Papel | Tijera | Lagarto | Spock
+
+| **Piedra** | E | P | G | G | P
+| **Papel** | G | E | P | P | G
+| **Tijera** | P | G | E | G | P
+| **Lagarto** | P | G | P | E | G
+| **Spock** | G | P | G | P | E
+|===
+
+=== Ejemplos
+
+* Piedra vs Tijera: gana Piedra. Mensaje: «Piedra aplasta Tijera».
+* Papel vs Piedra: gana Papel. Mensaje: «Papel cubre Piedra».
+* Tijera vs Lagarto: gana Tijera. Mensaje: «Tijera decapita Lagarto».
+* Lagarto vs Spock: gana Lagarto. Mensaje: «Lagarto envenena Spock».
+* Spock vs Piedra: gana Spock. Mensaje: «Spock vaporiza Piedra».
+* Piedra vs Piedra: empate. Mensaje: «Choque de piedras».
+
+== Cálculo de daño y efectividad
+
+El daño solo lo inflige el ganador del intercambio. Se calcula con un número entero aleatorio entre 0 y el HP máximo del rival, inclusive:
+
+[source,javascript]
+----
+function calcularDano(hpMaxRival) {
+  return Math.floor(Math.random() * (hpMaxRival + 1));
+}
+----
+
+La efectividad se clasifica así:
+
+[cols="1,2,2",options="header"]
+|===
+| Condición | Clasificación | Mensaje sugerido
+
+| `dano === 0` | Sin efecto | «El ataque no tuvo efecto».
+| `dano > hpMaxRival * 0.5` | Muy efectivo | «¡Es muy efectivo!».
+| `dano > 0 && dano <= hpMaxRival * 0.5` | Efectivo | «El ataque fue efectivo».
+| Empate PPTLS | Sin daño | «Los movimientos chocaron».
+|===
+
+El daño se resta del HP actual del perdedor:
+
+[source,javascript]
+----
+hpActual = Math.max(0, hpActual - dano);
+----
+
+[IMPORTANT]
+====
+El daño se calcula siempre sobre el **HP máximo** del rival, no sobre su HP actual. Por ejemplo, si el rival tiene HP máximo 40 y HP actual 5, el daño puede ser de hasta 40. Esto hace que un golpe afortunado pueda debilitar a un rival sano y mantiene la imprevisibilidad.
+====
+
+=== Ejemplo de cálculo
+
+* Ave del jugador: Cóndor, HP máximo 40.
+* Ave del CPU: Loica, HP máximo 35.
+* Jugador usa Garra Cortante (Tijera). CPU usa Nido Oculto (Papel).
+* Tijera gana a Papel. El jugador inflige daño.
+* Se calcula un daño entre 0 y 35; sale 28.
+* 28 > 17.5 (50 % de 35), por lo que se clasifica como **Muy efectivo**.
+* Loica queda con 35 − 28 = 7 HP.
+
+== Puntos de poder (PP)
+
+* Cada movimiento activo recibe un PP máximo aleatorio entre 1 y 5 al entrar en combate.
+* El PP actual comienza igual al PP máximo.
+* Usar un movimiento consume un PP, incluso si el ataque falla o empata.
+* Un movimiento con PP cero se muestra deshabilitado y no puede seleccionarse.
+* Cuando todos los movimientos activos de un ave tienen PP cero, el ave se rinde automáticamente.
+* La rendición por PP no reduce el HP del ave; simplemente sale de combate.
+
+[NOTE]
+====
+El rango 1–5 es una decisión de diseño para mantener batallas cortas. Puede ajustarse en configuración sin cambiar las reglas. Si se amplía, debe actualizarse el PRD y los casos UAT.
+====
+
+== Rendición manual
+
+El jugador puede rendir su ave activa antes de seleccionar un movimiento. La rendición:
+
+* Requiere confirmación para evitar errores.
+* Retira el ave activa sin reducir su HP a cero.
+* Registra el evento en el historial.
+* Da paso a la siguiente ave del equipo.
+* Si no quedan aves, el jugador pierde la batalla.
+
+El CPU no se rinde manualmente; solo se retira por HP cero o por PP agotados.
+
+== Debilitamiento y relevo
+
+Cuando el HP de un ave llega a cero:
+
+. El ave se marca como debilitada.
+. Se muestra un mensaje o animación de debilitamiento.
+. Entra la siguiente ave del equipo en el orden establecido.
+. La nueva ave activa conserva el HP y PP con los que fue inicializada.
+. Si no quedan aves, la batalla termina.
+
+El mismo flujo aplica para el jugador y para el CPU.
+
+== Condiciones de término
+
+[cols="1,2",options="header"]
+|===
+| Condición | Resultado
+
+| El CPU no tiene aves disponibles (todas debilitadas o rendidas). | Gana el jugador.
+| El jugador no tiene aves disponibles (todas debilitadas o rendidas). | Gana el CPU.
+| Ambos equipos se quedan sin aves en el mismo turno. | Empate técnico; se muestra pantalla de empate y opción de revancha.
+|===
+
+[NOTE]
+====
+El empate técnico es un caso borde. Ocurre, por ejemplo, cuando las últimas aves de ambos equipos usan su último PP en el mismo turno y se rinden automáticamente. La pantalla de empate reutiliza el estilo de las pantallas de resultado y ofrece *Jugar de nuevo*.
+====
+
+== Inteligencia artificial del CPU
+
+Para el MVP:
+
+* El CPU elige uniformemente al azar entre sus movimientos con PP disponible.
+* Si no tiene movimientos disponibles, su ave se rinde automáticamente.
+* El CPU no hace trampa: usa las mismas reglas de daño y PP.
+* La IA puede evolucionar a una estrategia con memoria de tipos en versiones futuras, pero no es parte del MVP.
+
+=== Mejora opcional (Should)
+
+Si el tiempo lo permite, el CPU puede ponderar la elección según la ventaja PPTLS contra el último movimiento del jugador. Esta mejora debe documentarse y probarse, pero no reemplaza la elección aleatoria base.
+
+== Pseudocódigo de resolución
+
+[source,javascript]
+----
+function resolverTurno(aveJugador, movJugador, aveCpu, movCpu) {
+  if (movJugador.ppActual <= 0) throw new Error('Movimiento sin PP');
+  if (movCpu.ppActual <= 0) throw new Error('CPU sin PP');
+
+  movJugador.ppActual -= 1;
+  movCpu.ppActual -= 1;
+
+  const resultado = compararPPTLS(movJugador.tipo, movCpu.tipo);
+  let mensaje = '';
+  let dano = 0;
+
+  if (resultado === 'jugador') {
+    dano = calcularDano(aveCpu.hpMax);
+    aveCpu.hpActual = Math.max(0, aveCpu.hpActual - dano);
+    mensaje = `${movJugador.nombre} vence a ${movCpu.nombre}. ` +
+              clasificarEfectividad(dano, aveCpu.hpMax);
+  } else if (resultado === 'cpu') {
+    dano = calcularDano(aveJugador.hpMax);
+    aveJugador.hpActual = Math.max(0, aveJugador.hpActual - dano);
+    mensaje = `${movCpu.nombre} vence a ${movJugador.nombre}. ` +
+              clasificarEfectividad(dano, aveJugador.hpMax);
+  } else {
+    mensaje = 'Los movimientos chocaron. No hay daño.';
+  }
+
+  return { resultado, dano, mensaje };
+}
+----
+
+== Ejemplo de batalla completa
+
+[cols="1,2,1,2,1,3",options="header"]
+|===
+| Turno | Acción jugador | Tipo | Acción CPU | Tipo | Resultado
+
+| 1 | Cóndor usa Garra Cortante | Tijera | Loica usa Nido Oculto | Papel | Gana jugador; 28 de daño; Loica 35 → 7 HP.
+| 2 | Cóndor usa Planeo Pesado | Piedra | Loica usa Canto de Alba | Spock | Gana CPU; 12 de daño; Cóndor 40 → 28 HP.
+| 3 | Cóndor usa Garra Cortante | Tijera | Loica usa Picotazo | Tijera | Empate; sin daño; ambos consumen PP.
+| 4 | Cóndor usa Planeo Pesado | Piedra | Loica usa Nido Oculto | Papel | Gana CPU; 9 de daño; Cóndor 28 → 19 HP.
+| 5 | Cóndor usa Garra Cortante | Tijera | Loica usa Nido Oculto | Papel | Gana jugador; 7 de daño; Loica 7 → 0 HP; Loica se debilita y entra el siguiente CPU.
+|===
+
+== Casos borde
+
+[cols="1,2,2",options="header"]
+|===
+| Caso | Situación | Comportamiento esperado
+
+| CB-01 | El jugador intenta usar un movimiento con PP 0. | El botón está deshabilitado y no se ejecuta el turno.
+| CB-02 | El daño aleatorio es 0. | Se muestra «Sin efecto»; no cambia el HP; el PP se consume.
+| CB-03 | El daño supera el HP actual. | El HP se fija en 0; no se muestran valores negativos.
+| CB-04 | Ambos usan el mismo tipo. | Empate; no hay daño; ambos consumen PP.
+| CB-05 | El ave se queda sin PP y sin HP en el mismo turno. | Se prioriza el debilitamiento (HP 0); el ave sale y entra la siguiente.
+| CB-06 | El CPU no tiene movimientos con PP. | Se rinde automáticamente y entra su siguiente ave.
+| CB-07 | El jugador se rinde con su última ave. | Pierde la batalla; se muestra la pantalla de perdedor.
+| CB-08 | Ambos equipos se quedan sin aves en el mismo turno. | Empate técnico; pantalla de empate; opción de revancha.
+| CB-09 | Se selecciona un movimiento durante la animación. | La interfaz bloquea nuevas selecciones hasta terminar la resolución.
+| CB-10 | El jugador recarga la página en batalla. | La partida se reinicia; no hay persistencia en el MVP.
+|===
+
+== Aclaraciones sobre la especificación original
+
+La especificación inicial menciona que «el tipo de movimiento» se define aleatoriamente al entrar en combate. Para que los íconos PPTLS de la pantalla de selección sean estables y comprensibles, el MVP adopta la siguiente interpretación:
+
+* El tipo PPTLS de cada movimiento es **fijo** y se muestra desde la selección de equipo.
+* Al entrar en combate se aleatorizan HP y PP.
+* La efectividad (daño) se aleatoriza en cada turno.
+
+Si el Product Owner prefiere tipos aleatorios por combate, será necesario actualizar la pantalla de selección, los íconos y los casos UAT. Esta decisión se registra como A-03 en el xref:prd:index.adoc[resumen del PRD].
+
+La especificación también indica que el PP máximo se asigna «en la pantalla de selección de equipo», mientras que otro párrafo indica que se define «al momento de entrar en combate». El MVP adopta la segunda interpretación: HP y PP se asignan al inicializar la batalla, no al seleccionar el equipo, para que el jugador no vea valores que luego cambien.
+
+El ejemplo de la especificación «Ave 1 ataca con piedra y el CPU ataca con papel, la efectividad calculada es daño al CPU» contradice la matriz PPTLS estándar, en la que Papel vence a Piedra. El MVP sigue la matriz estándar: si el CPU usa Papel y el jugador usa Piedra, gana el CPU y el daño se aplica al jugador. Cualquier cambio debe validarse con el Product Owner y actualizar los casos UAT de batalla.

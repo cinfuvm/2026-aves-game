@@ -1,0 +1,71 @@
+= Aves de Chile: Duelo Alado
+:toc: left
+:toclevels: 3
+:description: Documentación PRD y UAT del juego Aves de Chile: Duelo Alado.
+
+[.lead]
+Bienvenido a la documentación oficial del proyecto **Aves de Chile: Duelo Alado**, un juego web y PWA construido con TIC-80 y JavaScript. Aquí encontrarás el Product Requirements Document (PRD) y el plan de User Acceptance Testing (UAT) que guían el diseño, desarrollo, despliegue y aceptación del producto.
+
+== Mapa de la documentación
+
+[cols="1,3",options="header"]
+|===
+| Módulo | Contenido
+
+| xref:prd:index.adoc[PRD]
+| Define el problema, la visión, el alcance, los requisitos funcionales y no funcionales, el sistema de batalla PPTLS, el contenido de las diez aves, la arquitectura técnica, el cronograma, los riesgos y los criterios de aceptación.
+
+| xref:uat:index.adoc[UAT]
+| Define la estrategia de aceptación, el ambiente y los datos de prueba, los casos de aceptación por pantalla y funcionalidad, la matriz de trazabilidad, la gestión de defectos y el acta de aprobación.
+|===
+
+== Resumen del proyecto
+
+* **Producto:** videojuego de batallas por turnos con aves de Chile.
+* **Plataforma:** navegador web moderno y aplicación web progresiva (PWA) instalable.
+* **Motor:** TIC-80 con programación en JavaScript.
+* **Mecánica principal:** batallas 4 contra 4 que combinan la resolución de *Piedra, Papel, Tijera, Lagarto, Spock* (PPTLS) con estadísticas y movimientos tipo Pokémon.
+* **Contenido base:** diez aves chilenas, cada una con imagen, sonido, descripción, cuatro movimientos activos y un movimiento distintivo.
+* **Pantallas:** Inicio, Selección de equipo, Batalla, Ganador y Perdedor.
+* **Entregables:** código fuente en GitHub, juego PWA público, manual de usuario web, tráiler en YouTube y documentación técnica en Antora.
+
+== Estado de la documentación
+
+[cols="1,1,1,2",options="header"]
+|===
+| Documento | Versión | Estado | Última actualización
+
+| PRD | 1.0 | Aprobado para desarrollo | 2026-11-06
+| UAT | 1.0 | Listo para ejecución | 2026-11-06
+| Glosario | 1.0 | Vigente | 2026-11-06
+|===
+
+== Cómo leer esta documentación
+
+1. Comienza por el xref:prd:vision-objetivos.adoc[PRD: visión y objetivos] para entender el propósito del juego.
+2. Revisa el xref:prd:reglas-batalla.adoc[sistema de batalla] y el xref:prd:contenido-aves.adoc[contenido de las aves], que son el corazón del producto.
+3. Consulta los xref:prd:requisitos-funcionales.adoc[requisitos funcionales] y xref:prd:requisitos-no-funcionales.adoc[no funcionales] antes de implementar.
+4. Usa la xref:uat:matriz-trazabilidad.adoc[matriz de trazabilidad] para verificar que cada requisito tenga cobertura de aceptación.
+5. Ejecuta los xref:uat:casos-inicio-seleccion.adoc[casos UAT] y registra los resultados en el xref:uat:registro-resultados.adoc[registro de resultados].
+
+== Convenciones
+
+* **RF-###**: requisito funcional.
+* **RNF-###**: requisito no funcional.
+* **BR-###**: regla de negocio o de batalla.
+* **UAT-XXX-###**: caso de prueba de aceptación.
+* **A-###**: supuesto o decisión abierta.
+* **Must / Should / Could**: prioridad MoSCoW.
+
+== Contacto y responsables
+
+[cols="2,2,3",options="header"]
+|===
+| Rol | Equipo | Responsabilidad
+
+| Product Owner | Gestión | Prioriza el alcance y aprueba el PRD.
+| Líder técnico | Código | Arquitectura, revisión de código y despliegue.
+| Líder de arte y audio | Gráfico/audiovisual | Sprites, música, efectos y tráiler.
+| Líder de QA | Gestión/DevOps | Plan UAT, ejecución y acta de aceptación.
+| DevOps | Gestión/DevOps | PWA, GitHub Actions, GitHub Pages y manual web.
+|===

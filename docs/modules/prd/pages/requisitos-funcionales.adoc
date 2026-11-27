@@ -1,0 +1,416 @@
+= Requisitos funcionales
+:toc: left
+:toclevels: 3
+:description: Requisitos funcionales del juego, por módulo y con criterios de aceptación.
+
+[cols="1,4,1",options="header"]
+|===
+| Convención | Significado | Ejemplo
+
+| `Must` | Obligatorio para el MVP. | La batalla debe resolverse con reglas PPTLS.
+| `Should` | Importante, pero puede posponerse si el cronograma se ve afectado. | Sonido único por ave.
+| `Could` | Deseable para una versión futura. | Modo de dificultad.
+|===
+
+== Resumen de requisitos
+
+[cols="1,4,1",options="header"]
+|===
+| ID | Requisito | Prioridad
+
+| RF-001 | Pantalla de inicio con título, instrucciones mínimas y botón de comienzo. | Must
+| RF-002 | Reproducir la música 1 en la pantalla de inicio. | Must
+| RF-003 | Mostrar un catálogo de diez aves seleccionables. | Must
+| RF-004 | Mostrar la ficha de cada ave con imagen, sonido, descripción, movimientos e íconos PPTLS. | Must
+| RF-005 | Permitir seleccionar hasta cuatro aves, sin duplicados, registrando el orden. | Must
+| RF-006 | Permitir comenzar la batalla solo con exactamente cuatro aves. | Must
+| RF-007 | Reproducir la música 2 en la pantalla de selección de equipo. | Must
+| RF-008 | Inicializar dos equipos de cuatro aves: jugador y CPU. | Must
+| RF-009 | Asignar HP aleatorios entre 20 y 50 al entrar en combate. | Must
+| RF-010 | Asignar PP aleatorios a cada movimiento al entrar en combate. | Must
+| RF-011 | Mostrar el estado de la ave activa: nombre, imagen, HP, PP y movimientos. | Must
+| RF-012 | Ejecutar el movimiento seleccionado de inmediato y mostrar el resultado del turno. | Must
+| RF-013 | Resolver la ventaja entre movimientos con las reglas PPTLS. | Must
+| RF-014 | Calcular daño aleatorio, clasificar efectividad y aplicar el daño al perdedor del turno. | Must
+| RF-015 | Permitir la rendición manual de la ave activa. | Must
+| RF-016 | Rendir automáticamente un ave cuando todos sus PP lleguen a cero. | Must
+| RF-017 | Relevar automáticamente la siguiente ave cuando la activa llegue a cero HP. | Must
+| RF-018 | Seleccionar automáticamente los movimientos del CPU. | Must
+| RF-019 | Reproducir la música 3 durante la batalla. | Must
+| RF-020 | Mostrar la pantalla de ganador y reproducir la música 4 al derrotar a todo el equipo CPU. | Must
+| RF-021 | Mostrar la pantalla de perdedor y reproducir la música 5 al perder todo el equipo del jugador. | Must
+| RF-022 | Reproducir sonidos únicos por ave y efectos de sonido, con control de silencio. | Should
+| RF-023 | Ofrecer una PWA instalable con funcionamiento offline. | Must
+| RF-024 | Publicar un manual de usuario web enlazado desde el juego. | Must
+| RF-025 | Publicar un tráiler del juego en YouTube. | Should
+| RF-026 | Automatizar build y despliegue en GitHub Pages mediante GitHub Actions. | Must
+| RF-027 | Incluir un modo de depuración para fijar HP, PP y daño durante UAT. | Should
+| RF-028 | Adaptar la interfaz a escritorio y móvil, con controles táctiles y de teclado. | Must
+| RF-029 | Permitir volver a jugar o regresar al inicio desde las pantallas de resultado. | Must
+| RF-030 | Registrar un historial visual de los últimos turnos en la batalla. | Should
+|===
+
+== RF-001 — Pantalla de inicio
+
+**Descripción:** al abrir el juego se muestra una pantalla de título con el nombre, una ilustración representativa, el botón *Comenzar* y acceso al manual de usuario y al control de audio.
+
+**Criterios de aceptación:**
+
+* La pantalla carga sin errores y es visible en escritorio y móvil.
+* El botón *Comenzar* lleva a la pantalla de selección de equipo.
+* Se muestra un enlace o botón al manual de usuario.
+* Existe un control de silencio visible.
+* No se inicia la batalla ni se consumen recursos de audio antes de una interacción del usuario.
+
+== RF-002 — Música de inicio
+
+**Descripción:** la pantalla de inicio reproduce la pista de música 1 en bucle.
+
+**Criterios de aceptación:**
+
+* La música 1 comienza tras la primera interacción del usuario.
+* Se detiene al salir de la pantalla de inicio.
+* No se superpone con la música de la pantalla siguiente.
+* Respeta el estado de silencio.
+
+== RF-003 — Catálogo de aves
+
+**Descripción:** la pantalla de selección muestra las diez aves disponibles en una grilla o carrusel, con nombre e imagen.
+
+**Criterios de aceptación:**
+
+* Se listan exactamente diez aves.
+* Cada ave es seleccionable y muestra su estado (disponible, seleccionada, bloqueada).
+* El diseño es navegable con teclado, mouse y touch.
+* El catálogo se adapta a pantallas pequeñas sin cortar contenido.
+
+== RF-004 — Ficha de ave
+
+**Descripción:** al enfocar o seleccionar un ave se muestra su ficha con nombre común, nombre científico, descripción, imagen, sonido y movimientos.
+
+**Criterios de aceptación:**
+
+* Se muestran los cuatro movimientos activos con su nombre, personalidad e ícono PPTLS.
+* Se muestra el movimiento distintivo identificado como no usable en batalla.
+* Se puede reproducir el sonido del ave.
+* La descripción es única y coherente con la especie.
+* La imagen y el sonido corresponden al ave seleccionada.
+
+== RF-005 — Selección de equipo
+
+**Descripción:** el jugador selecciona aves hasta completar cuatro. El orden de selección determina el orden de entrada a batalla.
+
+**Criterios de aceptación:**
+
+* Se pueden seleccionar entre cero y cuatro aves.
+* Una misma ave no puede seleccionarse dos veces.
+* Al intentar seleccionar una quinta ave, el sistema lo impide con un mensaje claro.
+* La interfaz muestra el orden de selección (1 a 4).
+* El jugador puede deseleccionar un ave antes de confirmar.
+* El estado de selección se mantiene al navegar por las fichas.
+
+== RF-006 — Confirmación de equipo
+
+**Descripción:** el botón *Comenzar batalla* se habilita solo cuando hay exactamente cuatro aves seleccionadas.
+
+**Criterios de aceptación:**
+
+* Con menos de cuatro aves, el botón está deshabilitado y se explica el motivo.
+* Con cuatro aves, el botón habilita la transición a la batalla.
+* La batalla usa el equipo y el orden elegidos por el jugador.
+* El CPU recibe un equipo de cuatro aves, sin repetir aves del equipo del jugador cuando sea posible.
+
+== RF-007 — Música de selección
+
+**Descripción:** la pantalla de selección reproduce la pista de música 2 en bucle.
+
+**Criterios de aceptación:**
+
+* La música 2 inicia al entrar a la pantalla y se detiene al salir.
+* Respeta el estado de silencio.
+* No se superpone con la música 1 o 3.
+
+== RF-008 — Inicialización de la batalla
+
+**Descripción:** al comenzar la batalla se crean dos equipos de cuatro aves con su estado de combate.
+
+**Criterios de aceptación:**
+
+* El equipo del jugador conserva las aves y el orden seleccionados.
+* El equipo del CPU tiene cuatro aves válidas.
+* Se elige la primera ave activa de cada equipo.
+* Se inicializan HP, PP, contadores y registro de turnos.
+* La pantalla de batalla muestra ambos equipos y la ave activa.
+
+== RF-009 — HP aleatorios
+
+**Descripción:** al entrar en combate, cada ave recibe puntos vitales máximos aleatorios entre 20 y 50, inclusive, y comienza con ese valor como HP actual.
+
+**Criterios de aceptación:**
+
+* El valor está en el rango [20, 50].
+* El HP actual inicial es igual al HP máximo.
+* El valor se asigna una vez por ave y por batalla.
+* El HP se muestra numéricamente y con una barra proporcional.
+
+== RF-010 — PP aleatorios
+
+**Descripción:** al entrar en combate, cada movimiento activo recibe una cantidad máxima de PP aleatoria. El rango se define en xref:prd:reglas-batalla.adoc[reglas de batalla] (1 a 5 para el MVP).
+
+**Criterios de aceptación:**
+
+* Cada movimiento tiene PP máximo entre 1 y 5.
+* El PP actual inicia igual al máximo.
+* Al usar un movimiento, su PP disminuye en uno.
+* Un movimiento con PP cero se muestra deshabilitado.
+* Si todos los movimientos de un ave llegan a cero, el ave se rinde automáticamente.
+
+== RF-011 — HUD de batalla
+
+**Descripción:** la pantalla de batalla muestra la información necesaria para decidir: ave activa del jugador, ave activa del CPU, HP, PP de cada movimiento, tipos e historial reciente.
+
+**Criterios de aceptación:**
+
+* Se ve el nombre y la imagen de ambas aves activas.
+* Se ve el HP actual y máximo de ambas aves.
+* Se ve el PP actual y máximo de cada movimiento del jugador.
+* Los íconos PPTLS son visibles y consistentes con la ficha del ave.
+* El HUD no tapa los controles en pantallas móviles.
+* El historial muestra al menos el último turno con el resultado.
+
+== RF-012 — Ejecución del turno
+
+**Descripción:** al seleccionar un movimiento con PP disponible, el turno se ejecuta inmediatamente sin pasos adicionales.
+
+**Criterios de aceptación:**
+
+* El movimiento elegido consume un PP.
+* El CPU elige y consume un PP de su movimiento.
+* Se muestra el resultado del enfrentamiento y el daño aplicado.
+* El turno se registra en el historial.
+* La interfaz se actualiza antes de habilitar el siguiente turno.
+* No se puede seleccionar un movimiento sin PP o durante la animación de resolución.
+
+== RF-013 — Resolución PPTLS
+
+**Descripción:** la ventaja entre el movimiento del jugador y el del CPU se resuelve con la matriz PPTLS.
+
+**Criterios de aceptación:**
+
+* Cada movimiento tiene un tipo PPTLS fijo y visible.
+* Se aplica la matriz oficial de cinco tipos.
+* Si el jugador gana, el daño se aplica al CPU.
+* Si el CPU gana, el daño se aplica al jugador.
+* Si hay empate, no se aplica daño y se muestra un mensaje de choque.
+* El resultado se explica con texto claro (por ejemplo, «Piedra aplasta Tijera»).
+
+== RF-014 — Daño y efectividad
+
+**Descripción:** el ganador del turno inflige un daño aleatorio entre 0 y el HP máximo del rival. El daño se clasifica según su magnitud.
+
+**Criterios de aceptación:**
+
+* El daño es un entero en el rango [0, HP máximo del rival].
+* Si el daño es 0, se muestra *Sin efecto*.
+* Si el daño es mayor al 50 % del HP máximo del rival, se muestra *Muy efectivo*.
+* En caso contrario, se muestra *Efectivo*.
+* El daño se resta del HP actual del perdedor y nunca deja HP negativo.
+* El daño se muestra en el resultado del turno.
+
+== RF-015 — Rendición manual
+
+**Descripción:** el jugador puede rendir su ave activa en cualquier momento antes de elegir un movimiento.
+
+**Criterios de aceptación:**
+
+* Existe un botón *Rendirse* visible y accesible.
+* Al confirmar, el ave activa sale de combate sin reducir su HP a cero.
+* Entra la siguiente ave disponible del jugador.
+* Si no quedan aves, se muestra la pantalla de perdedor.
+* La rendición queda registrada en el historial.
+
+== RF-016 — Rendición automática por PP
+
+**Descripción:** cuando todos los PP de los movimientos activos de un ave llegan a cero, el ave se rinde automáticamente.
+
+**Criterios de aceptación:**
+
+* La condición se evalúa al finalizar cada turno.
+* Se muestra un mensaje que explica la rendición automática.
+* Entra la siguiente ave del equipo.
+* Si no quedan aves, termina la batalla.
+* La rendición automática no requiere confirmación del jugador.
+
+== RF-017 — Relevo por HP
+
+**Descripción:** cuando el HP de un ave llega a cero, esa ave queda fuera de combate y entra la siguiente ave de su equipo.
+
+**Criterios de aceptación:**
+
+* El HP se muestra en cero y el ave se marca como debilitada.
+* Se muestra una animación o mensaje de debilitamiento.
+* Entra la siguiente ave en el orden del equipo.
+* Si no quedan aves, se determina el resultado de la batalla.
+* El relevo ocurre para el jugador y para el CPU.
+
+== RF-018 — Comportamiento del CPU
+
+**Descripción:** el CPU elige un movimiento disponible al azar entre los movimientos con PP mayor a cero de su ave activa.
+
+**Criterios de aceptación:**
+
+* El CPU nunca elige un movimiento con PP cero.
+* La elección es aleatoria uniforme entre los movimientos disponibles.
+* Si no hay movimientos disponibles, el ave del CPU se rinde automáticamente.
+* El CPU aplica las mismas reglas de daño, PP y relevo que el jugador.
+
+== RF-019 — Música de batalla
+
+**Descripción:** la pantalla de batalla reproduce la pista de música 3 en bucle.
+
+**Criterios de aceptación:**
+
+* La música 3 inicia al entrar a la batalla y se detiene al salir.
+* No se superpone con otras pistas.
+* Respeta el estado de silencio.
+* Los efectos de sonido se reproducen por encima de la música sin cortarla.
+
+== RF-020 — Pantalla de ganador
+
+**Descripción:** cuando todas las aves del CPU son derrotadas o se rinden, se muestra la pantalla de ganador con la música 4.
+
+**Criterios de aceptación:**
+
+* La pantalla indica claramente la victoria del jugador.
+* Se reproduce la música 4.
+* Se ofrecen las opciones *Jugar de nuevo* y *Volver al inicio*.
+* Se muestra un resumen de la partida (aves usadas, turnos, daño total).
+* No se muestran errores en consola.
+
+== RF-021 — Pantalla de perdedor
+
+**Descripción:** cuando todas las aves del jugador son derrotadas o se rinden, se muestra la pantalla de perdedor con la música 5.
+
+**Criterios de aceptación:**
+
+* La pantalla indica claramente la derrota.
+* Se reproduce la música 5.
+* Se ofrecen las opciones *Intentar de nuevo* y *Volver al inicio*.
+* Se muestra un resumen de la partida.
+* No se muestran errores en consola.
+
+== RF-022 — Audio
+
+**Descripción:** el juego incluye cinco pistas de música, un sonido único por ave, efectos de sonido para acciones y un control de silencio.
+
+**Criterios de aceptación:**
+
+* Cada pantalla reproduce su pista correspondiente.
+* Cada ave tiene un sonido reproducible desde su ficha y al entrar a combate.
+* Existen efectos para seleccionar, atacar, recibir daño, debilitarse, rendirse y confirmar.
+* El control de silencio silencia música y efectos.
+* El estado de silencio se mantiene durante la sesión.
+* El audio no se reproduce antes de la primera interacción del usuario.
+
+== RF-023 — PWA
+
+**Descripción:** el juego se distribuye como PWA instalable con manifiesto, íconos y service worker.
+
+**Criterios de aceptación:**
+
+* Existe un manifiesto válido con nombre, íconos, colores y modo de visualización.
+* El navegador ofrece la instalación en los contextos compatibles.
+* El service worker cachea los recursos necesarios.
+* Tras la primera carga, el juego abre y permite una partida completa sin conexión.
+* La versión publicada se actualiza al recargar cuando hay una nueva versión disponible.
+
+== RF-024 — Manual de usuario web
+
+**Descripción:** se publica un manual web con instrucciones de uso, reglas, controles, aves y solución de problemas.
+
+**Criterios de aceptación:**
+
+* El manual es accesible desde un enlace visible en el juego y desde el README.
+* Incluye una sección por pantalla: inicio, selección, batalla, ganador y perdedor.
+* Explica las reglas PPTLS y el cálculo de daño.
+* Incluye la tabla de las diez aves y sus movimientos.
+* Incluye controles de teclado, mouse y touch.
+* Incluye preguntas frecuentes y requisitos del navegador.
+* Está publicado en una URL pública.
+
+== RF-025 — Tráiler
+
+**Descripción:** se produce y publica un tráiler de 60 a 90 segundos en YouTube.
+
+**Criterios de aceptación:**
+
+* Muestra el título, las aves, la selección de equipo y una batalla.
+* Incluye música y efectos del juego.
+* Tiene una URL pública enlazada desde el README y la documentación.
+* No usa recursos sin licencia.
+
+== RF-026 — CI/CD y despliegue
+
+**Descripción:** el repositorio incluye workflows de GitHub Actions para construir y desplegar el juego, el manual y la documentación en GitHub Pages.
+
+**Criterios de aceptación:**
+
+* Un push a `main` ejecuta el build sin intervención manual.
+* El despliegue publica la PWA y la documentación en las URLs configuradas.
+* El workflow falla de forma visible si el build o los tests fallan.
+* El README documenta la configuración de GitHub Pages.
+* Existe una versión etiquetada del release.
+
+== RF-027 — Modo de depuración
+
+**Descripción:** mediante un parámetro de URL, el juego permite fijar HP, PP y valores de daño para pruebas deterministas.
+
+**Criterios de aceptación:**
+
+* El modo se activa solo con el parámetro documentado (por ejemplo, `?debug=1`).
+* Permite fijar HP inicial entre 20 y 50.
+* Permite fijar PP inicial por movimiento.
+* Permite forzar un valor de daño o una secuencia.
+* No afecta la experiencia del jugador normal.
+* Se documenta en el manual de pruebas.
+
+== RF-028 — Responsive y controles
+
+**Descripción:** la interfaz se adapta a escritorio y móvil, con controles adecuados para cada dispositivo.
+
+**Criterios de aceptación:**
+
+* En escritorio se puede jugar con teclado y mouse.
+* En móvil se puede jugar con toques.
+* Los botones cumplen un tamaño mínimo táctil de 44 × 44 px.
+* No hay desplazamiento horizontal no deseado.
+* La orientación vertical y horizontal es usable, con preferencia por vertical en móvil.
+* La interfaz mantiene legibilidad en pantallas de 360 px de ancho.
+
+== RF-029 — Navegación y reinicio
+
+**Descripción:** desde las pantallas de resultado el jugador puede reiniciar la partida o volver al inicio.
+
+**Criterios de aceptación:**
+
+* *Jugar de nuevo* reinicia una batalla con el mismo equipo o permite elegir uno nuevo según la opción.
+* *Volver al inicio* regresa a la pantalla de título.
+* El estado anterior se limpia correctamente.
+* La música cambia a la pista de la pantalla destino.
+* No quedan procesos de audio o animación en segundo plano.
+
+== RF-030 — Historial de turnos
+
+**Descripción:** la batalla muestra un historial de los últimos turnos con los movimientos usados y el resultado.
+
+**Criterios de aceptación:**
+
+* Se muestran al menos los últimos tres turnos.
+* Cada entrada indica ave, movimiento, tipo, resultado y daño.
+* El historial se actualiza tras cada turno.
+* El historial no interfiere con los controles.
+* En móvil se puede consultar sin perder de vista el HUD principal.
+
+== Trazabilidad de requisitos funcionales
+
+La matriz completa se encuentra en xref:uat:matriz-trazabilidad.adoc[la matriz de trazabilidad UAT]. Cada requisito funcional *Must* debe tener al menos un caso de aceptación asociado antes de la aprobación del producto.

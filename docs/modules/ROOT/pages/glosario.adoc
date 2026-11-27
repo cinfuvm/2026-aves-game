@@ -1,0 +1,47 @@
+= Glosario
+:toc: left
+:description: Términos y siglas usados en la documentación del proyecto.
+
+[cols="1,3",options="header"]
+|===
+| Término | Definición
+
+| **Antora** | Generador de sitios de documentación que organiza contenido AsciiDoc en componentes, módulos y páginas.
+| **AsciiDoc** | Lenguaje de marcado usado para escribir la documentación.
+| **Ave activa** | Ave que está en combate en un momento dado, tanto del lado del jugador como del CPU.
+| **Ave de relevo** | Siguiente ave del equipo que entra cuando la ave activa pierde todos sus puntos vitales o se rinde.
+| **CPU** | Computador; controla el equipo rival y selecciona movimientos automáticamente.
+| **Efectividad** | Daño calculado aleatoriamente entre 0 y los puntos vitales máximos del rival. Se clasifica como *sin efecto*, *efectivo* o *muy efectivo*.
+| **HP** | *Hit Points* o puntos vitales. En este juego se asignan aleatoriamente entre 20 y 50 al iniciar el combate.
+| **Movimiento activo** | Movimiento que el ave puede usar en batalla. Cada ave tiene cuatro movimientos activos.
+| **Movimiento distintivo** | Quinto movimiento del ave, asociado a su identidad y visible en su ficha, pero no utilizable en batalla.
+| **PWA** | *Progressive Web App*. Aplicación web instalable, con manifiesto, service worker y funcionamiento offline.
+| **PP** | *Power Points* o puntos de poder. Cada movimiento tiene un máximo aleatorio de usos por combate; al llegar a cero, el movimiento no puede usarse.
+| **PPTLS** | *Piedra, Papel, Tijera, Lagarto, Spock*. Sistema de resolución de ventajas y desventajas entre cinco tipos.
+| **PRD** | *Product Requirements Document*. Documento que define qué se construye y por qué.
+| **Rendición** | Acción de retirar voluntariamente el ave activa. También ocurre automáticamente cuando todos sus PP llegan a cero.
+| **TIC-80** | Motor de videojuegos *fantasy console* que permite crear, ejecutar y exportar juegos a HTML y otras plataformas.
+| **Turno** | Acción en la que el jugador elige un movimiento, el CPU elige otro, se resuelve PPTLS y se aplican daños y consumos de PP.
+| **UAT** | *User Acceptance Testing*. Pruebas de aceptación ejecutadas por el usuario o por QA para validar que el producto cumple los requisitos.
+|===
+
+== Tipos PPTLS
+
+[cols="1,2",options="header"]
+|===
+| Tipo | Identidad visual propuesta
+
+| Piedra | Puño o roca; color gris.
+| Papel | Hoja o documento; color azul.
+| Tijera | Tijeras; color verde.
+| Lagarto | Lagartija; color morado.
+| Spock | Saludo vulcano; color naranja.
+|===
+
+== Abreviaturas de requisitos
+
+* `RF`: requisito funcional.
+* `RNF`: requisito no funcional.
+* `BR`: regla de batalla.
+* `UAT`: caso de aceptación.
+* `A`: supuesto o decisión abierta.

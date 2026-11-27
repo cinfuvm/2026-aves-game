@@ -1,0 +1,128 @@
+= Estrategia de pruebas
+:toc: left
+:description: Tipos de prueba, técnicas, herramientas, métricas y criterios de suspensión.
+
+== Tipos de prueba
+
+[cols="1,2,2",options="header"]
+|===
+| Tipo | Objetivo | Ejemplos
+
+| Humo | Verificar que la build es ejecutable. | Cargar inicio, seleccionar 4 aves, completar una batalla.
+| Funcional | Validar requisitos y reglas. | PPTLS, daño, PP, rendición, relevo, pantallas.
+| Integración | Verificar la interacción entre componentes. | Selección → batalla → resultado; audio por pantalla.
+| Regresión | Asegurar que los cambios no rompen lo existente. | Repetir casos críticos tras cada corrección.
+| PWA | Validar instalación, caché y offline. | Lighthouse, DevTools offline, instalación en móvil.
+| Compatibilidad | Validar navegadores y dispositivos. | Chrome, Firefox, Safari, Edge; Android e iOS.
+| Usabilidad | Validar que el juego se entiende y se disfruta. | Sesión moderada con 1–3 usuarios.
+| Accesibilidad | Validar buenas prácticas básicas. | Contraste, foco, texto alternativo, control de audio.
+| Rendimiento | Validar fluidez y tiempos de carga. | FPS, Lighthouse, tamaño de recursos.
+| Contenido | Validar aves, textos, imágenes y sonidos. | Checklist de las diez aves.
+| Documentación | Validar manual y docs. | Navegación, enlaces, exactitud.
+|===
+
+== Técnicas
+
+* **Partición de equivalencia:** HP bajo (20), medio (35) y alto (50); PP 1 y 5; daño 0, normal y alto.
+* **Valores límite:** HP 20/50, PP 0/1/5, daño 0, 50 % exacto y 50 % + 1.
+* **Tabla de decisión:** matriz PPTLS completa (25 combinaciones).
+* **Máquina de estados:** transiciones entre pantallas y estados de batalla.
+* **Pruebas basadas en escenarios:** flujos completos de victoria, derrota, rendición y empate.
+* **Pruebas deterministas:** modo `?debug=1` con HP, PP y daño fijados.
+* **Pruebas exploratorias:** sesión libre para detectar problemas no previstos.
+
+== Cobertura mínima
+
+* 25 combinaciones PPTLS (5 × 5).
+* 4 tipos de resultado de daño: 0, normal, muy efectivo y empate.
+* 3 salidas de ave: HP 0, PP 0 y rendición manual.
+* 3 finales: victoria, derrota y empate.
+* 5 pantallas con su música correspondiente.
+* 10 aves con ficha, sonido y movimientos.
+* 3 navegadores de escritorio y 2 móviles como mínimo.
+* PWA instalable y offline.
+* Manual y documentación publicados.
+
+== Herramientas
+
+[cols="1,2",options="header"]
+|===
+| Herramienta | Uso
+
+| Navegadores de escritorio | Chrome, Firefox, Safari y Edge.
+| Dispositivos móviles / emuladores | Android e iOS; modo responsive de DevTools.
+| DevTools | Consola, red, almacenamiento, service worker, auditorías.
+| Lighthouse | PWA, rendimiento, accesibilidad y buenas prácticas.
+| Modo `?debug=1` | Fijar HP, PP y daño para pruebas deterministas.
+| Capturas y grabación de pantalla | Evidencia de resultados.
+| Hoja de cálculo o tablero | Registro de casos y defectos.
+| GitHub Actions | Verificación del build y despliegue.
+|===
+
+== Datos de prueba
+
+* Equipos con aves de todos los tipos.
+* Equipos con aves repetidas en tipo (por ejemplo, dos aves sin Spock).
+* HP límite: 20, 35 y 50.
+* PP límite: 1 y 5.
+* Daño: 0, 50 % del HP máximo, 50 % + 1 y 100 %.
+* Estados de batalla: primera ave, ave intermedia, última ave.
+* Casos de rendición con y sin aves restantes.
+* Casos de empate técnico.
+
+== Evidencia
+
+Cada caso aprobado o fallido debe tener al menos una evidencia:
+
+* Captura de pantalla con el resultado visible.
+* Video corto del flujo.
+* Log de consola sin errores.
+* Reporte de Lighthouse.
+* URL y commit evaluado.
+
+La evidencia se almacena en la carpeta del proyecto o en el registro de resultados, con el ID del caso y la fecha.
+
+== Métricas
+
+[cols="2,1,2",options="header"]
+|===
+| Métrica | Meta | Cálculo
+
+| Casos *Must* aprobados | 100 % | Aprobados / total *Must*.
+| Casos totales aprobados | ≥ 90 % | Aprobados / total ejecutados.
+| Defectos críticos abiertos | 0 | Conteo por severidad.
+| Defectos altos abiertos | 0 | Conteo por severidad.
+| Cobertura de requisitos *Must* | 100 % | Requisitos con al menos un caso.
+| Cobertura de aves | 100 % | Aves con ficha y sonido verificados.
+| PWA Lighthouse | Aprobado | Reporte.
+| Tiempo de ejecución | ≤ 2 días | Desde inicio hasta acta.
+|===
+
+== Criterios de suspensión y reanudación
+
+El UAT se suspende si:
+
+* El ambiente no está disponible o la build no carga.
+* Un defecto bloqueante impide ejecutar más del 30 % de los casos.
+* La versión desplegada no corresponde al commit evaluado.
+* Faltan datos o assets críticos.
+
+Se reanuda cuando:
+
+* El defecto bloqueante está corregido y verificado.
+* El ambiente y la versión son estables.
+* QA confirma que los casos bloqueados pueden ejecutarse.
+
+== Gestión de defectos
+
+Los defectos se registran con severidad, prioridad, pasos, resultado esperado, resultado observado, evidencia y responsable. El flujo y la plantilla están en xref:uat:gestion-defectos.adoc[gestión de defectos].
+
+== Salida
+
+Al finalizar, QA entrega:
+
+* Registro de resultados completo.
+* Lista de defectos con estado final.
+* Matriz de trazabilidad actualizada.
+* Reporte de métricas.
+* Recomendación de aceptación al Product Owner.

@@ -1,0 +1,40 @@
+= Casos: inicio y selección
+:toc: left
+:description: Casos de aceptación de las pantallas de inicio y selección de equipo.
+
+== Casos de inicio
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-INI-001 | Alta | RF-001, RF-028 | Juego desplegado. Navegador de escritorio y móvil. | 1) Abrir la URL. 2) Esperar la carga. 3) Observar la pantalla. | Se muestra el título, ilustración, botón *Comenzar*, enlace al manual y control de audio. La pantalla es usable en escritorio y móvil, sin errores en consola.
+| UAT-INI-002 | Alta | RF-002, RF-022 | Juego cargado. Sonido del dispositivo activo. | 1) Realizar una interacción (clic o toque). 2) Verificar la música. 3) Activar silencio. 4) Cambiar de pantalla y volver. | La música 1 suena tras la interacción; el silencio detiene música y efectos; el estado se conserva al navegar; al reactivar, la música vuelve.
+| UAT-INI-003 | Alta | RF-001, RF-024 | Juego cargado. | 1) Presionar el enlace al manual. 2) Verificar la nueva pestaña. 3) Volver al juego. 4) Presionar *Comenzar*. | El manual abre en una pestaña nueva y es navegable. Al volver, *Comenzar* lleva a la pantalla de selección sin errores.
+|===
+
+== Casos de selección de equipo
+
+[cols="1,1,1,2,3,3",options="header"]
+|===
+| ID | Prioridad | Requisito | Precondición y datos | Pasos | Resultado esperado
+
+| UAT-SEL-001 | Alta | RF-003, RF-028 | Estar en la pantalla de selección. | 1) Contar las aves disponibles. 2) Recorrer el catálogo en escritorio y móvil. 3) Verificar nombres e imágenes. | Se muestran exactamente diez aves, cada una con nombre e imagen, navegables con teclado, mouse y touch, sin cortes en móvil.
+| UAT-SEL-002 | Alta | RF-004 | Estar en la pantalla de selección. | 1) Seleccionar cada una de las diez aves. 2) Revisar su ficha. | Cada ficha muestra nombre común, nombre científico, descripción, imagen, sonido, cuatro movimientos activos con nombre, personalidad e ícono PPTLS, y el movimiento distintivo marcado como no usable.
+| UAT-SEL-003 | Media | RF-004, RF-022 | Ficha de un ave abierta. | 1) Presionar el botón de sonido del ave. 2) Repetir con tres aves distintas. | Se reproduce el sonido único del ave seleccionada; no se reproduce el de otra ave; el audio no se superpone de forma incorrecta.
+| UAT-SEL-004 | Alta | RF-005 | Estar en la pantalla de selección. | 1) Seleccionar el ave A. 2) Seleccionar B, C y D. 3) Verificar el orden. 4) Intentar seleccionar A de nuevo. | Se muestran las cuatro aves con orden 1 a 4; no se permiten duplicados; el estado de selección es visible.
+| UAT-SEL-005 | Alta | RF-005, RF-006 | Cuatro aves seleccionadas. | 1) Intentar seleccionar una quinta ave. 2) Observar el mensaje. 3) Verificar el equipo. | El sistema impide la quinta selección, muestra un mensaje claro y mantiene las cuatro aves.
+| UAT-SEL-006 | Media | RF-005 | Cuatro aves seleccionadas. | 1) Deseleccionar el ave 2. 2) Verificar el orden restante. 3) Volver a seleccionarla. | El ave se quita del equipo; el orden se recalcula; se puede volver a seleccionar sin duplicados.
+| UAT-SEL-007 | Alta | RF-006, RF-007 | Menos de cuatro aves seleccionadas. | 1) Observar el botón *Comenzar batalla*. 2) Intentar presionarlo. | El botón está deshabilitado y se explica que faltan aves. No se inicia la batalla.
+| UAT-SEL-008 | Alta | RF-006, RF-007 | Cuatro aves seleccionadas. | 1) Presionar *Comenzar batalla*. 2) Verificar la transición y la música. | Se inicia la batalla con el equipo y orden elegidos; la música 2 se detiene y comienza la música 3 sin superposición.
+| UAT-SEL-009 | Media | RF-007, RF-022 | Estar en la pantalla de selección. | 1) Verificar la música 2. 2) Activar silencio. 3) Salir a inicio y volver. | La música 2 suena en bucle y respeta el silencio; al volver se mantiene la selección previa si el flujo lo permite.
+| UAT-SEL-010 | Alta | RF-028 | Dispositivo móvil de 360 px de ancho. | 1) Abrir la selección. 2) Navegar con touch. 3) Seleccionar cuatro aves. 4) Confirmar. | La interfaz se adapta sin scroll horizontal; los botones son táctiles (≥ 44 px); se completa la selección y la confirmación.
+|===
+
+== Notas de ejecución
+
+* Para UAT-SEL-002 se deben revisar las diez aves; registrar una captura por cada ficha o una tabla de verificación.
+* La verificación de íconos PPTLS debe comprobar que cada movimiento muestra el ícono correcto y que el color no es el único indicador.
+* El sonido de cada ave debe ser distinguible; no se acepta reutilizar el mismo audio para varias aves.
+* La selección de equipo debe conservar el orden incluso si el jugador navega entre fichas antes de confirmar.
+* Si el flujo permite volver desde la batalla a la selección, verificar que el estado se restablezca correctamente.

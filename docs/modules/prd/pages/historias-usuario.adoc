@@ -1,0 +1,269 @@
+= Historias de usuario
+:toc: left
+:toclevels: 3
+:description: Épicas, historias de usuario y criterios de aceptación en formato Gherkin.
+
+== Épicas
+
+[cols="1,2,3",options="header"]
+|===
+| ID | Épica | Historias
+
+| EP-01 | Inicio y navegación | US-01, US-02
+| EP-02 | Selección de equipo | US-03, US-04
+| EP-03 | Batalla PPTLS | US-05, US-06, US-07, US-08
+| EP-04 | Resultados y rejugabilidad | US-09
+| EP-05 | Plataforma PWA y despliegue | US-10, US-11
+| EP-06 | Documentación y manual | US-12
+|===
+
+== US-01 — Iniciar el juego
+
+**Como** jugador, **quiero** ver una pantalla de inicio atractiva con un botón para comenzar, **para** entrar al juego sin pasos innecesarios.
+
+[source,gherkin]
+----
+Escenario: Inicio exitoso
+  Dado que abro la URL pública del juego
+  Cuando la pantalla termina de cargar
+  Entonces veo el título del juego y el botón "Comenzar"
+  Y escucho la música 1 después de mi primera interacción
+  Cuando presiono "Comenzar"
+  Entonces paso a la pantalla de selección de equipo
+  Y la música 1 se detiene sin superponerse con la música 2
+----
+
+== US-02 — Controlar el audio
+
+**Como** jugador, **quiero** silenciar la música y los efectos, **para** jugar sin molestar a otras personas.
+
+[source,gherkin]
+----
+Escenario: Silenciar el audio
+  Dado que estoy en cualquier pantalla del juego
+  Cuando activo el control de silencio
+  Entonces la música y los efectos se detienen
+  Y el estado de silencio se mantiene al cambiar de pantalla
+  Cuando vuelvo a activar el sonido
+  Entonces se reanuda la música de la pantalla actual
+----
+
+== US-03 — Explorar las aves
+
+**Como** jugador, **quiero** ver la ficha de cada ave con sus movimientos e íconos PPTLS, **para** elegir un equipo informado.
+
+[source,gherkin]
+----
+Escenario: Consultar la ficha de un ave
+  Dado que estoy en la pantalla de selección
+  Cuando selecciono una de las diez aves
+  Entonces veo su nombre, nombre científico, descripción, imagen y sonido
+  Y veo sus cuatro movimientos activos con nombre, personalidad e ícono PPTLS
+  Y veo su movimiento distintivo marcado como no usable
+----
+
+== US-04 — Seleccionar el equipo
+
+**Como** jugador, **quiero** elegir hasta cuatro aves en un orden determinado, **para** definir mi estrategia de batalla.
+
+[source,gherkin]
+----
+Escenario: Seleccionar cuatro aves
+  Dado que estoy en la pantalla de selección
+  Cuando selecciono cuatro aves distintas
+  Entonces veo el orden de selección del 1 al 4
+  Y el botón "Comenzar batalla" se habilita
+
+Escenario: Intentar seleccionar una quinta ave
+  Dado que ya tengo cuatro aves seleccionadas
+  Cuando intento seleccionar una quinta
+  Entonces el sistema muestra un mensaje y no la agrega
+  Y el equipo permanece con cuatro aves
+
+Escenario: Intentar comenzar con menos de cuatro aves
+  Dado que tengo menos de cuatro aves seleccionadas
+  Entonces el botón "Comenzar batalla" está deshabilitado
+  Y veo un mensaje que indica que faltan aves por seleccionar
+----
+
+== US-05 — Combatir con reglas PPTLS
+
+**Como** jugador, **quiero** elegir un movimiento y ver de inmediato el resultado del enfrentamiento, **para** entender la ventaja de tipo y el daño recibido o infligido.
+
+[source,gherkin]
+----
+Escenario: Ganar un intercambio PPTLS
+  Dado que mi ave activa tiene al menos un movimiento con PP
+  Y el CPU tiene un movimiento con PP
+  Cuando elijo un movimiento que vence al del CPU según PPTLS
+  Entonces mi movimiento consume un PP
+  Y el CPU consume un PP
+  Y se calcula un daño entre 0 y el HP máximo del CPU
+  Y el HP del CPU se reduce según el daño
+  Y veo el resultado y la clasificación de efectividad
+
+Escenario: Perder un intercambio PPTLS
+  Dado que elijo un movimiento que pierde contra el del CPU
+  Entonces el CPU inflige daño a mi ave
+  Y mi HP se reduce según el daño calculado
+  Y veo el resultado del turno
+
+Escenario: Empatar un intercambio PPTLS
+  Dado que ambos elegimos movimientos del mismo tipo
+  Entonces no se aplica daño
+  Y ambos movimientos consumen un PP
+  Y veo el mensaje de choque
+----
+
+== US-06 — Gestionar la rendición y el relevo
+
+**Como** jugador, **quiero** rendir mi ave activa y que el relevo ocurra automáticamente, **para** continuar la batalla cuando una ave ya no es útil.
+
+[source,gherkin]
+----
+Escenario: Rendición manual
+  Dado que estoy en batalla
+  Cuando presiono "Rendirse" y confirmo
+  Entonces mi ave activa sale de combate sin llegar a 0 HP
+  Y entra la siguiente ave de mi equipo
+  Y el evento se registra en el historial
+
+Escenario: Rendición automática por PP
+  Dado que todos los movimientos de mi ave activa tienen PP 0
+  Cuando termina el turno
+  Entonces el ave se rinde automáticamente
+  Y entra la siguiente ave de mi equipo
+
+Escenario: Relevo por HP
+  Dado que mi ave activa llega a 0 HP
+  Entonces el ave se debilita
+  Y entra la siguiente ave de mi equipo
+  Y si no quedan aves, se muestra la pantalla de perdedor
+----
+
+== US-07 — Enfrentar al CPU
+
+**Como** jugador, **quiero** que el CPU elija movimientos válidos y respete las reglas, **para** tener una batalla justa.
+
+[source,gherkin]
+----
+Escenario: El CPU elige un movimiento
+  Dado que es el turno del CPU
+  Cuando el CPU tiene movimientos con PP
+  Entonces elige uno al azar entre los disponibles
+  Y consume un PP
+  Y aplica las mismas reglas de daño y relevo que el jugador
+
+Escenario: El CPU no tiene PP
+  Dado que todos los movimientos del CPU activo tienen PP 0
+  Entonces su ave se rinde automáticamente
+  Y entra la siguiente ave del CPU
+----
+
+== US-08 — Ver el resultado de la batalla
+
+**Como** jugador, **quiero** ver una pantalla de victoria o derrota con opciones para continuar, **para** cerrar la partida y volver a jugar.
+
+[source,gherkin]
+----
+Escenario: Victoria
+  Dado que todas las aves del CPU están debilitadas o rendidas
+  Entonces veo la pantalla de ganador
+  Y escucho la música 4
+  Y puedo elegir "Jugar de nuevo" o "Volver al inicio"
+
+Escenario: Derrota
+  Dado que todas mis aves están debilitadas o rendidas
+  Entonces veo la pantalla de perdedor
+  Y escucho la música 5
+  Y puedo elegir "Intentar de nuevo" o "Volver al inicio"
+----
+
+== US-09 — Rejugar
+
+**Como** jugador, **quiero** iniciar una nueva partida desde la pantalla de resultado, **para** intentar una estrategia diferente.
+
+[source,gherkin]
+----
+Escenario: Jugar de nuevo
+  Dado que estoy en la pantalla de ganador o perdedor
+  Cuando presiono "Jugar de nuevo"
+  Entonces se reinicia la batalla con un equipo nuevo
+  Y se restablecen HP y PP
+  Y la música cambia a la pista correspondiente
+  Y no quedan procesos de audio o animación en segundo plano
+----
+
+== US-10 — Instalar y jugar offline
+
+**Como** jugador, **quiero** instalar el juego como aplicación y jugar sin conexión, **para** usarlo en cualquier momento.
+
+[source,gherkin]
+----
+Escenario: Instalación de la PWA
+  Dado que visito el juego en un navegador compatible
+  Cuando el navegador ofrece instalar la aplicación
+  Y acepto la instalación
+  Entonces el juego se abre como aplicación instalada
+
+Escenario: Juego offline
+  Dado que cargué el juego al menos una vez con conexión
+  Cuando desactivo la red y abro el juego
+  Entonces el juego carga desde el caché
+  Y puedo completar una partida
+----
+
+== US-11 — Despliegue automático
+
+**Como** miembro del equipo, **quiero** que cada push a `main` publique el juego y la documentación, **para** reducir errores manuales y mantener la URL actualizada.
+
+[source,gherkin]
+----
+Escenario: Despliegue exitoso
+  Dado que hago push a la rama main
+  Cuando se ejecuta el workflow de GitHub Actions
+  Entonces se construyen el juego, el manual y la documentación
+  Y se publican en GitHub Pages
+  Y el workflow termina en estado exitoso
+
+Escenario: Build fallido
+  Dado que el build o los tests fallan
+  Entonces el workflow falla y no publica una versión rota
+  Y el equipo recibe la notificación del error
+----
+
+== US-12 — Consultar el manual
+
+**Como** jugador, **quiero** acceder a un manual web claro, **para** aprender las reglas y resolver dudas.
+
+[source,gherkin]
+----
+Escenario: Acceso al manual
+  Dado que estoy en el juego
+  Cuando presiono el enlace al manual
+  Entonces se abre el manual en una nueva pestaña
+  Y encuentro secciones de inicio, selección, batalla, reglas PPTLS, aves, controles y preguntas frecuentes
+----
+
+== Definición de Ready (DoR)
+
+Una historia está lista para desarrollo cuando:
+
+* Tiene criterios de aceptación claros y verificables.
+* Tiene dependencias identificadas.
+* Tiene los assets o datos necesarios definidos.
+* Fue estimada por el equipo.
+* Tiene un caso UAT asociado o plan para crearlo.
+* No tiene bloqueos externos conocidos.
+
+== Definición de Done (DoD)
+
+Una historia está terminada cuando:
+
+* El código está implementado y revisado por un par.
+* Los tests automatizados relevantes pasan.
+* Los criterios de aceptación se cumplen.
+* La funcionalidad se probó en escritorio y móvil.
+* No introduce errores críticos ni regresiones.
+* La documentación o el manual se actualizaron si corresponde.
+* El caso UAT asociado está identificado y listo para ejecución.

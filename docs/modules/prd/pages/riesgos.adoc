@@ -1,0 +1,72 @@
+= Riesgos
+:toc: left
+:description: Registro de riesgos, evaluación, mitigación, contingencia y responsables.
+
+== Metodología
+
+Cada riesgo se evalúa con probabilidad (P) e impacto (I) en escala 1–5. La exposición es `P × I`:
+
+* **Bajo:** 1–6.
+* **Medio:** 8–12.
+* **Alto:** 15–25.
+
+== Registro de riesgos
+
+[cols="1,3,1,1,1,2,2,1",options="header"]
+|===
+| ID | Riesgo | P | I | Exp. | Mitigación | Contingencia | Dueño
+
+| R-01 | Limitaciones del exportador HTML de TIC-80 en móvil o en CI. | 3 | 5 | 15 | Prueba de concepto temprana; fijar versión del binario; validar en dispositivos reales. | Exportación manual documentada y artefacto versionado. | Código/DevOps
+| R-02 | Bajo rendimiento en teléfonos de gama media. | 3 | 4 | 12 | Sprites y paleta optimizados; medir fps; evitar efectos costosos. | Reducir animaciones y efectos secundarios. | Código
+| R-03 | Políticas de autoplay bloquean el audio. | 4 | 3 | 12 | Iniciar audio tras la primera interacción; mensaje claro. | Botón de activación de sonido. | Código
+| R-04 | Service worker con caché obsoleto o rutas rotas en Pages. | 3 | 5 | 15 | Versionar caché; rutas relativas; probar en subdirectorio. | Limpiar caché y publicar nueva versión; fallback a red. | DevOps
+| R-05 | Assets sin licencia o con derechos de autor. | 3 | 5 | 15 | Revisión de licencias; `CREDITS.md`; assets originales. | Reemplazar el recurso antes del lanzamiento. | Arte/audio
+| R-06 | Ambigüedad en las reglas de la especificación original. | 4 | 4 | 16 | Documentar supuestos en el PRD; validar con el Product Owner. | Ajustar reglas y casos UAT antes de la implementación. | Product Owner
+| R-07 | Retraso en la entrega de las diez aves. | 3 | 4 | 12 | Entregas parciales; placeholders; seguimiento semanal. | Reducir detalle visual manteniendo la jugabilidad. | Arte/audio
+| R-08 | Descoordinación entre equipos. | 3 | 4 | 12 | Daily, demo semanal, tablero compartido y responsables claros. | Reunión de alineación y reasignación de tareas. | Gestión
+| R-09 | Cambios de alcance tardíos. | 3 | 4 | 12 | Congelar alcance en semana 2; control de cambios. | Posponer a versión futura. | Product Owner
+| R-10 | Defectos críticos cerca del lanzamiento. | 3 | 5 | 15 | UAT desde semana 7; pruebas automatizadas; revisión de código. | Retrasar el lanzamiento o publicar con hotfix. | QA/Código
+| R-11 | Pérdida de trabajo por falta de respaldo. | 2 | 5 | 10 | Repositorio remoto; commits frecuentes; ramas protegidas. | Restaurar desde GitHub o respaldos locales. | Todo el equipo
+| R-12 | Incompatibilidad con Safari/iOS. | 3 | 3 | 9 | Pruebas en Safari y iOS; fallbacks de audio y almacenamiento. | Ajustar la PWA y documentar limitaciones. | DevOps
+| R-13 | Música o efectos demasiado pesados para TIC-80. | 3 | 3 | 9 | Componer dentro de las capacidades del motor; comprimir. | Simplificar arreglos o reutilizar pistas. | Audio
+| R-14 | Falta de tiempo para el tráiler. | 3 | 2 | 6 | Guion temprano; capturas durante el desarrollo. | Publicar un tráiler más corto con lo esencial. | Arte/audio
+| R-15 | Documentación desactualizada respecto al producto. | 3 | 3 | 9 | Actualizar docs en cada cambio de requisito; revisión en el DoD. | Corregir antes del acta de aceptación. | Gestión/DevOps
+|===
+
+== Riesgos de mayor exposición
+
+[cols="1,2,3",options="header"]
+|===
+| Riesgo | Exposición | Acción prioritaria
+
+| R-06 Ambigüedad de reglas | 16 | Validar supuestos A-01 a A-12 con el Product Owner en la semana 2.
+| R-01 Exportación TIC-80 | 15 | Prueba de concepto en la semana 3 y build reproducible.
+| R-04 Caché/rutas PWA | 15 | Implementar rutas relativas y probar en subdirectorio.
+| R-05 Licencias | 15 | Auditar assets antes de integrarlos.
+| R-10 Defectos tardíos | 15 | Iniciar UAT en la semana 7 y priorizar *Must*.
+|===
+
+== Seguimiento
+
+* Revisión quincenal del registro.
+* Actualización de probabilidad e impacto tras cada hito.
+* Cierre de riesgos con evidencia.
+* Escalamiento al Product Owner si un riesgo alto se materializa.
+* Registro de lecciones aprendidas al final del proyecto.
+
+== Criterios de escalamiento
+
+Un riesgo se escala cuando:
+
+* Su exposición sube a **Alto**.
+* Afecta un requisito *Must* o un hito.
+* No tiene mitigación viable dentro del cronograma.
+* Requiere una decisión de alcance o presupuesto.
+
+== Plan de contingencia general
+
+1. Congelar nuevas funcionalidades y enfocarse en los requisitos *Must*.
+2. Reasignar personas de arte/audio a pruebas o documentación si el código es el cuello de botella.
+3. Publicar una versión candidata con las limitaciones documentadas.
+4. Comunicar el estado al Product Owner y acordar el nuevo alcance.
+5. Registrar la decisión en el acta de aceptación.

@@ -1,0 +1,135 @@
+= Requisitos no funcionales
+:toc: left
+:description: Rendimiento, compatibilidad, usabilidad, accesibilidad, seguridad, mantenibilidad y licencias.
+
+== Resumen
+
+[cols="1,3,2",options="header"]
+|===
+| ID | Requisito | Criterio verificable
+
+| RNF-001 | Compatibilidad con navegadores modernos. | Últimas dos versiones estables de Chrome, Firefox, Safari y Edge.
+| RNF-002 | Soporte web y móvil. | Jugable en escritorio, tablet y teléfono; PWA instalable.
+| RNF-003 | Rendimiento en móvil. | ≥ 30 fps estables en un dispositivo de gama media; sin caídas visibles.
+| RNF-004 | Tiempo de carga. | ≤ 5 s en una conexión 3G rápida; ≤ 2 s en banda ancha.
+| RNF-005 | Funcionamiento offline. | Partida completa sin red tras la primera carga.
+| RNF-006 | Tamaño de recursos. | Carga inicial ≤ 5 MB comprimida; assets optimizados.
+| RNF-007 | Usabilidad. | Primera partida completada sin ayuda por al menos el 80 % de los testeadores.
+| RNF-008 | Accesibilidad básica. | Contraste suficiente, foco visible, controles de audio, información no dependiente solo del color.
+| RNF-009 | Compatibilidad táctil. | Objetivos táctiles ≥ 44 × 44 px y sin gestos obligatorios.
+| RNF-010 | Seguridad. | Sin backend, sin datos personales, sin secretos en el repositorio.
+| RNF-011 | Privacidad. | Sin analítica de terceros ni cookies de seguimiento en el MVP.
+| RNF-012 | Mantenibilidad. | Código modular, lint sin errores, revisión de pares y pruebas de lógica.
+| RNF-013 | Portabilidad. | Build reproducible en Windows, macOS y Linux; dependencias documentadas.
+| RNF-014 | Despliegue. | Publicación automatizada y reversible en GitHub Pages.
+| RNF-015 | Licencias. | Todos los assets tienen licencia compatible con publicación pública.
+| RNF-016 | Idioma. | Interfaz, manual y documentación en español de Chile.
+| RNF-017 | SEO y metadatos. | Título, descripción, favicon y Open Graph en la página pública.
+| RNF-018 | Disponibilidad. | URL pública disponible al menos durante el periodo de evaluación.
+| RNF-019 | Observabilidad básica. | Errores críticos visibles en consola y mensajes amigables al usuario.
+| RNF-020 | Originalidad de contenido. | Nombres de movimientos, personalidad y descripciones propias del equipo.
+|===
+
+== Rendimiento
+
+* El bucle de juego debe mantener una actualización estable; se acepta una tasa mínima de 30 fps en móviles de gama media.
+* La carga inicial debe priorizar el contenido esencial de la pantalla de inicio y diferir assets secundarios cuando sea posible.
+* Las imágenes deben usar el tamaño y formato adecuados para TIC-80 y para la PWA; se prefieren sprites pequeños y paletas limitadas.
+* El audio debe cargarse de forma que no bloquee la primera interacción.
+* El service worker debe cachear solo los recursos necesarios para una partida completa, evitando un caché inicial excesivo.
+
+== Compatibilidad
+
+[cols="1,1,2",options="header"]
+|===
+| Plataforma | Versiones | Observaciones
+
+| Chrome | Últimas 2 estables | Navegador de referencia para PWA.
+| Edge | Últimas 2 estables | Basado en Chromium.
+| Firefox | Últimas 2 estables | Verificar instalación PWA y audio.
+| Safari (macOS/iOS) | Últimas 2 estables | Verificar audio y almacenamiento del service worker.
+| Android | 10 o superior | PWA instalable; probar en gama media.
+| iOS/iPadOS | 15 o superior | Instalación desde *Compartir → Añadir a pantalla de inicio*.
+|===
+
+== Usabilidad
+
+* La interfaz debe comunicar el estado del juego en todo momento: ave activa, turno, HP, PP y resultado.
+* Las acciones destructivas o que cambian el rumbo de la partida (rendirse) deben requerir confirmación.
+* Los mensajes de error deben explicar qué ocurrió y cómo continuar.
+* El jugador no debe necesitar leer documentación externa para completar una partida.
+* Los íconos PPTLS deben ir acompañados de texto o forma para no depender solo del color.
+
+== Accesibilidad
+
+* Contraste mínimo de 4.5:1 para texto normal y 3:1 para texto grande.
+* Foco visible en todos los elementos interactivos.
+* Navegación completa por teclado en escritorio.
+* Control de silencio persistente durante la sesión.
+* Alternativa textual para los íconos y resultados de cada turno.
+* No usar animaciones parpadeantes ni efectos que puedan causar molestias.
+* Tamaño de fuente legible en móvil y opción de texto claro en las descripciones.
+
+== Seguridad y privacidad
+
+* El juego no recopila datos personales.
+* No se usan cookies de seguimiento ni servicios de analítica de terceros en el MVP.
+* No se incluyen claves, tokens ni secretos en el repositorio.
+* Los recursos externos se sirven por HTTPS.
+* Las dependencias de desarrollo se mantienen actualizadas y auditadas.
+* El código no ejecuta contenido de terceros no confiable.
+
+== Mantenibilidad
+
+* El código JavaScript se organiza en módulos con responsabilidades claras: escenas, estado, batalla, datos y audio.
+* La lógica de batalla debe ser independiente de la interfaz para permitir pruebas unitarias.
+* Se usa un linter y un formato consistentes.
+* Las funciones críticas (HP, PP, daño, PPTLS, fin de batalla) tienen pruebas automatizadas.
+* Los cambios relevantes se registran en un ADR o en el changelog.
+* El repositorio incluye un README con pasos de instalación, build y despliegue.
+
+== Portabilidad y despliegue
+
+* El build debe funcionar en un entorno limpio con Node.js y las dependencias declaradas.
+* El workflow de GitHub Actions debe ser la fuente de verdad del proceso de build.
+* La configuración de rutas debe funcionar en GitHub Pages (incluido el subdirectorio del repositorio).
+* El despliegue debe poder revertirse a una versión anterior mediante tags o releases.
+* El juego y la documentación se publican como artefactos estáticos.
+
+== Licencias y créditos
+
+* Las imágenes, música y efectos deben ser creados por el equipo o tener licencia compatible con la publicación pública.
+* Se debe mantener un archivo `CREDITS.md` con autoría y licencia de cada recurso.
+* Los datos científicos de las aves deben citar la fuente utilizada.
+* El nombre del juego y los nombres de movimientos no deben infringir marcas registradas de terceros.
+* La documentación se publica bajo CC BY 4.0 y el código bajo la licencia elegida por el equipo.
+
+== Disponibilidad y soporte
+
+* La URL pública debe estar disponible durante el periodo de evaluación y al menos 30 días después del lanzamiento.
+* Los errores críticos deben tener un canal de reporte definido en el README.
+* Se debe documentar cómo reproducir el entorno de desarrollo.
+* El equipo debe conservar una copia de los assets originales para futuras correcciones.
+
+== Criterios de verificación
+
+[cols="1,2,2",options="header"]
+|===
+| Requisito | Método | Evidencia
+
+| RNF-001, RNF-002 | Prueba manual en matriz de dispositivos. | Capturas y video por navegador.
+| RNF-003, RNF-004 | Medición con DevTools y Lighthouse. | Reporte de rendimiento.
+| RNF-005 | Prueba offline con DevTools. | Video de partida sin red.
+| RNF-006 | Auditoría de red y tamaño de build. | Reporte de recursos.
+| RNF-007 | Sesión moderada con usuarios. | Formulario y observaciones.
+| RNF-008, RNF-009 | Revisión de accesibilidad y prueba táctil. | Checklist y capturas.
+| RNF-010, RNF-011 | Revisión de código y de red. | Checklist de seguridad.
+| RNF-012, RNF-013 | Ejecución de lint, tests y build limpio. | Salida de CI.
+| RNF-014 | Ejecución del workflow y rollback. | Log de Actions.
+| RNF-015 | Revisión de `CREDITS.md`. | Archivo y enlaces de licencia.
+| RNF-016 | Revisión de textos. | Checklist de idioma.
+| RNF-017 | Inspección de metadatos. | Captura de la página y del código.
+| RNF-018 | Monitoreo manual de la URL. | Registro de disponibilidad.
+| RNF-019 | Prueba de errores y consola. | Capturas y logs.
+| RNF-020 | Revisión de contenido. | Fichas de aves y movimientos.
+|===

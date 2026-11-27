@@ -1,0 +1,6 @@
+{
+  "ticExecutable": "/Applications/TIC-80.app/Contents/MacOS/tic80",
+  "entry": "main.ts",
+  "outfile": "build/output.js",
+  "minify": false
+}
