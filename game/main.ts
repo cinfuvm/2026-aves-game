@@ -54,6 +54,7 @@ import {
   FONDO_BLOQUE_TILES,
 } from "./src/data/sprites"
 import type { AveCombate, Equipo, Rng, TipoPPTLS } from "./src/battle/types"
+import { actualizarMusica, type ApiSonido } from "./src/audio/musica"
 
 // Botones de TIC-80
 const ARRIBA = 0
@@ -116,7 +117,11 @@ function BOOT() {
   printh("Module import works!")
 }
 
+// Sonido de TIC-80 para el reproductor de música (src/audio/musica.ts).
+const SONIDO: ApiSonido = { poke, sfx }
+
 function TIC() {
+  actualizarMusica(SONIDO, juego.pantalla, juego.resultado)
   leerEntrada()
   dibujar()
 }
