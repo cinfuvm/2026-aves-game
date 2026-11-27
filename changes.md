@@ -28,6 +28,7 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 | D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 3]** (D-H; antes [1, 5]). | BR-003 |
 | D-11 | Pasiva Tijera «+5» | No aplica. | Interpretación: **+5 de daño fijo adicional** al daño calculado cuando el ave de tipo tijera gana el intercambio. | — |
 | D-12 | Redondeo del daño final | No se especifica. | El daño final se **redondea hacia abajo** (`floor`) a un entero ≥ 0, coherente con el estilo del PRD. | BR-006 |
+| D-19 | IA del CPU | El CPU elige uniformemente al azar entre sus movimientos disponibles. Como mejora opcional, puede ponderar la ventaja PPTLS contra el último movimiento del jugador, sin reemplazar la elección aleatoria base. | **Perfil base sin cambios** (`PERFIL_BASE`, aleatorio) y un **perfil estratégico** para los 8 bots de la torre: predicción del jugador con el historial, valor esperado de cada movimiento y elección con softmax más un piso de exploración (siempre con azar). Los bots no ven la elección actual del jugador (D-J); solo el Enemigo 8 conoce además sus movimientos usables. Ver paso 13. | `reglas-batalla.adoc` («Inteligencia artificial del CPU») |
 
 ## Pendientes de decisión (bloquean cambios futuros)
 
@@ -35,7 +36,7 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
 2. **D-14 (tipo propio de las aves):** supuesto S-01. Falta que el Product Owner lo confirme; si cambia, solo hay que editar `game/src/data/birds.ts`.
 3. **Pokédex** (plan_desarrollo.md §4.1): sin definir.
 4. **Torre de desafíos** (plan_desarrollo.md §4.1): sin definir.
-5. **Actualización del PRD:** pendiente incorporar D-01 a D-18 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
+5. **Actualización del PRD:** pendiente incorporar D-01 a D-19 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
 
 ---
 
@@ -231,3 +232,35 @@ Fuente de arte: `C:\Users\mauri\Desktop\Proyecto-III` (fondos 240×136 + 10 aves
 - **Franjas de fondo:** regeneradas desde la **parte superior** (y=0..31, con arte) en `assets-src/fondos/*_franja.png`. `dibujarFondoBatalla` pinta la franja arriba (y=0) y completa suelo/horizonte con primitivas.
 - Verificado: `tsc` 0, build OK, comando de arranque importa 12 assets + código sin errores, **208 tests verdes**.
 - **Pendiente validación visual:** si aparece recuadro alrededor de aves o franja, ajustar el `colorkey` de `spr` (0 → -1 o el índice transparente real).
+### Paso 13 — Bots de la torre (Área B de plan_desarrollo.md, 26 nov 2026)
+
+- **IA nueva, sin cambiar la firma de `elegirMovimientoCpu`.** `PerfilCpu` ahora es `{ tipo: 'aleatorio' }` (nivel base, igual que antes) o `{ tipo: 'estrategico', ia: ParametrosIA }`. Se agregó `decisionCpu` (probabilidades de cada movimiento sin tirar el rng, para pruebas y depuración) y `armarEquipoCpu`.
+- Creado `game/src/battle/ia/prediccion.ts`: 4 predictores del próximo tipo del jugador (frecuencia con memoria, reacción ganar-quedarse / perder-cambiar, transiciones de Markov y anti-CPU) y un conjunto que pesa cada predictor según cuánto acertó en la batalla. Usan solo el historial y el tipo del ave del jugador.
+- Creado `game/src/battle/ia/evaluacion.ts`: valor esperado de cada movimiento con las reglas del motor leídas de `estado.config` (daño base 10–50 %, esfuerzo, STAB, Tijera +5, fallo, Spock que no falla, papel con coste 0, empate con daño para ambos, rendición por quedarse sin MP). Después suma la personalidad y convierte a probabilidades con softmax + exploración.
+- Creado `game/src/data/bots.ts`: los 8 bots de §5.1 y §5.2 con apodo, dificultad, tipo favorito, ave característica, descripción y perfil. `equipoDeBot` arma el equipo con las fichas que existan (ave característica al final, al menos un ave del tipo favorito; solo el Enemigo 8 elige contra el equipo del jugador).
+- **Decisiones de diseño:**
+  - Enemigo 7 usa solo el historial (D-J). Enemigo 8 («algo injusto») conoce los movimientos usables del jugador y sus costes, y arma su equipo contra el del jugador. **Nadie ve la elección actual del jugador.**
+  - Todos los bots conservan azar: probabilidad media de su jugada favorita entre 44 % (Enemigos 1–2) y 69 % (Enemigo 8). Ningún movimiento usable queda con probabilidad 0.
+  - Los Enemigos 1 a 5 tienen debilidades distintas a propósito, para que el jugador pueda aprender a vencerlos (p. ej. El Porfiado repite el tipo con que ganó).
+  - El CPU sigue sin rendirse manualmente (reglas-batalla.adoc).
+- **Integración con el MVP:** `flujo.ts` guarda el bot de la batalla (`Juego.bot`). Mientras no exista la torre, la CPU juega con el bot cuyo tipo favorito coincide con su ave (Cóndor → Enemigo 5, Loica → Enemigo 4, Chincol → Enemigo 3). No cambia el consumo del rng al crear la batalla.
+- **Simulación (`npm run bots:sim`):** `scripts/simular-bots.ts`, 600 batallas 3v3 por celda con `CONFIG_BASE` y 10 fichas de prueba (2 por tipo). Victorias del CPU:
+
+  | Bot | vs azar | vs humano (mezcla) | Media de 7 estilos | Turnos |
+  |---|---|---|---|---|
+  | Base (aleatorio) | 51 % | 44 % | 45 % | 14.1 |
+  | Enemigo 1 (El Porfiado) | 55 % | 39 % | 40 % | 13.9 |
+  | Enemigo 2 (La Filosa) | 53 % | 58 % | 56 % | 13.1 |
+  | Enemigo 3 (El Centinela) | 57 % | 56 % | 55 % | 14.3 |
+  | Enemigo 4 (El Oportunista) | 57 % | 56 % | 61 % | 14.2 |
+  | Enemigo 5 (El Escurridizo) | 55 % | 57 % | 63 % | 13.8 |
+  | Enemigo 6 (La Estratega) | 60 % | 69 % | 75 % | 13.6 |
+  | Enemigo 7 (El Jefe) | 56 % | 78 % | 83 % | 12.9 |
+  | Enemigo 8 (La Sombra) | 73 % | 84 % | 89 % | 12.8 |
+
+  Contra un jugador al azar los bots que juegan limpio quedan entre 53 % y 60 %: no pueden leerlo y la ventaja viene de usar mejor el daño y el MP. El 73 % del Enemigo 8 viene de su información extra. Los niveles de la torre (D-D) todavía no están en la simulación.
+- Verificado en **TIC-80 1.1 (QuickJS)**: un cartucho de prueba jugó 160 batallas 3v3 con los 8 bots sin errores, y el cartucho del juego carga con `import code`.
+- Tests: `game/tests/ia.test.ts` (26 casos) y `game/tests/bots.test.ts` (17 casos). Total: 169 pruebas pasan. `tsc` sin errores.
+- **Tamaño del cartucho:** `build/output.js` pasa de 27,9 KB a 47,9 KB sin minificar. Si el juego completo se acerca al límite de código de TIC-80, activar `"minify": true` en `game/tsc80-config.json`.
+- **Pendiente (fuera de este paso):** mecánicas propias de los Enemigos 6 a 8 (§5.2, son reglas del motor), niveles de cada combate (P4) y equipos fijos cuando existan las 7 fichas que faltan.
+

@@ -17,10 +17,13 @@
  * traduce los botones a estas funciones. Todas devuelven un juego nuevo.
  *
  * Batalla 1v1 (decisión D1 del plan MVP). El jugador elige una de las aves de
- * FICHAS_MVP; la CPU recibe otra al azar. El 3v3 llega en fases posteriores.
+ * Batalla 3v3 (ver confirmarEquipo). El equipo del jugador es su selección;
+ * el rival es el equipo del bot de la torre (`equipoDeBot`, ver game/src/data/bots.ts).
  */
 
 import { CATALOGO_AVES, FICHAS_MVP } from '../data/birds';
+import { BOTS, equipoDeBot, type BotCpu } from '../data/bots';
+
 import { aveActiva, estaBloqueado, inicializarBatalla } from '../battle/state';
 import { resolverTurno } from '../battle/turn';
 import { elegirMovimientoCpu } from '../battle/cpu';
@@ -75,6 +78,8 @@ export interface Juego {
   /** Índice del movimiento resaltado en la batalla (0–3). */
   cursorMov: number;
   fichaJugador: AveFicha | null;
+  /** Bot que controla a la CPU en la batalla actual (null fuera de batalla). */
+  bot: BotCpu | null;
   estado: EstadoBatalla | null;
   /** Mensaje principal del último turno o aviso. */
   mensaje: string;
@@ -113,6 +118,7 @@ export function nuevoJuego(progreso: Progreso = progresoVacio()): Juego {
     equipoEnemigo: [],
     cursorMov: 0,
     fichaJugador: null,
+    bot: null,
     estado: null,
     mensaje: '',
     eventos: [],
@@ -305,6 +311,7 @@ export function confirmarEquipo(j: Juego, rng: Rng): Juego {
     ...j,
     pantalla: 'batalla',
     fichaJugador: elegidas[0],
+    bot: j.botActual !== null ? BOTS[j.botActual] : null,
     estado,
     cursorMov: 0,
     mensaje: 'Elige un movimiento',
@@ -358,7 +365,7 @@ export function usarMovimiento(j: Juego, rng: Rng): Juego {
       eventos: [],
     };
   }
-  const movCpu = elegirMovimientoCpu(j.estado, rng);
+  const movCpu = elegirMovimientoCpu(j.estado, rng, j.bot?.perfil);
   if (movCpu === null) {
     // No debería pasar: tras cada turno el motor deja al ave activa con algún movimiento usable.
     return { ...j, mensaje: 'Error: la CPU no tiene movimientos usables', eventos: [] };

@@ -11,7 +11,8 @@
     "game:build": "cd game && node ../bin/tsc80.js build",
     "game:run": "cd game && node ../bin/tsc80.js run",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bots:sim": "esbuild scripts/simular-bots.ts --bundle --platform=node --outfile=build/simular-bots.cjs --log-level=warning && node build/simular-bots.cjs"
   },
   "devDependencies": {
     "@antora/cli": "^3.1.9",

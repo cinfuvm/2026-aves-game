@@ -26,8 +26,13 @@ game/src/battle/
 ├── state.ts   Fichas, inicialización, bloqueo, relevo, fin
 ├── turn.ts    Resolución del turno
 ├── rendicion.ts  Rendición manual del ave activa
-└── cpu.ts     Elección del CPU (nivel base)
+├── cpu.ts     Elección del CPU: perfil base (aleatorio) y perfil estratégico (bots)
+└── ia/
+    ├── prediccion.ts  Predicción del próximo tipo del jugador (solo historial público)
+    └── evaluacion.ts  Valor esperado de cada movimiento del CPU y probabilidades
 ```
+
+Los 8 bots de la torre (sus parámetros) viven en `game/src/data/bots.ts`.
 
 ---
 
@@ -141,14 +146,59 @@ El ave activa del `lado` pasa a `'rendida'`, entra la siguiente ave (si hay) y s
 ## `cpu.ts` — elección del CPU (Parte C)
 
 ```ts
-elegirMovimientoCpu(estado, rng, perfil?): MovimientoActivo | null
-PerfilCpu { tipo: 'aleatorio', datos?: Record<string, unknown> }
-PERFIL_BASE
+elegirMovimientoCpu(estado, rng, perfil?): MovimientoActivo | null   // firma sin cambios
+decisionCpu(estado, perfil?): DecisionCpu      // probabilidades de cada movimiento, sin tirar el rng
+armarEquipoCpu(fichas, cantidad, rng, opciones, equipoJugador?): AveFicha[]
+PerfilCpu = { tipo: 'aleatorio' } | { tipo: 'estrategico', ia: ParametrosIA }
+PERFIL_BASE                                    // { tipo: 'aleatorio' }
 ```
 
-Nivel base: aleatorio uniforme entre los movimientos usables del ave activa del CPU. La Parte C añade perfiles **sin cambiar la firma**.
+- **Perfil `aleatorio`** (nivel base del PRD): uniforme entre los movimientos usables. Es el valor por defecto y no cambió.
+- **Perfil `estrategico`** (bots): en cada turno
+  1. predice el próximo tipo del jugador con el historial (`ia/prediccion.ts`);
+  2. calcula el valor esperado de cada movimiento usable con las reglas del motor (`ia/evaluacion.ts`): daño esperado que hace o recibe según gane, pierda o empate, probabilidad de debilitar, fallo, Spock que no falla, coste de MP y rendición por quedarse sin MP;
+  3. suma su personalidad (tipo favorito, terquedad, evitar repetirse, ahorro de MP);
+  4. elige con una **softmax** (`temperatura`) más un **piso de exploración** que deja a todos los movimientos con probabilidad mayor que 0.
+- Consume **una** tirada de `rng` por decisión (ninguna si hay 0 o 1 movimientos usables).
+- **Juego limpio:** ningún perfil ve la elección actual del jugador (D-J). Los Enemigos 1 a 7 usan solo el historial y el tipo del ave del jugador (visible en pantalla). Solo el Enemigo 8 conoce además los movimientos usables del jugador y sus costes («algo injusto»).
+- El CPU no se rinde manualmente (reglas-batalla.adoc).
 
 `null` solo ocurre si el ave activa del CPU no tiene ningún movimiento usable. En una batalla en curso no debería pasar: tras cada turno, `resolverTurno` marca como `rendida` al ave sin movimientos usables y hace el relevo, así que el ave activa siempre tiene al menos un movimiento. `resolverTurno` **no acepta `null`**: si la UI o el perfil de la CPU lo reciben, deben tratarlo como error de estado, no como una rendición.
+
+### Parámetros de un bot (`ParametrosIA`)
+
+| Parámetro | Qué hace |
+|---|---|
+| `afinidad`, `pesoAfinidad` | Tipo favorito y cuánto lo prefiere (Enemigos 1 a 5). |
+| `predictores`, `confianza`, `memoria` | Qué predictores usa (`frecuencia`, `reaccion`, `transicion`, `anti-cpu`), cuánto confía en ellos frente a la uniforme y cuán rápido olvida. Con varios, pesan según cuánto acertaron en esta batalla. |
+| `agresividad`, `aversionRiesgo`, `rematador` | Peso del daño que hace, del daño que recibe y de la probabilidad de debilitar al rival. |
+| `ahorroMp` | Penaliza gastar MP (menos cuando le queda poca vida). |
+| `terco`, `evitaRepetir` | Repetir el tipo con el que ganó / evitar repetir su último tipo. |
+| `temperatura`, `exploracion` | Cuánto azar tiene: softmax y piso de probabilidad. |
+| `informacionCompleta` | Solo Enemigo 8: conoce los movimientos usables del jugador. |
+
+### Los 8 bots (`game/src/data/bots.ts`)
+
+| Bot | Apodo | Dificultad | Tipo | Ave característica | Cómo piensa |
+|---|---|---|---|---|---|
+| Enemigo 1 | El Porfiado | Media | Piedra | Picaflor | No predice. Repite el tipo con el que ganó. |
+| Enemigo 2 | La Filosa | Media | Tijera | Diucón | Agresiva, gasta MP en golpes caros. Lee tu reacción tras ganar o perder. |
+| Enemigo 3 | El Centinela | Media | Papel | Queltehue | Defensivo, cuida su MP. Recuerda qué tipos usas más. |
+| Enemigo 4 | El Oportunista | Media | Lagarto | Tiuque | Remata a aves débiles. Combina reacción y frecuencia. |
+| Enemigo 5 | El Escurridizo | Media | Spock | Chercán | Detecta secuencias y evita repetirse. |
+| Enemigo 6 | La Estratega | Media/alta | — | Pingüino de Humboldt | Tres predictores, equilibrado. |
+| Enemigo 7 | El Jefe | Alta | — | Tucúquere | Cuatro predictores con pesos por acierto. Solo historial. |
+| Enemigo 8 | La Sombra | Muy alta | — | — | Como el Jefe, más información de tus movimientos usables y equipo armado contra el tuyo. |
+
+`equipoDeBot(bot, fichas, cantidad, rng, equipoJugador?)` arma el equipo del bot con las fichas que existan: el ave característica entra última, hay al menos un ave del tipo favorito y se prefieren tipos distintos. Solo el Enemigo 8 mira el equipo del jugador.
+
+### Medir el balance
+
+```bash
+npm run bots:sim          # 300 batallas 3v3 por celda (opcional: npm run bots:sim -- 600)
+```
+
+`scripts/simular-bots.ts` enfrenta a cada bot contra 7 estilos de jugador (azar, repetitivo, rotativo, ganar-quedarse, contra-último, lector y humano) y muestra el porcentaje de victorias del CPU, los turnos, el uso del tipo favorito y la probabilidad media de su jugada favorita (cuánto azar le queda). Resultados vigentes en `changes.md` (paso 13).
 
 ---
 
@@ -168,8 +218,8 @@ let estado = inicializarBatalla(fichasJugador, fichasCpu, rng);
 const activa = aveActiva(estado.jugador);
 const bloqueados = activa.movimientos.filter((m) => m.costeMp > activa.mpActual);
 
-// 3. Cada turno:
-const movCpu = elegirMovimientoCpu(estado, rng);          // MovimientoActivo | null
+// 3. Cada turno (con el perfil del bot del combate, p. ej. ENEMIGO_3 de data/bots.ts):
+const movCpu = elegirMovimientoCpu(estado, rng, bot.perfil); // MovimientoActivo | null
 if (movCpu === null) {
   throw new Error('El CPU no tiene movimientos usables: estado inconsistente');
 }
@@ -184,9 +234,12 @@ estado = nuevo; // el estado original no se muta: reemplazar la referencia
 ## Cómo extender la Parte C
 
 ```ts
-// cpu.ts es el único punto de entrada: añadir un tipo de perfil y su lógica
-// dentro de elegirMovimientoCpu, sin tocar damage/state/turn.
-PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
+// Un bot nuevo es un perfil 'estrategico' con otros parámetros (data/bots.ts):
+const MI_BOT = { tipo: 'estrategico', ia: { ...ENEMIGO_6.perfil.ia, temperatura: 0.3 } };
+elegirMovimientoCpu(estado, rng, MI_BOT);
+
+// Un predictor nuevo se agrega en ia/prediccion.ts (NombrePredictor + predecirCon)
+// y queda disponible para el conjunto sin tocar damage/state/turn.
 ```
 
 ## Movimientos y pool (D-17)
