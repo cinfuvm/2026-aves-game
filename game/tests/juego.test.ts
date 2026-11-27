@@ -27,6 +27,7 @@ import {
 } from '../src/juego/flujo';
 import { progresoVacio, type Progreso } from '../src/juego/guardado';
 import { crearRng } from '../src/battle/rng';
+import { ganaPPTLS } from '../src/battle/pptls';
 
 /** Progreso con los primeros n bots vencidos. */
 function progresoCon(n: number): Progreso {
@@ -152,12 +153,12 @@ describe('flujo del juego — título y torre (game/src/juego/flujo.ts)', () => 
 
   it('entrar a un combate no disponible no cambia de pantalla', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 3 };
-    expect(entrarCombate(j).pantalla).toBe('menu_torre');
+    expect(entrarCombate(j, crearRng(1)).pantalla).toBe('menu_torre');
   });
 
   it('entrar al siguiente combate pasa a la selección', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 0 };
-    expect(entrarCombate(j).pantalla).toBe('seleccion');
+    expect(entrarCombate(j, crearRng(1)).pantalla).toBe('seleccion');
   });
 
   it('volver al título conserva el progreso', () => {
@@ -216,7 +217,7 @@ describe('flujo del juego — selección 3v3 y batalla (game/src/juego/flujo.ts)
 
   it('entrar a combate prepara selección vacía y vistazo del rival', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 0 };
-    const sel = entrarCombate(j);
+    const sel = entrarCombate(j, crearRng(1));
     expect(sel.pantalla).toBe('seleccion');
     expect(sel.seleccion.elegidas).toEqual([]);
     expect(sel.equipoEnemigo.length).toBe(3);
@@ -396,7 +397,7 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
   /** Entra a un combate de la torre, elige el equipo 3v3 y crea la batalla. */
   function entrarYJugar(indiceBot: number, progreso: Progreso = progresoVacio()): Juego {
     let j: Juego = { ...nuevoJuego(progreso), pantalla: 'menu_torre', cursorTorre: indiceBot };
-    j = entrarCombate(j);
+    j = entrarCombate(j, crearRng(1));
     j = { ...j, seleccion: { cursorAve: 0, elegidas: ['condor', 'loica', 'chincol'] } };
     return confirmarEquipo(j, crearRng(1));
   }
@@ -418,13 +419,25 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
     }
   }
 
+  /**
+   * Movimiento que vence al tipo del ave activa de la CPU, si el jugador tiene
+   * uno; si no, el primero. El equipo rival de la torre cambia según el bot,
+   * así que el jugador no siempre gana con su primer movimiento.
+   */
+  function movimientoQueVence(j: Juego): Juego {
+    const rival = j.estado!.cpu.aves[j.estado!.cpu.indiceActiva];
+    const ave = j.estado!.jugador.aves[j.estado!.jugador.indiceActiva];
+    const i = ave.movimientos.findIndex((m) => ganaPPTLS(m.tipo, rival.tipo));
+    return i >= 0 ? { ...j, cursorMov: i } : j;
+  }
+
   /** Juega turnos hasta llegar a resultado (la CPU cae en pocos turnos). */
   function jugarHastaResultado(j: Juego): Juego {
     let actual = j;
     let guard = 0;
     while (actual.pantalla !== 'resultado' && guard++ < 300) {
       if (actual.pantalla === 'batalla') {
-        actual = usarMovimiento(reponerMpActiva(actual), crearRng(100 + guard));
+        actual = usarMovimiento(movimientoQueVence(reponerMpActiva(actual)), crearRng(100 + guard));
       } else if (actual.pantalla === 'revelacion') {
         actual = confirmarTurno(actual, crearRng(200 + guard));
       }
@@ -434,7 +447,7 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
 
   it('entrar a un combate de la torre fija el bot actual', () => {
     const j: Juego = { ...nuevoJuego(progresoCon(2)), pantalla: 'menu_torre', cursorTorre: 2 };
-    expect(entrarCombate(j).botActual).toBe(2);
+    expect(entrarCombate(j, crearRng(1)).botActual).toBe(2);
   });
 
   it('crear la batalla desde la torre conserva el bot actual', () => {

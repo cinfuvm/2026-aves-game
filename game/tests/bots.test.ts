@@ -208,7 +208,7 @@ describe('batallas completas con cada bot', () => {
  */
 function batallaDesdeTorre(indiceBot: number, rng: Rng): Juego {
   let j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: indiceBot };
-  j = entrarCombate(j);
+  j = entrarCombate(j, rng);
   for (let i = 0; i < 3; i++) {
     j = alternarAveDelCursor(j);
     j = moverSeleccion(j, 1);

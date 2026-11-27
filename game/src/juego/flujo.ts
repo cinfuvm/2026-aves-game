@@ -46,7 +46,6 @@ import {
   TAMANO_EQUIPO,
   type SeleccionEquipo,
 } from './seleccion';
-import { equipoEnemigo } from './enemigos';
 
 export type Pantalla =
   | 'titulo'
@@ -215,17 +214,23 @@ export function moverTorre(j: Juego, delta: number): Juego {
   return { ...j, cursorTorre: (((j.cursorTorre + delta) % n) + n) % n };
 }
 
-/** Entra a la selección de equipo desde la torre, si el bot está disponible. */
-export function entrarCombate(j: Juego): Juego {
+/**
+ * Entra a la selección de equipo desde la torre, si el bot está disponible.
+ * El equipo rival es el del bot de la torre (`equipoDeBot`, game/src/data/bots.ts),
+ * armado con todo el catálogo. Sin equipo del jugador todavía, el Enemigo 8
+ * no puede elegir contra él (su preferencia `contraEquipo` no aplica aquí).
+ */
+export function entrarCombate(j: Juego, rng: Rng): Juego {
   if (j.pantalla !== 'menu_torre') return j;
   if (!botDisponible(j.progreso, j.cursorTorre)) return j;
-    return {
+  const bot = BOTS[j.cursorTorre];
+  return {
     ...j,
     pantalla: 'seleccion',
     botActual: j.cursorTorre,
     cursorAve: 0,
     seleccion: seleccionVacia(),
-    equipoEnemigo: equipoEnemigo(j.cursorTorre),
+    equipoEnemigo: equipoDeBot(bot, CATALOGO_AVES, TAMANO_EQUIPO, rng),
     mensaje: '',
   };
 }
