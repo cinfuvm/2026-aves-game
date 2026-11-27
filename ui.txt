@@ -1,0 +1,146 @@
+
+// title: Coron Game - Interfaz de batalla
+// script: js
+
+// COLORES SWEETIE-16
+var C = {
+  fondo: 0,
+  azul: 8,
+  cielo: 10,
+  montana: 13,
+  verde: 6,
+  blanco: 12,
+  amarillo: 4,
+  rojo: 2,
+  gris: 5,
+  negro: 0,
+  panel: 1,
+  vida: 6
+};
+
+// Datos temporales para la maqueta
+var condor = {nombre:"CONDOR", hp:80, max:100};
+var loica = {nombre:"LOICA", hp:65, max:100, pp:10};
+
+var movimientos = [
+  "PICOTAZO", "ALETEO",
+  "DEFENSA", "GRITO"
+];
+
+var seleccionado = 0;
+var mensaje = "LOICA lista!";
+
+// Dibujar un panel con borde
+function panel(x,y,w,h) {
+  rect(x,y,w,h,C.panel);
+  rectb(x,y,w,h,C.blanco);
+}
+
+// Barra de puntos de vida
+function barraHP(x,y,hp,maximo) {
+  rect(x,y,76,6,C.gris);
+
+  var ancho = Math.floor(76*hp/maximo);
+  var color = hp>50 ? C.verde :
+              hp>20 ? C.amarillo : C.rojo;
+
+  rect(x,y,ancho,6,color);
+  rectb(x,y,76,6,C.blanco);
+}
+
+// Fondo de batalla provisional
+function dibujarFondo() {
+  cls(C.cielo);
+
+  // Montanas
+  tri(0,82,55,34,112,82,C.montana);
+  tri(75,82,145,20,220,82,C.montana);
+  tri(172,82,213,45,240,82,C.montana);
+
+  // Suelo
+  rect(0,80,240,13,C.verde);
+  line(0,80,239,80,C.blanco);
+}
+
+// Personajes provisionales
+function dibujarAves() {
+  // Loica - jugador
+  elli(58,67,15,11,C.negro);
+  elli(64,68,9,10,C.rojo);
+  circ(72,58,6,C.negro);
+  tri(78,58,88,61,78,64,C.amarillo);
+  pix(74,57,C.blanco);
+
+  // Condor - CPU
+  elli(173,45,17,11,C.negro);
+  elli(173,44,10,8,C.gris);
+  circ(187,34,8,C.negro);
+  tri(194,33,206,37,194,40,C.amarillo);
+  pix(189,32,C.blanco);
+}
+
+// Nombres y estadisticas
+function dibujarEstado() {
+  panel(5,8,111,31);
+  print("CONDOR",10,12,C.blanco);
+  print("HP",10,24,C.amarillo);
+  barraHP(27,23,condor.hp,condor.max);
+
+  panel(124,62,111,30);
+  print("LOICA",129,66,C.blanco);
+  print("HP",129,78,C.amarillo);
+  barraHP(147,77,loica.hp,loica.max);
+  print("PP:"+loica.pp,190,85,C.blanco);
+}
+
+// Mensajes y menu
+function dibujarMenu() {
+  panel(3,96,116,37);
+  print(mensaje,8,103,C.blanco,true);
+  print("Elige movimiento",8,117,C.blanco,true);
+
+  panel(121,96,116,37);
+
+  for(var i=0;i<4;i++) {
+    var x=125+(i%2)*55;
+    var y=100+Math.floor(i/2)*16;
+
+    if(i===seleccionado) {
+      rect(x-2,y-2,54,13,C.amarillo);
+    } else {
+      rect(x-2,y-2,54,13,C.gris);
+    }
+
+    rect(x-1,y-1,52,11,C.panel);
+    print(movimientos[i],x,y,C.blanco,false,1,true);
+  }
+}
+
+// Controles de prueba
+function actualizar() {
+  if(btnp(0) && seleccionado>=2)
+    seleccionado-=2;
+
+  if(btnp(1) && seleccionado<2)
+    seleccionado+=2;
+
+  if(btnp(2) && seleccionado%2===1)
+    seleccionado--;
+
+  if(btnp(3) && seleccionado%2===0)
+    seleccionado++;
+
+  // Boton A: confirmar movimiento
+  if(btnp(4)) {
+    mensaje=movimientos[seleccionado];
+  }
+}
+
+// Funcion principal de TIC-80
+function TIC() {
+  actualizar();
+  dibujarFondo();
+  dibujarAves();
+  dibujarEstado();
+  dibujarMenu();
+}
