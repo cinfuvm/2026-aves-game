@@ -124,14 +124,17 @@ Cuentas: 10 aves = 3 iniciales (Cóndor, Loica, Chincol) + 7 desbloqueables. Los
 | Enemigo 8 | — | **Sigiloso:** su primer movimiento de cada combate no puede fallar. |
 
 ### 5.3 Pendientes de bots
-- [ ] Elegir las mecánicas de los Enemigos 6 a 8.
-- [ ] IA del Enemigo 6 (sin detalle).
-- [ ] IA de los Enemigos 1 a 5 (estrategia de cada tipo). Hoy el bot base es aleatorio.
-- [ ] Equipo de 3 aves de cada bot.
+- [ ] Elegir las mecánicas de los Enemigos 6 a 8 (son reglas del motor, no de la IA).
+- [x] IA del Enemigo 6: La Estratega, tres predictores y juego equilibrado.
+- [x] IA de los Enemigos 1 a 5: una personalidad por tipo (ver 5.4).
+- [x] Equipo de cada bot: `equipoDeBot` lo arma con las fichas que existan. Falta fijar equipos cuando estén las 10 fichas.
 
 ### 5.4 Estado actual
-- CPU de nivel base: elige un movimiento usable al azar.
-- `PerfilCpu` listo para añadir comportamientos sin cambiar la firma del motor.
+- Los 8 bots están en `game/src/data/bots.ts` y usan el perfil `estrategico` de `cpu.ts` (paso 13 de `changes.md`).
+- Cada bot predice tu próximo tipo con el historial, calcula el valor esperado de cada movimiento y elige con azar controlado.
+- Personalidades: 1 El Porfiado (piedra, repite lo que le funciona), 2 La Filosa (tijera, agresiva), 3 El Centinela (papel, defensivo), 4 El Oportunista (lagarto, remata), 5 El Escurridizo (spock, evita repetirse), 6 La Estratega (general), 7 El Jefe (solo historial, D-J), 8 La Sombra (conoce tus movimientos usables).
+- Victorias del CPU en simulación (media de 7 estilos de jugador): 40 %, 56 %, 55 %, 61 %, 63 %, 75 %, 83 % y 89 %. El perfil aleatorio base queda en 45 %.
+- El perfil aleatorio base sigue disponible (`PERFIL_BASE`).
 
 ---
 

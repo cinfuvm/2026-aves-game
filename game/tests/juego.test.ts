@@ -27,6 +27,7 @@ import {
 } from '../src/juego/flujo';
 import { progresoVacio, type Progreso } from '../src/juego/guardado';
 import { crearRng } from '../src/battle/rng';
+import { ganaPPTLS } from '../src/battle/pptls';
 
 /** Progreso con los primeros n bots vencidos. */
 function progresoCon(n: number): Progreso {
@@ -214,12 +215,11 @@ describe('flujo del juego — selección 3v3 y batalla (game/src/juego/flujo.ts)
     expect(alternado.seleccion.elegidas).toHaveLength(2);
   });
 
-  it('entrar a combate prepara selección vacía y vistazo del rival', () => {
+  it('entrar a combate prepara selección vacía', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 0 };
     const sel = entrarCombate(j);
     expect(sel.pantalla).toBe('seleccion');
     expect(sel.seleccion.elegidas).toEqual([]);
-    expect(sel.equipoEnemigo.length).toBe(3);
   });
 
   it('no se puede confirmar el equipo sin las 3 aves', () => {
@@ -371,7 +371,6 @@ describe('flujo del juego — selección 3v3 y batalla (game/src/juego/flujo.ts)
     const j = volverATorre(enSeleccionCompleta());
     expect(j.pantalla).toBe('menu_torre');
     expect(j.seleccion.elegidas).toEqual([]);
-    expect(j.equipoEnemigo).toEqual([]);
   });
 
   it('reiniciar vuelve a la torre y conserva el progreso', () => {
@@ -418,13 +417,25 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
     }
   }
 
+  /**
+   * Movimiento que vence al tipo del ave activa de la CPU, si el jugador tiene
+   * uno; si no, el primero. El equipo rival de la torre cambia según el bot,
+   * así que el jugador no siempre gana con su primer movimiento.
+   */
+  function movimientoQueVence(j: Juego): Juego {
+    const rival = j.estado!.cpu.aves[j.estado!.cpu.indiceActiva];
+    const ave = j.estado!.jugador.aves[j.estado!.jugador.indiceActiva];
+    const i = ave.movimientos.findIndex((m) => ganaPPTLS(m.tipo, rival.tipo));
+    return i >= 0 ? { ...j, cursorMov: i } : j;
+  }
+
   /** Juega turnos hasta llegar a resultado (la CPU cae en pocos turnos). */
   function jugarHastaResultado(j: Juego): Juego {
     let actual = j;
     let guard = 0;
     while (actual.pantalla !== 'resultado' && guard++ < 300) {
       if (actual.pantalla === 'batalla') {
-        actual = usarMovimiento(reponerMpActiva(actual), crearRng(100 + guard));
+        actual = usarMovimiento(movimientoQueVence(reponerMpActiva(actual)), crearRng(100 + guard));
       } else if (actual.pantalla === 'revelacion') {
         actual = confirmarTurno(actual, crearRng(200 + guard));
       }

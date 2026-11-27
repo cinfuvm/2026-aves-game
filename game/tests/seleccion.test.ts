@@ -9,8 +9,9 @@ import {
   seleccionVacia,
   TAMANO_EQUIPO,
 } from '../src/juego/seleccion';
-import { equipoEnemigo } from '../src/juego/enemigos';
-import { FICHAS_MVP } from '../src/data/birds';
+import { BOTS, equipoDeBot } from '../src/data/bots';
+import { CATALOGO_AVES, FICHAS_MVP } from '../src/data/birds';
+import { crearRng } from '../src/battle/rng';
 
 describe('selección de equipo 3v3 (game/src/juego/seleccion.ts)', () => {
   it('empieza vacía', () => {
@@ -74,18 +75,21 @@ describe('selección de equipo 3v3 (game/src/juego/seleccion.ts)', () => {
   });
 });
 
-describe('equipo enemigo (game/src/juego/enemigos.ts)', () => {
-  it('devuelve 3 fichas', () => {
-    expect(equipoEnemigo(0)).toHaveLength(3);
+describe('equipo enemigo de la torre (equipoDeBot, game/src/data/bots.ts)', () => {
+  it('devuelve 3 fichas del catálogo', () => {
+    const equipo = equipoDeBot(BOTS[0], CATALOGO_AVES, 3, crearRng(1));
+    expect(equipo).toHaveLength(3);
+    for (const f of equipo) expect(CATALOGO_AVES).toContain(f);
   });
 
-  it('es determinista para el mismo bot', () => {
-    expect(equipoEnemigo(2).map((f) => f.id)).toEqual(equipoEnemigo(2).map((f) => f.id));
+  it('es determinista para la misma semilla y el mismo bot', () => {
+    const a = equipoDeBot(BOTS[2], CATALOGO_AVES, 3, crearRng(7)).map((f) => f.id);
+    const b = equipoDeBot(BOTS[2], CATALOGO_AVES, 3, crearRng(7)).map((f) => f.id);
+    expect(a).toEqual(b);
   });
 
-  it('varía según el bot', () => {
-    const a = equipoEnemigo(0).map((f) => f.id);
-    const b = equipoEnemigo(1).map((f) => f.id);
-    expect(a).not.toEqual(b);
+  it('no repite aves dentro de un equipo', () => {
+    const ids = equipoDeBot(BOTS[5], CATALOGO_AVES, 3, crearRng(3)).map((f) => f.id);
+    expect(new Set(ids).size).toBe(3);
   });
 });

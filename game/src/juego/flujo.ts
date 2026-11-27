@@ -17,10 +17,13 @@
  * traduce los botones a estas funciones. Todas devuelven un juego nuevo.
  *
  * Batalla 1v1 (decisión D1 del plan MVP). El jugador elige una de las aves de
- * FICHAS_MVP; la CPU recibe otra al azar. El 3v3 llega en fases posteriores.
+ * Batalla 3v3 (ver confirmarEquipo). El equipo del jugador es su selección;
+ * el rival es el equipo del bot de la torre (`equipoDeBot`, ver game/src/data/bots.ts).
  */
 
 import { CATALOGO_AVES, FICHAS_MVP } from '../data/birds';
+import { BOTS, equipoDeBot, type BotCpu } from '../data/bots';
+
 import { aveActiva, estaBloqueado, inicializarBatalla } from '../battle/state';
 import { resolverTurno } from '../battle/turn';
 import { elegirMovimientoCpu } from '../battle/cpu';
@@ -43,7 +46,6 @@ import {
   TAMANO_EQUIPO,
   type SeleccionEquipo,
 } from './seleccion';
-import { equipoEnemigo } from './enemigos';
 
 export type Pantalla =
   | 'titulo'
@@ -70,11 +72,11 @@ export interface Juego {
   cursorAve: number;
   /** Selección de equipo 3v3 en curso (aves elegidas y orden). */
   seleccion: SeleccionEquipo;
-  /** Vistazo del equipo enemigo del bot actual (solo lectura). */
-  equipoEnemigo: AveFicha[];
   /** Índice del movimiento resaltado en la batalla (0–3). */
   cursorMov: number;
   fichaJugador: AveFicha | null;
+  /** Bot que controla a la CPU en la batalla actual (null fuera de batalla). */
+  bot: BotCpu | null;
   estado: EstadoBatalla | null;
   /** Mensaje principal del último turno o aviso. */
   mensaje: string;
@@ -110,9 +112,9 @@ export function nuevoJuego(progreso: Progreso = progresoVacio()): Juego {
     opcionBorrado: 1,
     cursorAve: 0,
     seleccion: seleccionVacia(),
-    equipoEnemigo: [],
     cursorMov: 0,
     fichaJugador: null,
+    bot: null,
     estado: null,
     mensaje: '',
     eventos: [],
@@ -213,13 +215,12 @@ export function moverTorre(j: Juego, delta: number): Juego {
 export function entrarCombate(j: Juego): Juego {
   if (j.pantalla !== 'menu_torre') return j;
   if (!botDisponible(j.progreso, j.cursorTorre)) return j;
-    return {
+  return {
     ...j,
     pantalla: 'seleccion',
     botActual: j.cursorTorre,
     cursorAve: 0,
     seleccion: seleccionVacia(),
-    equipoEnemigo: equipoEnemigo(j.cursorTorre),
     mensaje: '',
   };
 }
@@ -282,29 +283,31 @@ export function puedeConfirmarEquipo(j: Juego): boolean {
 /** Vuelve a la torre desde la selección (descarta la selección en curso). */
 export function volverATorre(j: Juego): Juego {
   if (j.pantalla !== 'seleccion') return j;
-  return { ...j, pantalla: 'menu_torre', seleccion: seleccionVacia(), equipoEnemigo: [] };
+  return { ...j, pantalla: 'menu_torre', seleccion: seleccionVacia() };
 }
 
 /**
  * Confirma el equipo 3v3 y crea la batalla 3v3 real (relevos incluidos).
  *
- * El equipo del jugador son las 3 aves elegidas (en orden). El rival es el
- * equipo enemigo del bot actual (`equipoEnemigo`, 3 aves). El motor resuelve
- * relevos, salidas y fin de batalla por equipo.
+ * El equipo del jugador son las 3 aves elegidas (en orden). El rival se arma aquí,
+ * con las aves del jugador como `equipoJugador`: así el Enemigo 8 (`contraEquipo`)
+ * puede elegir aves que venzan a las del jugador. Fuera de la torre, el rival es
+ * el MVP. El motor resuelve relevos, salidas y fin de batalla por equipo.
  */
 export function confirmarEquipo(j: Juego, rng: Rng): Juego {
   if (j.pantalla !== 'seleccion') return j;
-    const elegidas = fichasElegidas(CATALOGO_AVES, j.seleccion);
+  const elegidas = fichasElegidas(CATALOGO_AVES, j.seleccion);
   if (elegidas.length !== TAMANO_EQUIPO) return j;
   const rivales =
-    j.equipoEnemigo.length === TAMANO_EQUIPO
-      ? j.equipoEnemigo
+    j.botActual !== null
+      ? equipoDeBot(BOTS[j.botActual], CATALOGO_AVES, TAMANO_EQUIPO, rng, elegidas)
       : FICHAS_MVP.slice(0, TAMANO_EQUIPO);
   const estado = inicializarBatalla(elegidas, rivales, rng, CONFIG_3V3);
   return {
     ...j,
     pantalla: 'batalla',
     fichaJugador: elegidas[0],
+    bot: j.botActual !== null ? BOTS[j.botActual] : null,
     estado,
     cursorMov: 0,
     mensaje: 'Elige un movimiento',
@@ -358,7 +361,7 @@ export function usarMovimiento(j: Juego, rng: Rng): Juego {
       eventos: [],
     };
   }
-  const movCpu = elegirMovimientoCpu(j.estado, rng);
+  const movCpu = elegirMovimientoCpu(j.estado, rng, j.bot?.perfil);
   if (movCpu === null) {
     // No debería pasar: tras cada turno el motor deja al ave activa con algún movimiento usable.
     return { ...j, mensaje: 'Error: la CPU no tiene movimientos usables', eventos: [] };

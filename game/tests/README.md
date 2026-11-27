@@ -17,7 +17,7 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 
 ---
 
-## Qué se prueba (8 archivos, 126 casos)
+## Qué se prueba (10 archivos, 169 casos)
 
 | Archivo | Módulo probado | Casos | En qué consiste |
 |---|---|---|---|
@@ -29,6 +29,8 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
 | `juego.test.ts` | `src/juego/flujo.ts` | 14 | Estados seleccion → batalla → revelación → resultado; cursores con vuelta; batalla 1v1; movimiento bloqueado por MP sin turno; revelación sin gastar MP antes de confirmar; confirmación que resuelve el turno; fin de batalla con el ganador del motor; rendición; reinicio; acciones fuera de pantalla |
 | `rendicion.test.ts` | `rendicion.ts` | 7 | Rendir en 1v1 termina con victoria del rival (y viceversa); sin turno, MP ni historial; no muta el estado; en 3v3 entra la siguiente ave; rendir las 3 termina la batalla; error si la batalla ya terminó |
 | `birds.test.ts` | `src/data/birds.ts`, `src/data/movimientos.ts` | 15 | Las 3 fichas del MVP pasan `validarFicha`; ids únicos; tipo propio según S-01; característicos únicos entre aves; predeterminados de la pool; pool con 3 movimientos por tipo (15); `desdePool` con id inexistente; los 4 movimientos fijos se activan siempre (50 semillas) |
+| `ia.test.ts` | `battle/ia/prediccion.ts`, `battle/ia/evaluacion.ts`, `battle/cpu.ts` (perfil estratégico) | 26 | Predictores (frecuencia con memoria y sesgo STAB, reacción ganar-quedarse / perder-cambiar, transiciones que detectan rotaciones, anti-CPU); el conjunto da más peso al predictor que acierta; `resumirDano` coincide con `calcularDano` para cada daño base; contra «piedra segura» elige un tipo que vence a piedra; penalización por quedarse sin MP (D-07); softmax con piso de exploración; información completa solo en el Enemigo 8; nunca elige bloqueados; una sola tirada de rng por decisión; determinismo; las probabilidades de `decisionCpu` coinciden con la frecuencia real; el Jefe castiga a un jugador repetitivo sin perder el azar; **juego limpio**: el Jefe decide igual sin importar los movimientos ocultos del jugador |
+| `bots.test.ts` | `src/data/bots.ts`, `armarEquipoCpu`, integración con `flujo.ts` | 17 | Los 8 bots en orden de torre, afinidades, aves características (§5.2), azar en todos, solo el 8 con información extra; equipos sin repetir, ave característica al final, al menos un ave del tipo favorito, el 8 elige contra el equipo del jugador; batallas 3v3 completas con cada bot; en el MVP la CPU usa el bot del tipo de su ave |
 
 ---
 
