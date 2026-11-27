@@ -140,7 +140,7 @@ function leerEntrada() {
     case "menu_torre":
       if (btnp(ARRIBA)) juego = moverTorre(juego, -1)
       if (btnp(ABAJO)) juego = moverTorre(juego, 1)
-      if (btnp(A)) juego = entrarCombate(juego, rng)
+      if (btnp(A)) juego = entrarCombate(juego)
       if (btnp(B)) juego = volverAlTitulo(juego)
       break
         case "seleccion":

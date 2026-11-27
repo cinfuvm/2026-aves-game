@@ -6,6 +6,8 @@ import { crearRng } from '../src/battle/rng';
 import { aveActiva, inicializarBatalla, movimientosUsables } from '../src/battle/state';
 import { resolverTurno } from '../src/battle/turn';
 import { CONFIG_BASE, type AveFicha, type Rng, type TipoPPTLS } from '../src/battle/types';
+import { CATALOGO_AVES } from '../src/data/birds';
+import { progresoVacio } from '../src/juego/guardado';
 import {
   BOTS,
   botPorId,
@@ -206,9 +208,9 @@ describe('batallas completas con cada bot', () => {
  * Lleva el juego desde la torre hasta la batalla 3v3 contra el bot `indiceBot`,
  * eligiendo las tres primeras aves del catálogo.
  */
-function batallaDesdeTorre(indiceBot: number, rng: Rng): Juego {
-  let j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: indiceBot };
-  j = entrarCombate(j, rng);
+function batallaDesdeTorre(indiceBot: number, rng: Rng, progreso = progresoVacio()): Juego {
+  let j: Juego = { ...nuevoJuego(progreso), pantalla: 'menu_torre', cursorTorre: indiceBot };
+  j = entrarCombate(j);
   for (let i = 0; i < 3; i++) {
     j = alternarAveDelCursor(j);
     j = moverSeleccion(j, 1);
@@ -224,6 +226,22 @@ describe('integración con el flujo de la torre (juego/flujo.ts)', () => {
       expect(j.pantalla).toBe('batalla');
       expect(j.bot?.id).toBe(BOTS[0].id);
     }
+  });
+
+  it('el Enemigo 8 arma su equipo contra las aves elegidas por el jugador', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const progreso = { ...progresoVacio(), combatesGanados: [0, 1, 2, 3, 4, 5, 6] };
+      const j = batallaDesdeTorre(7, crearRng(seed), progreso);
+      const elegidas = CATALOGO_AVES.slice(0, 3);
+      const esperado = equipoDeBot(BOTS[7], CATALOGO_AVES, 3, crearRng(seed), elegidas);
+      expect(j.estado!.cpu.aves.map((a) => a.id)).toEqual(esperado.map((f) => f.id));
+    }
+  });
+
+  it('los bots 1 a 7 no cambian su equipo según las aves del jugador', () => {
+    const conA = equipoDeBot(BOTS[0], CATALOGO_AVES, 3, crearRng(5), CATALOGO_AVES.slice(0, 3));
+    const conB = equipoDeBot(BOTS[0], CATALOGO_AVES, 3, crearRng(5), CATALOGO_AVES.slice(7, 10));
+    expect(conB.map((f) => f.id)).toEqual(conA.map((f) => f.id));
   });
 
   it('usarMovimiento obtiene la jugada de la CPU con el perfil del bot de la torre', () => {

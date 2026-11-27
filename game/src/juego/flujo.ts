@@ -72,8 +72,6 @@ export interface Juego {
   cursorAve: number;
   /** Selección de equipo 3v3 en curso (aves elegidas y orden). */
   seleccion: SeleccionEquipo;
-  /** Vistazo del equipo enemigo del bot actual (solo lectura). */
-  equipoEnemigo: AveFicha[];
   /** Índice del movimiento resaltado en la batalla (0–3). */
   cursorMov: number;
   fichaJugador: AveFicha | null;
@@ -114,7 +112,6 @@ export function nuevoJuego(progreso: Progreso = progresoVacio()): Juego {
     opcionBorrado: 1,
     cursorAve: 0,
     seleccion: seleccionVacia(),
-    equipoEnemigo: [],
     cursorMov: 0,
     fichaJugador: null,
     bot: null,
@@ -214,23 +211,16 @@ export function moverTorre(j: Juego, delta: number): Juego {
   return { ...j, cursorTorre: (((j.cursorTorre + delta) % n) + n) % n };
 }
 
-/**
- * Entra a la selección de equipo desde la torre, si el bot está disponible.
- * El equipo rival es el del bot de la torre (`equipoDeBot`, game/src/data/bots.ts),
- * armado con todo el catálogo. Sin equipo del jugador todavía, el Enemigo 8
- * no puede elegir contra él (su preferencia `contraEquipo` no aplica aquí).
- */
-export function entrarCombate(j: Juego, rng: Rng): Juego {
+/** Entra a la selección de equipo desde la torre, si el bot está disponible. */
+export function entrarCombate(j: Juego): Juego {
   if (j.pantalla !== 'menu_torre') return j;
   if (!botDisponible(j.progreso, j.cursorTorre)) return j;
-  const bot = BOTS[j.cursorTorre];
   return {
     ...j,
     pantalla: 'seleccion',
     botActual: j.cursorTorre,
     cursorAve: 0,
     seleccion: seleccionVacia(),
-    equipoEnemigo: equipoDeBot(bot, CATALOGO_AVES, TAMANO_EQUIPO, rng),
     mensaje: '',
   };
 }
@@ -293,23 +283,24 @@ export function puedeConfirmarEquipo(j: Juego): boolean {
 /** Vuelve a la torre desde la selección (descarta la selección en curso). */
 export function volverATorre(j: Juego): Juego {
   if (j.pantalla !== 'seleccion') return j;
-  return { ...j, pantalla: 'menu_torre', seleccion: seleccionVacia(), equipoEnemigo: [] };
+  return { ...j, pantalla: 'menu_torre', seleccion: seleccionVacia() };
 }
 
 /**
  * Confirma el equipo 3v3 y crea la batalla 3v3 real (relevos incluidos).
  *
- * El equipo del jugador son las 3 aves elegidas (en orden). El rival es el
- * equipo enemigo del bot actual (`equipoEnemigo`, 3 aves). El motor resuelve
- * relevos, salidas y fin de batalla por equipo.
+ * El equipo del jugador son las 3 aves elegidas (en orden). El rival se arma aquí,
+ * con las aves del jugador como `equipoJugador`: así el Enemigo 8 (`contraEquipo`)
+ * puede elegir aves que venzan a las del jugador. Fuera de la torre, el rival es
+ * el MVP. El motor resuelve relevos, salidas y fin de batalla por equipo.
  */
 export function confirmarEquipo(j: Juego, rng: Rng): Juego {
   if (j.pantalla !== 'seleccion') return j;
-    const elegidas = fichasElegidas(CATALOGO_AVES, j.seleccion);
+  const elegidas = fichasElegidas(CATALOGO_AVES, j.seleccion);
   if (elegidas.length !== TAMANO_EQUIPO) return j;
   const rivales =
-    j.equipoEnemigo.length === TAMANO_EQUIPO
-      ? j.equipoEnemigo
+    j.botActual !== null
+      ? equipoDeBot(BOTS[j.botActual], CATALOGO_AVES, TAMANO_EQUIPO, rng, elegidas)
       : FICHAS_MVP.slice(0, TAMANO_EQUIPO);
   const estado = inicializarBatalla(elegidas, rivales, rng, CONFIG_3V3);
   return {

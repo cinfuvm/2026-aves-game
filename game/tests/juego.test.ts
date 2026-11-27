@@ -153,12 +153,12 @@ describe('flujo del juego — título y torre (game/src/juego/flujo.ts)', () => 
 
   it('entrar a un combate no disponible no cambia de pantalla', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 3 };
-    expect(entrarCombate(j, crearRng(1)).pantalla).toBe('menu_torre');
+    expect(entrarCombate(j).pantalla).toBe('menu_torre');
   });
 
   it('entrar al siguiente combate pasa a la selección', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 0 };
-    expect(entrarCombate(j, crearRng(1)).pantalla).toBe('seleccion');
+    expect(entrarCombate(j).pantalla).toBe('seleccion');
   });
 
   it('volver al título conserva el progreso', () => {
@@ -215,12 +215,11 @@ describe('flujo del juego — selección 3v3 y batalla (game/src/juego/flujo.ts)
     expect(alternado.seleccion.elegidas).toHaveLength(2);
   });
 
-  it('entrar a combate prepara selección vacía y vistazo del rival', () => {
+  it('entrar a combate prepara selección vacía', () => {
     const j: Juego = { ...nuevoJuego(), pantalla: 'menu_torre', cursorTorre: 0 };
-    const sel = entrarCombate(j, crearRng(1));
+    const sel = entrarCombate(j);
     expect(sel.pantalla).toBe('seleccion');
     expect(sel.seleccion.elegidas).toEqual([]);
-    expect(sel.equipoEnemigo.length).toBe(3);
   });
 
   it('no se puede confirmar el equipo sin las 3 aves', () => {
@@ -372,7 +371,6 @@ describe('flujo del juego — selección 3v3 y batalla (game/src/juego/flujo.ts)
     const j = volverATorre(enSeleccionCompleta());
     expect(j.pantalla).toBe('menu_torre');
     expect(j.seleccion.elegidas).toEqual([]);
-    expect(j.equipoEnemigo).toEqual([]);
   });
 
   it('reiniciar vuelve a la torre y conserva el progreso', () => {
@@ -397,7 +395,7 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
   /** Entra a un combate de la torre, elige el equipo 3v3 y crea la batalla. */
   function entrarYJugar(indiceBot: number, progreso: Progreso = progresoVacio()): Juego {
     let j: Juego = { ...nuevoJuego(progreso), pantalla: 'menu_torre', cursorTorre: indiceBot };
-    j = entrarCombate(j, crearRng(1));
+    j = entrarCombate(j);
     j = { ...j, seleccion: { cursorAve: 0, elegidas: ['condor', 'loica', 'chincol'] } };
     return confirmarEquipo(j, crearRng(1));
   }
@@ -447,7 +445,7 @@ describe('flujo del juego — victoria en la torre (P3)', () => {
 
   it('entrar a un combate de la torre fija el bot actual', () => {
     const j: Juego = { ...nuevoJuego(progresoCon(2)), pantalla: 'menu_torre', cursorTorre: 2 };
-    expect(entrarCombate(j, crearRng(1)).botActual).toBe(2);
+    expect(entrarCombate(j).botActual).toBe(2);
   });
 
   it('crear la batalla desde la torre conserva el bot actual', () => {
