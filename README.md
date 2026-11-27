@@ -62,9 +62,33 @@ npm run game:run          # compila, abre TIC-80 y vigila cambios en los .ts
 Para verificar que funciona:
 
 1. `npm run game:build` termina con `Build complete.` y existe `game/build/output.js`.
-2. `npm run game:run` abre TIC-80 y carga el cartucho con `import code`. La consola debe mostrar `build/output.js imported :)` y luego `run`. La plantilla actual solo muestra el texto `HELLO WORLD!`: su pájaro usa `spr()`, que no dibuja nada sin `game.js`.
+2. `npm run game:run` abre TIC-80 y carga el juego. La consola debe mostrar `load build/juego.tic` (si ya generaste las imágenes, ver abajo), `import code build/output.js` con `imported :)` y luego `run`.
 3. En la terminal debe aparecer `Module import works!`, que confirma que `helpers.ts` se empaquetó bien.
 4. Edita `game/main.ts`, guarda, y observa que la terminal muestra `Building ... Build complete.`. Para ver el cambio en TIC-80, presiona `Ctrl+R`: la herramienta recompila el cartucho, pero no recarga TIC-80 sola.
+
+### Imágenes (sprites y fondos)
+
+Las aves y los fondos viven en `game/assets-src/` (PNG de origen). Para que aparezcan en el juego hay que generar un cartucho de gráficos, `game/build/juego.tic`. Ese archivo no se versiona (`game/build/` está en `.gitignore`), así que cada persona lo genera en su equipo:
+
+1. Requisitos: Python 3 con Pillow (`pip install pillow`) y TIC-80 instalado (la misma ruta de `ticExecutable` o `TIC80_PATH`, ver arriba).
+2. Generar las hojas de sprites y fondos:
+
+   ```bash
+   python3 tools/build_sheet.py     # game/build/hoja_sprites.png, hoja_tiles.png, indice_ave.ts
+   ```
+
+3. Empaquetarlas en el cartucho con TIC-80:
+
+   ```bash
+   python3 tools/empaquetar_tic.py  # game/build/juego.tic
+   ```
+
+4. Luego corre `npm run game:run`. El lanzador carga `build/juego.tic` automáticamente si existe; si no, el juego corre sin imágenes.
+
+Notas:
+- Las ids de las aves están en `game/src/data/sprites.ts` (`SPRITE_POR_AVE`). Si cambias la hoja, revisa que coincidan con `indice_ave.ts`.
+- `tools/build-assets.js` es un generador anterior que escribe `build/assets.tic`. El lanzador no lo usa; el flujo de arriba es el que se usa para los sprites.
+- Tras cambiar un PNG, vuelve a correr los pasos 2 y 3.
 
 ### Otra ruta de TIC-80
 

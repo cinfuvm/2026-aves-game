@@ -23,7 +23,7 @@ import {
   type TipoPPTLS,
 } from '../src/battle/types';
 
-/** Ficha de prueba: 1 movimiento del tipo propio + 1 de cada otro tipo. */
+/** Ficha de prueba: 1 movimiento característico del tipo propio + 3 predeterminados de otros tipos. */
 function fichaPrueba(id: string, nombre: string, tipo: TipoPPTLS): AveFicha {
   const otros = (['piedra', 'papel', 'tijera', 'lagarto', 'spock'] as TipoPPTLS[]).filter(
     (t) => t !== tipo,
@@ -33,8 +33,8 @@ function fichaPrueba(id: string, nombre: string, tipo: TipoPPTLS): AveFicha {
     nombre,
     tipo,
     movimientos: [
-      { id: `${id}-propio`, nombre: `Propio ${tipo}`, tipo },
-      ...otros.map((t) => ({ id: `${id}-${t}`, nombre: `Otro ${t}`, tipo: t })),
+      { id: `${id}-car`, nombre: `Característico ${tipo}`, tipo, caracteristico: true },
+      ...otros.slice(0, 3).map((t) => ({ id: `${id}-${t}`, nombre: `Otro ${t}`, tipo: t })),
     ],
   };
 }
@@ -46,46 +46,44 @@ const PIKAFLOR = fichaPrueba('picaflor', 'Picaflor', 'piedra');
 const DIUCON = fichaPrueba('diucon', 'Diucón', 'tijera');
 
 describe('validarFicha', () => {
-  it('acepta una ficha con 5 movimientos y uno del tipo propio', () => {
+  it('acepta una ficha con 4 movimientos y un característico del tipo propio', () => {
     expect(validarFicha(CONDOR)).toEqual([]);
   });
 
-  it('rechaza fichas con menos (o más) de 5 movimientos', () => {
-    const corta: AveFicha = {
-      ...CONDOR,
-      movimientos: CONDOR.movimientos.slice(0, 4),
-    };
-    expect(validarFicha(corta)).toHaveLength(1);
+  it('rechaza fichas con menos (o más) de 4 movimientos', () => {
+    const corta: AveFicha = { ...CONDOR, movimientos: CONDOR.movimientos.slice(0, 3) };
+    expect(validarFicha(corta).some((e) => e.includes('4 movimientos'))).toBe(true);
 
     const larga: AveFicha = {
       ...CONDOR,
-      movimientos: [
-        ...CONDOR.movimientos,
-        { id: 'extra', nombre: 'Extra', tipo: 'piedra' },
-      ],
+      movimientos: [...CONDOR.movimientos, { id: 'extra', nombre: 'Extra', tipo: 'piedra' }],
     };
-    expect(validarFicha(larga)).toHaveLength(1);
+    expect(validarFicha(larga).some((e) => e.includes('4 movimientos'))).toBe(true);
   });
 
-  it('rechaza fichas sin ningún movimiento del tipo propio', () => {
-    const sinPropio: AveFicha = {
+  it('rechaza fichas sin movimiento característico', () => {
+    const sinCaracteristico: AveFicha = {
+      ...CONDOR,
+      movimientos: CONDOR.movimientos.map((m) => ({ ...m, caracteristico: false })),
+    };
+    expect(validarFicha(sinCaracteristico).some((e) => e.includes('característico'))).toBe(true);
+  });
+
+  it('rechaza fichas cuyo característico no es del tipo propio', () => {
+    const malTipo: AveFicha = {
       ...CONDOR,
       movimientos: CONDOR.movimientos.map((m) =>
-        m.tipo === 'spock' ? { ...m, tipo: 'piedra' as const } : m,
+        m.caracteristico ? { ...m, tipo: 'piedra' as const } : m,
       ),
     };
-    const errores = validarFicha(sinPropio);
-    expect(errores).toHaveLength(1);
-    expect(errores[0]).toContain('spock');
+    const errores = validarFicha(malTipo);
+    expect(errores.some((e) => e.includes('tipo propio'))).toBe(true);
   });
 
   it('rechaza ids de movimiento duplicados', () => {
     const duplicada: AveFicha = {
       ...CONDOR,
-      movimientos: [
-        ...CONDOR.movimientos.slice(0, 4),
-        CONDOR.movimientos[0],
-      ],
+      movimientos: [...CONDOR.movimientos.slice(0, 3), CONDOR.movimientos[0]],
     };
     const errores = validarFicha(duplicada);
     expect(errores.some((e) => e.includes('duplicado'))).toBe(true);
@@ -93,29 +91,22 @@ describe('validarFicha', () => {
 });
 
 describe('seleccionarMovimientos', () => {
-  it('devuelve 4 movimientos activos sin repetición, subconjunto de los 5', () => {
-    const rng = crearRng(42);
+  it('devuelve los 4 movimientos de la ficha, en el mismo orden, sin sortear', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const activos = seleccionarMovimientos(CONDOR, crearRng(seed));
-      expect(activos).toHaveLength(4);
-      const ids = new Set(activos.map((m) => m.id));
-      expect(ids.size).toBe(4);
-      for (const activo of activos) {
-        expect(CONDOR.movimientos.some((m) => m.id === activo.id)).toBe(true);
-      }
+      expect(activos.map((m) => m.id)).toEqual(CONDOR.movimientos.map((m) => m.id));
     }
   });
 
-  it('siempre incluye el movimiento garantizado del tipo propio del ave', () => {
+  it('el movimiento característico siempre está activo', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const activos = seleccionarMovimientos(LOICA, crearRng(seed));
-      const propios = activos.filter((m) => m.tipo === LOICA.tipo);
-      expect(propios.length, `seed ${seed}`).toBe(1);
-      expect(propios[0].id).toBe('loica-propio');
+      expect(activos[0].id).toBe('loica-car');
+      expect(activos.filter((m) => m.tipo === LOICA.tipo)).toHaveLength(1);
     }
   });
 
-  it('asigna un coste de MP dentro del rango configurado', () => {
+  it('asigna un coste de MP dentro del rango configurado (1 a 3)', () => {
     const rng = crearRng(7);
     for (let i = 0; i < 100; i++) {
       for (const activo of seleccionarMovimientos(CHINCOL, rng)) {
@@ -127,10 +118,7 @@ describe('seleccionarMovimientos', () => {
   });
 
   it('rechaza fichas inválidas al seleccionar', () => {
-    const invalida: AveFicha = {
-      ...CONDOR,
-      movimientos: CONDOR.movimientos.slice(0, 4),
-    };
+    const invalida: AveFicha = { ...CONDOR, movimientos: CONDOR.movimientos.slice(0, 3) };
     expect(() => seleccionarMovimientos(invalida, crearRng(1))).toThrow(/rechazada/i);
   });
 
@@ -144,31 +132,42 @@ describe('seleccionarMovimientos', () => {
   });
 });
 
-describe('inicializarAve', () => {
-  it('HP máx aleatorio en [20, 50] y HP actual igual al HP máx', () => {
+describe('inicializarAve (vida por nivel, C9)', () => {
+  it('HP máx entre 30 y 50 en nivel 0; HP actual igual al HP máx', () => {
     const rng = crearRng(2026);
     for (let i = 0; i < 100; i++) {
       const ave = inicializarAve(LOICA, rng);
-      expect(ave.hpMax).toBeGreaterThanOrEqual(20);
+      expect(ave.hpMax).toBeGreaterThanOrEqual(30);
       expect(ave.hpMax).toBeLessThanOrEqual(50);
       expect(ave.hpActual).toBe(ave.hpMax);
       expect(ave.estado).toBe('activa');
     }
   });
 
-  it('la pasiva Piedra usa el rango 40–50', () => {
-    const rng = crearRng(2026);
+  it('suma 10 × nivel al rango: nivel 3 da entre 60 y 80', () => {
+    const rng = crearRng(99);
     for (let i = 0; i < 100; i++) {
-      const ave = inicializarAve(PIKAFLOR, rng);
-      expect(ave.hpMax).toBeGreaterThanOrEqual(40);
-      expect(ave.hpMax).toBeLessThanOrEqual(50);
+      const ave = inicializarAve(LOICA, rng, CONFIG_BASE, 3);
+      expect(ave.hpMax).toBeGreaterThanOrEqual(60);
+      expect(ave.hpMax).toBeLessThanOrEqual(80);
     }
   });
 
-  it('MP compartido inicial igual a mpInicial (15)', () => {
+  it('la pasiva Piedra usa el rango 40–50, y el nivel se suma encima', () => {
+    const rng = crearRng(2026);
+    for (let i = 0; i < 100; i++) {
+      expect(inicializarAve(PIKAFLOR, rng).hpMax).toBeGreaterThanOrEqual(40);
+      expect(inicializarAve(PIKAFLOR, rng).hpMax).toBeLessThanOrEqual(50);
+    }
+    const conNivel = inicializarAve(PIKAFLOR, crearRng(5), CONFIG_BASE, 2);
+    expect(conNivel.hpMax).toBeGreaterThanOrEqual(60);
+    expect(conNivel.hpMax).toBeLessThanOrEqual(70);
+  });
+
+  it('MP compartido inicial igual a mpInicial (20)', () => {
     const ave = inicializarAve(CHINCOL, crearRng(9));
-    expect(ave.mpMax).toBe(15);
-    expect(ave.mpActual).toBe(15);
+    expect(ave.mpMax).toBe(20);
+    expect(ave.mpActual).toBe(20);
     expect(ave.movimientos).toHaveLength(4);
   });
 
@@ -181,23 +180,15 @@ describe('inicializarAve', () => {
 
 describe('inicializarEquipo / inicializarBatalla', () => {
   it('valida la cantidad de aves según el modo', () => {
-    expect(() =>
-      inicializarEquipo([CONDOR, LOICA], crearRng(1), CONFIG_BASE),
-    ).toThrow(/3 aves/);
+    expect(() => inicializarEquipo([CONDOR, LOICA], crearRng(1), CONFIG_BASE)).toThrow(/3 aves/);
 
     const config1v1 = { ...CONFIG_BASE, modo: '1v1' as const };
-    expect(() => inicializarEquipo([CONDOR, LOICA], crearRng(1), config1v1)).toThrow(
-      /1 aves/,
-    );
+    expect(() => inicializarEquipo([CONDOR, LOICA], crearRng(1), config1v1)).toThrow(/1 aves/);
   });
 
   it('crea el estado inicial completo (3v3)', () => {
     const rng = crearRng(100);
-    const estado = inicializarBatalla(
-      [CONDOR, LOICA, CHINCOL],
-      [PIKAFLOR, DIUCON, LOICA],
-      rng,
-    );
+    const estado = inicializarBatalla([CONDOR, LOICA, CHINCOL], [PIKAFLOR, DIUCON, LOICA], rng);
 
     expect(estado.jugador.aves).toHaveLength(3);
     expect(estado.cpu.aves).toHaveLength(3);
@@ -212,7 +203,16 @@ describe('inicializarEquipo / inicializarBatalla', () => {
     expect(aveActiva(estado.cpu).id).toBe('picaflor');
   });
 
-  it('funciona en modo 1v1 (entrega parcial)', () => {
+  it('aplica el nivel de cada bando: el del jugador y el de la CPU', () => {
+    const config = { ...CONFIG_BASE, modo: '1v1' as const, nivelJugador: 2, nivelCpu: 5 };
+    const estado = inicializarBatalla([CONDOR], [LOICA], crearRng(5), config);
+    expect(aveActiva(estado.jugador).hpMax).toBeGreaterThanOrEqual(50);
+    expect(aveActiva(estado.jugador).hpMax).toBeLessThanOrEqual(70);
+    expect(aveActiva(estado.cpu).hpMax).toBeGreaterThanOrEqual(80);
+    expect(aveActiva(estado.cpu).hpMax).toBeLessThanOrEqual(100);
+  });
+
+  it('funciona en modo 1v1 (ejecutable mínimo)', () => {
     const config1v1 = { ...CONFIG_BASE, modo: '1v1' as const };
     const estado = inicializarBatalla([CONDOR], [LOICA], crearRng(5), config1v1);
     expect(estado.jugador.aves).toHaveLength(1);
@@ -220,10 +220,7 @@ describe('inicializarEquipo / inicializarBatalla', () => {
   });
 
   it('propaga el rechazo de fichas inválidas', () => {
-    const invalida: AveFicha = {
-      ...CONDOR,
-      movimientos: CONDOR.movimientos.slice(0, 3),
-    };
+    const invalida: AveFicha = { ...CONDOR, movimientos: CONDOR.movimientos.slice(0, 3) };
     expect(() =>
       inicializarBatalla([invalida, LOICA, CHINCOL], [PIKAFLOR, DIUCON, LOICA], crearRng(1)),
     ).toThrow(/rechazada/i);
@@ -237,11 +234,11 @@ describe('bloqueo por MP insuficiente', () => {
   });
 
   it('bloquea movimientos cuyo coste supera el MP restante', () => {
-    const ave = aveConMp(3);
+    const ave = aveConMp(2);
     for (const mov of ave.movimientos) {
-      expect(estaBloqueado(mov, ave)).toBe(mov.costeMp > 3);
+      expect(estaBloqueado(mov, ave)).toBe(mov.costeMp > 2);
     }
-    expect(movimientosUsables(ave).every((m) => m.costeMp <= 3)).toBe(true);
+    expect(movimientosUsables(ave).every((m) => m.costeMp <= 2)).toBe(true);
   });
 
   it('detecta cuando ningún movimiento es usable', () => {
@@ -249,12 +246,9 @@ describe('bloqueo por MP insuficiente', () => {
     expect(tieneMovimientoUsable(ave)).toBe(false);
   });
 
-  it('con MP suficiente ningún movimiento está bloqueado', () => {
-    const ave = aveConMp(15);
-    const maxCoste = Math.max(...ave.movimientos.map((m) => m.costeMp));
-    expect(estaBloqueado(ave.movimientos.find((m) => m.costeMp === maxCoste)!, ave)).toBe(
-      maxCoste > 15,
-    );
+  it('con MP suficiente (coste máximo 3) ningún movimiento está bloqueado', () => {
+    const ave = aveConMp(20);
+    expect(movimientosUsables(ave)).toHaveLength(4);
   });
 });
 

@@ -1,19 +1,20 @@
 /**
- * Cálculo de daño (Parte A).
- * Fuente: plan_logica.md (reglas de pelea.md) + pasivas por tipo (D-04, changes.md).
+ * Cálculo de daño (Parte A, ajustado en la Parte C).
+ * Fuente: plan_motor_c.md (paso 2) y plan_desarrollo.md (D-H, D-K).
  *
  * Orden de aplicación:
- *   1. Daño base aleatorio en [0, HP máx del rival].
+ *   1. Daño base aleatorio entero entre danoBaseMinFrac y danoBaseMaxFrac del
+ *      HP máx rival (por defecto 10 % a 50 %).
  *   2. Multiplicador de esfuerzo: ×(1 + coste_MP × factorEsfuerzo).
  *   3. STAB ×factorStab si el tipo del movimiento coincide con el tipo del ave.
  *   4. Pasiva Tijera: +bonusTijera de daño fijo si el ave gana el intercambio.
- *   5. Pasiva Spock: daño mínimo de minimoSpock × HP máx rival si el ave gana
- *      y el daño es mayor que 0 (solo con `pasivaSpockActiva`; decisión D3 del plan MVP).
- *   6. Redondeo hacia abajo (entero ≥ 0).
+ *   5. Redondeo hacia abajo (entero ≥ 0).
+ *
+ * La pasiva de Spock ya no eleva el daño (D-K): su efecto es que su movimiento
+ * no puede fallar cuando gana, y eso lo resuelve `turn.ts`.
  *
  * El daño solo se calcula para el bando que inflige: ganador del intercambio,
- * o ambos en empate PPTLS (D-02). Las pasivas de Tijera y Spock exigen ganar
- * el intercambio, por lo que no aplican en empate.
+ * o ambos en empate PPTLS (D-02). La pasiva de Tijera exige ganar el intercambio.
  */
 
 import { enteroAleatorio } from './rng';
@@ -36,16 +37,23 @@ export interface DetalleDano {
   danoAntesDePasivas: number;
   /** Suma aplicada por la pasiva Tijera (0 si no aplica). */
   bonusTijera: number;
-  /** Verdadero si el mínimo de Spock elevó el daño. */
-  aplicaMinimoSpock: boolean;
   /** Daño final, entero ≥ 0, que se resta del HP del rival. */
   dano: number;
   clasificacion: ClasificacionEfectividad;
 }
 
-/** Daño base aleatorio entero en [0, hpMaxRival], inclusive (BR-006). */
-export function calcularDanoBase(hpMaxRival: number, rng: Rng): number {
-  return enteroAleatorio(rng, 0, hpMaxRival);
+/**
+ * Daño base aleatorio entero en [floor(min × HP), floor(max × HP)], inclusive.
+ * Por defecto min = 10 % y max = 50 % del HP máximo del rival (plan_motor_c.md, C1).
+ */
+export function calcularDanoBase(
+  hpMaxRival: number,
+  rng: Rng,
+  config: ConfigBatalla = CONFIG_BASE,
+): number {
+  const minimo = Math.floor(hpMaxRival * config.danoBaseMinFrac);
+  const maximo = Math.floor(hpMaxRival * config.danoBaseMaxFrac);
+  return enteroAleatorio(rng, minimo, maximo);
 }
 
 /**
@@ -75,7 +83,7 @@ export const MENSAJE_EFECTIVIDAD: Record<ClasificacionEfectividad, string> = {
  * `tipoAveAtacante` sobre un rival con HP máximo `hpMaxRival`.
  *
  * `ganaIntercambio` indica si el atacante ganó el intercambio PPTLS
- * (`false` en empate): condiciona las pasivas de Tijera y Spock.
+ * (`false` en empate): condiciona la pasiva de Tijera.
  */
 export function calcularDano(
   hpMaxRival: number,
@@ -85,7 +93,7 @@ export function calcularDano(
   rng: Rng,
   config: ConfigBatalla = CONFIG_BASE,
 ): DetalleDano {
-  const danoBase = calcularDanoBase(hpMaxRival, rng);
+  const danoBase = calcularDanoBase(hpMaxRival, rng, config);
 
   const multiplicadorEsfuerzo = 1 + movAtacante.costeMp * config.factorEsfuerzo;
   const aplicaStab = movAtacante.tipo === tipoAveAtacante;
@@ -99,16 +107,6 @@ export function calcularDano(
     dano += bonusTijera;
   }
 
-  let aplicaMinimoSpock = false;
-  // D3: la pasiva solo se aplica si hay daño base; con daño 0 el resultado es «Sin efecto».
-  if (ganaIntercambio && tipoAveAtacante === 'spock' && config.pasivaSpockActiva && dano > 0) {
-    const minimo = hpMaxRival * config.minimoSpock;
-    if (dano < minimo) {
-      dano = minimo;
-      aplicaMinimoSpock = true;
-    }
-  }
-
   const danoFinal = Math.max(0, Math.floor(dano));
 
   return {
@@ -117,7 +115,6 @@ export function calcularDano(
     aplicaStab,
     danoAntesDePasivas,
     bonusTijera,
-    aplicaMinimoSpock,
     dano: danoFinal,
     clasificacion: clasificarEfectividad(danoFinal, hpMaxRival),
   };

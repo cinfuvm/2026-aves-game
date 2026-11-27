@@ -1,0 +1,2264 @@
+diff --git a/changes.md b/changes.md
+index 083c668..9b3b84f 100644
+--- a/changes.md
++++ b/changes.md
+@@ -28,6 +28,7 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
+ | D-10 | Rango del coste de MP | PP 1–5 (BR-003). | Coste de MP por movimiento aleatorio en **[1, 3]** (D-H; antes [1, 5]). | BR-003 |
+ | D-11 | Pasiva Tijera «+5» | No aplica. | Interpretación: **+5 de daño fijo adicional** al daño calculado cuando el ave de tipo tijera gana el intercambio. | — |
+ | D-12 | Redondeo del daño final | No se especifica. | El daño final se **redondea hacia abajo** (`floor`) a un entero ≥ 0, coherente con el estilo del PRD. | BR-006 |
++| D-19 | IA del CPU | El CPU elige uniformemente al azar entre sus movimientos disponibles. Como mejora opcional, puede ponderar la ventaja PPTLS contra el último movimiento del jugador, sin reemplazar la elección aleatoria base. | **Perfil base sin cambios** (`PERFIL_BASE`, aleatorio) y un **perfil estratégico** para los 8 bots de la torre: predicción del jugador con el historial, valor esperado de cada movimiento y elección con softmax más un piso de exploración (siempre con azar). Los bots no ven la elección actual del jugador (D-J); solo el Enemigo 8 conoce además sus movimientos usables. Ver paso 13. | `reglas-batalla.adoc` («Inteligencia artificial del CPU») |
+ 
+ ## Pendientes de decisión (bloquean cambios futuros)
+ 
+@@ -35,7 +36,7 @@ Cada desviación indica el requisito o regla del PRD afectado para poder actuali
+ 2. **D-14 (tipo propio de las aves):** supuesto S-01. Falta que el Product Owner lo confirme; si cambia, solo hay que editar `game/src/data/birds.ts`.
+ 3. **Pokédex** (plan_desarrollo.md §4.1): sin definir.
+ 4. **Torre de desafíos** (plan_desarrollo.md §4.1): sin definir.
+-5. **Actualización del PRD:** pendiente incorporar D-01 a D-18 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
++5. **Actualización del PRD:** pendiente incorporar D-01 a D-19 en `reglas-batalla.adoc`, `requisitos-funcionales.adoc`, `contenido-aves.adoc` y `arquitectura.adoc`, con aprobación del Product Owner.
+ 
+ ---
+ 
+@@ -155,3 +156,36 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance
+ - **Daño en la revelación:** la pantalla de revelación tiene dos pasos. Primero muestra las dos elecciones. Al confirmar con `Z` se resuelve el turno y, en la misma pantalla, aparecen el daño de cada ave (`Daño a <ave>: -N HP`) y el mensaje del turno. Otro `Z` continúa a batalla o a resultado. El estado de batalla se actualiza en el primer paso (`entradaTurno` en `flujo.ts`).
+ - Tests: `game/tests/juego.test.ts` ahora tiene 14 casos. Total: 111 pruebas pasan.
+ - Verificado: `tsc` sin errores; cartucho generado; TIC-80 corre sin errores en el log. No verificado visualmente.
++
++### Paso 13 — Bots de la torre (Área B de plan_desarrollo.md, 26 nov 2026)
++
++- **IA nueva, sin cambiar la firma de `elegirMovimientoCpu`.** `PerfilCpu` ahora es `{ tipo: 'aleatorio' }` (nivel base, igual que antes) o `{ tipo: 'estrategico', ia: ParametrosIA }`. Se agregó `decisionCpu` (probabilidades de cada movimiento sin tirar el rng, para pruebas y depuración) y `armarEquipoCpu`.
++- Creado `game/src/battle/ia/prediccion.ts`: 4 predictores del próximo tipo del jugador (frecuencia con memoria, reacción ganar-quedarse / perder-cambiar, transiciones de Markov y anti-CPU) y un conjunto que pesa cada predictor según cuánto acertó en la batalla. Usan solo el historial y el tipo del ave del jugador.
++- Creado `game/src/battle/ia/evaluacion.ts`: valor esperado de cada movimiento con las reglas del motor leídas de `estado.config` (daño base 10–50 %, esfuerzo, STAB, Tijera +5, fallo, Spock que no falla, papel con coste 0, empate con daño para ambos, rendición por quedarse sin MP). Después suma la personalidad y convierte a probabilidades con softmax + exploración.
++- Creado `game/src/data/bots.ts`: los 8 bots de §5.1 y §5.2 con apodo, dificultad, tipo favorito, ave característica, descripción y perfil. `equipoDeBot` arma el equipo con las fichas que existan (ave característica al final, al menos un ave del tipo favorito; solo el Enemigo 8 elige contra el equipo del jugador).
++- **Decisiones de diseño:**
++  - Enemigo 7 usa solo el historial (D-J). Enemigo 8 («algo injusto») conoce los movimientos usables del jugador y sus costes, y arma su equipo contra el del jugador. **Nadie ve la elección actual del jugador.**
++  - Todos los bots conservan azar: probabilidad media de su jugada favorita entre 44 % (Enemigos 1–2) y 69 % (Enemigo 8). Ningún movimiento usable queda con probabilidad 0.
++  - Los Enemigos 1 a 5 tienen debilidades distintas a propósito, para que el jugador pueda aprender a vencerlos (p. ej. El Porfiado repite el tipo con que ganó).
++  - El CPU sigue sin rendirse manualmente (reglas-batalla.adoc).
++- **Integración con el MVP:** `flujo.ts` guarda el bot de la batalla (`Juego.bot`). Mientras no exista la torre, la CPU juega con el bot cuyo tipo favorito coincide con su ave (Cóndor → Enemigo 5, Loica → Enemigo 4, Chincol → Enemigo 3). No cambia el consumo del rng al crear la batalla.
++- **Simulación (`npm run bots:sim`):** `scripts/simular-bots.ts`, 600 batallas 3v3 por celda con `CONFIG_BASE` y 10 fichas de prueba (2 por tipo). Victorias del CPU:
++
++  | Bot | vs azar | vs humano (mezcla) | Media de 7 estilos | Turnos |
++  |---|---|---|---|---|
++  | Base (aleatorio) | 51 % | 44 % | 45 % | 14.1 |
++  | Enemigo 1 (El Porfiado) | 55 % | 39 % | 40 % | 13.9 |
++  | Enemigo 2 (La Filosa) | 53 % | 58 % | 56 % | 13.1 |
++  | Enemigo 3 (El Centinela) | 57 % | 56 % | 55 % | 14.3 |
++  | Enemigo 4 (El Oportunista) | 57 % | 56 % | 61 % | 14.2 |
++  | Enemigo 5 (El Escurridizo) | 55 % | 57 % | 63 % | 13.8 |
++  | Enemigo 6 (La Estratega) | 60 % | 69 % | 75 % | 13.6 |
++  | Enemigo 7 (El Jefe) | 56 % | 78 % | 83 % | 12.9 |
++  | Enemigo 8 (La Sombra) | 73 % | 84 % | 89 % | 12.8 |
++
++  Contra un jugador al azar los bots que juegan limpio quedan entre 53 % y 60 %: no pueden leerlo y la ventaja viene de usar mejor el daño y el MP. El 73 % del Enemigo 8 viene de su información extra. Los niveles de la torre (D-D) todavía no están en la simulación.
++- Verificado en **TIC-80 1.1 (QuickJS)**: un cartucho de prueba jugó 160 batallas 3v3 con los 8 bots sin errores, y el cartucho del juego carga con `import code`.
++- Tests: `game/tests/ia.test.ts` (26 casos) y `game/tests/bots.test.ts` (17 casos). Total: 169 pruebas pasan. `tsc` sin errores.
++- **Tamaño del cartucho:** `build/output.js` pasa de 27,9 KB a 47,9 KB sin minificar. Si el juego completo se acerca al límite de código de TIC-80, activar `"minify": true` en `game/tsc80-config.json`.
++- **Pendiente (fuera de este paso):** mecánicas propias de los Enemigos 6 a 8 (§5.2, son reglas del motor), niveles de cada combate (P4) y equipos fijos cuando existan las 7 fichas que faltan.
++
+diff --git a/game/src/battle/README.md b/game/src/battle/README.md
+index 0d3f45e..ba07ec0 100644
+--- a/game/src/battle/README.md
++++ b/game/src/battle/README.md
+@@ -26,9 +26,14 @@ game/src/battle/
+ ├── state.ts   Fichas, inicialización, bloqueo, relevo, fin
+ ├── turn.ts    Resolución del turno
+ ├── rendicion.ts  Rendición manual del ave activa
+-└── cpu.ts     Elección del CPU (nivel base)
++├── cpu.ts     Elección del CPU: perfil base (aleatorio) y perfil estratégico (bots)
++└── ia/
++    ├── prediccion.ts  Predicción del próximo tipo del jugador (solo historial público)
++    └── evaluacion.ts  Valor esperado de cada movimiento del CPU y probabilidades
+ ```
+ 
++Los 8 bots de la torre (sus parámetros) viven en `game/src/data/bots.ts`.
++
+ ---
+ 
+ ## `types.ts` — contrato
+@@ -141,15 +146,60 @@ El ave activa del `lado` pasa a `'rendida'`, entra la siguiente ave (si hay) y s
+ ## `cpu.ts` — elección del CPU (Parte C)
+ 
+ ```ts
+-elegirMovimientoCpu(estado, rng, perfil?): MovimientoActivo | null
+-PerfilCpu { tipo: 'aleatorio', datos?: Record<string, unknown> }
+-PERFIL_BASE
++elegirMovimientoCpu(estado, rng, perfil?): MovimientoActivo | null   // firma sin cambios
++decisionCpu(estado, perfil?): DecisionCpu      // probabilidades de cada movimiento, sin tirar el rng
++armarEquipoCpu(fichas, cantidad, rng, opciones, equipoJugador?): AveFicha[]
++PerfilCpu = { tipo: 'aleatorio' } | { tipo: 'estrategico', ia: ParametrosIA }
++PERFIL_BASE                                    // { tipo: 'aleatorio' }
+ ```
+ 
+-Nivel base: aleatorio uniforme entre los movimientos usables del ave activa del CPU. La Parte C añade perfiles **sin cambiar la firma**.
++- **Perfil `aleatorio`** (nivel base del PRD): uniforme entre los movimientos usables. Es el valor por defecto y no cambió.
++- **Perfil `estrategico`** (bots): en cada turno
++  1. predice el próximo tipo del jugador con el historial (`ia/prediccion.ts`);
++  2. calcula el valor esperado de cada movimiento usable con las reglas del motor (`ia/evaluacion.ts`): daño esperado que hace o recibe según gane, pierda o empate, probabilidad de debilitar, fallo, Spock que no falla, coste de MP y rendición por quedarse sin MP;
++  3. suma su personalidad (tipo favorito, terquedad, evitar repetirse, ahorro de MP);
++  4. elige con una **softmax** (`temperatura`) más un **piso de exploración** que deja a todos los movimientos con probabilidad mayor que 0.
++- Consume **una** tirada de `rng` por decisión (ninguna si hay 0 o 1 movimientos usables).
++- **Juego limpio:** ningún perfil ve la elección actual del jugador (D-J). Los Enemigos 1 a 7 usan solo el historial y el tipo del ave del jugador (visible en pantalla). Solo el Enemigo 8 conoce además los movimientos usables del jugador y sus costes («algo injusto»).
++- El CPU no se rinde manualmente (reglas-batalla.adoc).
+ 
+ `null` solo ocurre si el ave activa del CPU no tiene ningún movimiento usable. En una batalla en curso no debería pasar: tras cada turno, `resolverTurno` marca como `rendida` al ave sin movimientos usables y hace el relevo, así que el ave activa siempre tiene al menos un movimiento. `resolverTurno` **no acepta `null`**: si la UI o el perfil de la CPU lo reciben, deben tratarlo como error de estado, no como una rendición.
+ 
++### Parámetros de un bot (`ParametrosIA`)
++
++| Parámetro | Qué hace |
++|---|---|
++| `afinidad`, `pesoAfinidad` | Tipo favorito y cuánto lo prefiere (Enemigos 1 a 5). |
++| `predictores`, `confianza`, `memoria` | Qué predictores usa (`frecuencia`, `reaccion`, `transicion`, `anti-cpu`), cuánto confía en ellos frente a la uniforme y cuán rápido olvida. Con varios, pesan según cuánto acertaron en esta batalla. |
++| `agresividad`, `aversionRiesgo`, `rematador` | Peso del daño que hace, del daño que recibe y de la probabilidad de debilitar al rival. |
++| `ahorroMp` | Penaliza gastar MP (menos cuando le queda poca vida). |
++| `terco`, `evitaRepetir` | Repetir el tipo con el que ganó / evitar repetir su último tipo. |
++| `temperatura`, `exploracion` | Cuánto azar tiene: softmax y piso de probabilidad. |
++| `informacionCompleta` | Solo Enemigo 8: conoce los movimientos usables del jugador. |
++
++### Los 8 bots (`game/src/data/bots.ts`)
++
++| Bot | Apodo | Dificultad | Tipo | Ave característica | Cómo piensa |
++|---|---|---|---|---|---|
++| Enemigo 1 | El Porfiado | Media | Piedra | Picaflor | No predice. Repite el tipo con el que ganó. |
++| Enemigo 2 | La Filosa | Media | Tijera | Diucón | Agresiva, gasta MP en golpes caros. Lee tu reacción tras ganar o perder. |
++| Enemigo 3 | El Centinela | Media | Papel | Queltehue | Defensivo, cuida su MP. Recuerda qué tipos usas más. |
++| Enemigo 4 | El Oportunista | Media | Lagarto | Tiuque | Remata a aves débiles. Combina reacción y frecuencia. |
++| Enemigo 5 | El Escurridizo | Media | Spock | Chercán | Detecta secuencias y evita repetirse. |
++| Enemigo 6 | La Estratega | Media/alta | — | Pingüino de Humboldt | Tres predictores, equilibrado. |
++| Enemigo 7 | El Jefe | Alta | — | Tucúquere | Cuatro predictores con pesos por acierto. Solo historial. |
++| Enemigo 8 | La Sombra | Muy alta | — | — | Como el Jefe, más información de tus movimientos usables y equipo armado contra el tuyo. |
++
++`equipoDeBot(bot, fichas, cantidad, rng, equipoJugador?)` arma el equipo del bot con las fichas que existan: el ave característica entra última, hay al menos un ave del tipo favorito y se prefieren tipos distintos. Solo el Enemigo 8 mira el equipo del jugador.
++
++### Medir el balance
++
++```bash
++npm run bots:sim          # 300 batallas 3v3 por celda (opcional: npm run bots:sim -- 600)
++```
++
++`scripts/simular-bots.ts` enfrenta a cada bot contra 7 estilos de jugador (azar, repetitivo, rotativo, ganar-quedarse, contra-último, lector y humano) y muestra el porcentaje de victorias del CPU, los turnos, el uso del tipo favorito y la probabilidad media de su jugada favorita (cuánto azar le queda). Resultados vigentes en `changes.md` (paso 13).
++
+ ---
+ 
+ ## Flujo típico para la Parte B
+@@ -168,8 +218,8 @@ let estado = inicializarBatalla(fichasJugador, fichasCpu, rng);
+ const activa = aveActiva(estado.jugador);
+ const bloqueados = activa.movimientos.filter((m) => m.costeMp > activa.mpActual);
+ 
+-// 3. Cada turno:
+-const movCpu = elegirMovimientoCpu(estado, rng);          // MovimientoActivo | null
++// 3. Cada turno (con el perfil del bot del combate, p. ej. ENEMIGO_3 de data/bots.ts):
++const movCpu = elegirMovimientoCpu(estado, rng, bot.perfil); // MovimientoActivo | null
+ if (movCpu === null) {
+   throw new Error('El CPU no tiene movimientos usables: estado inconsistente');
+ }
+@@ -184,9 +234,12 @@ estado = nuevo; // el estado original no se muta: reemplazar la referencia
+ ## Cómo extender la Parte C
+ 
+ ```ts
+-// cpu.ts es el único punto de entrada: añadir un tipo de perfil y su lógica
+-// dentro de elegirMovimientoCpu, sin tocar damage/state/turn.
+-PerfilCpu → { tipo: 'jefe-agresivo', datos: { prioridad: 'tipo-ganador' } }
++// Un bot nuevo es un perfil 'estrategico' con otros parámetros (data/bots.ts):
++const MI_BOT = { tipo: 'estrategico', ia: { ...ENEMIGO_6.perfil.ia, temperatura: 0.3 } };
++elegirMovimientoCpu(estado, rng, MI_BOT);
++
++// Un predictor nuevo se agrega en ia/prediccion.ts (NombrePredictor + predecirCon)
++// y queda disponible para el conjunto sin tocar damage/state/turn.
+ ```
+ 
+ ## Movimientos y pool (D-17)
+diff --git a/game/src/battle/cpu.ts b/game/src/battle/cpu.ts
+index 117625b..aa360eb 100644
+--- a/game/src/battle/cpu.ts
++++ b/game/src/battle/cpu.ts
+@@ -1,39 +1,98 @@
+ /**
+- * Elección de movimiento del CPU (frontera con la Parte C).
+- * Fuente: plan_desarrollo.md (Área B) y docs/modules/prd/pages/reglas-batalla.adoc («IA del CPU»).
++ * Elección del CPU (Parte C): movimientos y equipo de los bots.
++ * Fuente: plan_desarrollo.md (Área B, §5) y docs/modules/prd/pages/reglas-batalla.adoc («IA del CPU»).
+  *
+- * Nivel base (MVP, BR del PRD): elección **uniformemente aleatoria** entre los
+- * movimientos del ave activa del CPU que tengan MP suficiente. No hace trampa:
+- * solo puede elegir entre movimientos no bloqueados.
++ * Perfiles:
++ * - 'aleatorio' (nivel base del PRD): elección uniforme entre los movimientos usables.
++ * - 'estrategico' (bots de la torre): predice el próximo tipo del jugador con el
++ *   historial (`ia/prediccion.ts`), calcula el valor esperado de cada movimiento
++ *   con las reglas del motor (`ia/evaluacion.ts`) y elige con una softmax más un
++ *   piso de exploración. Así el bot juega con criterio, pero siempre con azar.
+  *
+- * La Parte C reemplazará la implementación interna por perfiles con preferencias
+- * e IA por jefe, sin tocar el motor ni `resolverTurno`. La firma ya queda fija.
++ * Reglas de juego limpio (todos los perfiles):
++ * - Solo elige entre movimientos no bloqueados por MP.
++ * - Nunca ve la elección actual del jugador (D-J).
++ * - No se rinde manualmente (reglas-batalla.adoc, «Rendición»).
++ * La firma de `elegirMovimientoCpu` no cambió respecto al nivel base.
+  */
+ 
++import { ganaPPTLS } from './pptls';
+ import { aveActiva, movimientosUsables } from './state';
+-import type { EstadoBatalla, MovimientoActivo, Rng } from './types';
++import type { AveFicha, EstadoBatalla, MovimientoActivo, Rng, TipoPPTLS } from './types';
++import {
++  evaluarMovimientos,
++  predecirJugador,
++  valoresAProbabilidades,
++  type EvaluacionMovimiento,
++  type ParametrosIA,
++} from './ia/evaluacion';
++import type { Distribucion } from './ia/prediccion';
++
++export type { ParametrosIA } from './ia/evaluacion';
++export type { Distribucion, NombrePredictor } from './ia/prediccion';
+ 
+ /**
+  * Perfil de elección del CPU.
+- * El nivel base usa 'aleatorio'; la Parte C añadirá tipos propios
+- * (preferencias por ventaja, conservar MP, relevar, estrategia por jefe)
+- * con parámetros libres en `datos`.
++ * - 'aleatorio': nivel base, sin parámetros.
++ * - 'estrategico': IA de los bots, con sus parámetros de personalidad (`ia`).
+  */
+-export interface PerfilCpu {
+-  tipo: 'aleatorio';
+-  /** Parámetros libres del perfil (los define la Parte C). */
+-  datos?: Record<string, unknown>;
+-}
++export type PerfilCpu =
++  | { tipo: 'aleatorio'; datos?: Record<string, unknown> }
++  | { tipo: 'estrategico'; ia: ParametrosIA; datos?: Record<string, unknown> };
++
++/** Perfil de un bot: la variante 'estrategico' de `PerfilCpu`. */
++export type PerfilEstrategico = Extract<PerfilCpu, { tipo: 'estrategico' }>;
+ 
+ /** Perfil base por defecto. */
+ export const PERFIL_BASE: PerfilCpu = { tipo: 'aleatorio' };
+ 
++/** Probabilidad con la que el CPU elegiría cada movimiento usable, con su desglose. */
++export interface DecisionCpu {
++  /** Movimientos usables del ave activa del CPU, en el orden de su ficha. */
++  movimientos: MovimientoActivo[];
++  /** Probabilidad de elegir cada movimiento (mismo orden; suma 1). */
++  probabilidades: number[];
++  /** Predicción del próximo tipo del jugador (uniforme en el perfil aleatorio). */
++  prediccion: Distribucion | null;
++  /** Evaluación de cada movimiento (solo en el perfil estratégico). */
++  evaluaciones: EvaluacionMovimiento[] | null;
++}
++
++/**
++ * Calcula, sin consumir aleatoriedad, con qué probabilidad el CPU elegiría cada
++ * movimiento usable. Sirve para pruebas y para un modo de depuración en la UI.
++ */
++export function decisionCpu(estado: EstadoBatalla, perfil: PerfilCpu = PERFIL_BASE): DecisionCpu {
++  const usables = movimientosUsables(aveActiva(estado.cpu));
++  const n = usables.length;
++
++  if (perfil.tipo !== 'estrategico' || n <= 1) {
++    return {
++      movimientos: usables,
++      probabilidades: usables.map(() => 1 / Math.max(1, n)),
++      prediccion: null,
++      evaluaciones: null,
++    };
++  }
++
++  const prediccion = predecirJugador(estado, perfil.ia);
++  const evaluaciones = evaluarMovimientos(estado, perfil.ia, prediccion);
++  const probabilidades = valoresAProbabilidades(
++    evaluaciones.map((e) => e.valor),
++    perfil.ia.temperatura,
++    perfil.ia.exploracion,
++  );
++  return { movimientos: usables, probabilidades, prediccion, evaluaciones };
++}
++
+ /**
+  * Elige el movimiento del CPU para el turno actual.
+  * - Devuelve el movimiento elegido (entre los usables del ave activa del CPU).
+  * - Devuelve `null` si ningún movimiento es usable por MP insuficiente
+- *   (señal para la Parte B de que el CPU no puede jugar; el relevo/rendición
+- *   ya lo maneja el motor).
++ *   (señal de estado inconsistente: el motor hace el relevo antes).
++ *
++ * Consumo del `rng`: una sola tirada si hay 2 o más movimientos usables;
++ * ninguna si hay 0 o 1.
+  */
+ export function elegirMovimientoCpu(
+   estado: EstadoBatalla,
+@@ -45,9 +104,101 @@ export function elegirMovimientoCpu(
+   if (usables.length === 0) return null;
+ 
+   switch (perfil.tipo) {
++    case 'estrategico': {
++      if (usables.length === 1) return usables[0];
++      const { probabilidades } = decisionCpu(estado, perfil);
++      return usables[muestrear(probabilidades, rng())];
++    }
+     case 'aleatorio':
+     default:
+       // Elección uniforme: cada movimiento usable tiene la misma probabilidad.
+       return usables[Math.floor(rng() * usables.length)];
+   }
+ }
++
++/** Índice elegido al recorrer las probabilidades acumuladas con `tirada` en [0, 1). */
++function muestrear(probabilidades: readonly number[], tirada: number): number {
++  let acumulada = 0;
++  for (let i = 0; i < probabilidades.length; i++) {
++    acumulada += probabilidades[i];
++    if (tirada < acumulada) return i;
++  }
++  return probabilidades.length - 1;
++}
++
++/** Preferencias de un bot al armar su equipo. */
++export interface OpcionesEquipoCpu {
++  /** Tipo favorito: el equipo incluye al menos un ave de ese tipo si hay alguna. */
++  afinidad: TipoPPTLS | null;
++  /** Id del ave característica del bot: si está disponible, entra última (su «as»). */
++  aveCaracteristica: string | null;
++  /**
++   * Elige aves que venzan a los tipos del equipo del jugador. Solo el Enemigo 8
++   * lo usa («algo injusto»): los demás no miran el equipo del jugador.
++   */
++  contraEquipo: boolean;
++}
++
++/**
++ * Arma el equipo del CPU con `cantidad` aves de `fichas`, en orden de salida.
++ * - El ave característica (si está en `fichas`) va al final, como en Pokémon.
++ * - Con afinidad, la primera ave es de ese tipo si existe alguna.
++ * - El resto se sortea con preferencia por tipos distintos (cobertura) y, si el
++ *   bot tiene afinidad, por su tipo favorito.
++ * - Con `contraEquipo` y `equipoJugador`, prefiere tipos que vencen a los del jugador.
++ *
++ * Lanza un error si no hay suficientes fichas. No repite aves.
++ */
++export function armarEquipoCpu(
++  fichas: readonly AveFicha[],
++  cantidad: number,
++  rng: Rng,
++  opciones: OpcionesEquipoCpu,
++  equipoJugador: readonly AveFicha[] = [],
++): AveFicha[] {
++  if (fichas.length < cantidad) {
++    throw new Error(
++      `No hay aves suficientes para el CPU: se piden ${cantidad} y hay ${fichas.length}`,
++    );
++  }
++
++  let restantes = [...fichas];
++  let as: AveFicha | null = null;
++  if (opciones.aveCaracteristica !== null && cantidad > 1) {
++    as = restantes.find((f) => f.id === opciones.aveCaracteristica) ?? null;
++    if (as) restantes = restantes.filter((f) => f !== as);
++  }
++
++  const elegidas: AveFicha[] = [];
++  const huecos = cantidad - (as ? 1 : 0);
++  const tipos = (): TipoPPTLS[] => [...elegidas, ...(as ? [as] : [])].map((f) => f.tipo);
++
++  for (let k = 0; k < huecos; k++) {
++    let candidatas = restantes;
++    const faltaAfinidad =
++      k === 0 && opciones.afinidad !== null && !tipos().includes(opciones.afinidad);
++    if (faltaAfinidad) {
++      const delTipo = restantes.filter((f) => f.tipo === opciones.afinidad);
++      if (delTipo.length > 0) candidatas = delTipo;
++    }
++
++    const pesos = candidatas.map((f) => {
++      let peso = 1;
++      if (opciones.afinidad !== null && f.tipo === opciones.afinidad) peso += 1.5;
++      if (tipos().includes(f.tipo)) peso *= 0.35;
++      if (opciones.contraEquipo) {
++        for (const rival of equipoJugador) {
++          if (ganaPPTLS(f.tipo, rival.tipo)) peso += 1;
++          if (ganaPPTLS(rival.tipo, f.tipo)) peso *= 0.7;
++        }
++      }
++      return peso;
++    });
++    const total = pesos.reduce((a, b) => a + b, 0);
++    const elegida = candidatas[muestrear(pesos.map((p) => p / total), rng())];
++    elegidas.push(elegida);
++    restantes = restantes.filter((f) => f !== elegida);
++  }
++
++  return as ? [...elegidas, as] : elegidas;
++}
+diff --git a/game/src/battle/ia/evaluacion.ts b/game/src/battle/ia/evaluacion.ts
+new file mode 100644
+index 0000000..810615f
+--- /dev/null
++++ b/game/src/battle/ia/evaluacion.ts
+@@ -0,0 +1,332 @@
++/**
++ * Evaluación de los movimientos del CPU (IA de los bots, Parte C).
++ *
++ * Para cada movimiento usable del ave activa del CPU calcula un **valor
++ * esperado** contra la predicción del próximo tipo del jugador:
++ *   - Si el CPU gana el intercambio: daño esperado al rival (como fracción de su
++ *     HP actual) y probabilidad de debilitarlo.
++ *   - Si pierde: daño esperado que recibe y probabilidad de caer.
++ *   - Si empata: ambas cosas (en este motor, en empate los dos se dañan, D-02).
++ * Usa las mismas reglas del motor (daño base, esfuerzo, STAB, Tijera, fallo,
++ * Spock que no falla, coste de MP y rendición por MP) leídas de `estado.config`.
++ *
++ * Después suma los rasgos de personalidad del bot (afinidad por un tipo,
++ * ahorro de MP, terquedad, evitar repetirse) y convierte los valores en
++ * probabilidades con una softmax más un piso de exploración: el bot prefiere
++ * las mejores jugadas, pero nunca es 100 % predecible.
++ *
++ * Módulo puro: no usa la API de TIC-80 ni aleatoriedad.
++ */
++
++import { compararPPTLS, PPTLS_TIPOS } from '../pptls';
++import { aveActiva, movimientosUsables } from '../state';
++import type {
++  AveCombate,
++  ConfigBatalla,
++  EstadoBatalla,
++  MovimientoActivo,
++  TipoPPTLS,
++} from '../types';
++import {
++  distribucionUniforme,
++  mezclar,
++  normalizar,
++  predecirConjunto,
++  type Distribucion,
++  type NombrePredictor,
++} from './prediccion';
++
++/** Parámetros de personalidad y dificultad de un bot. */
++export interface ParametrosIA {
++  /** Tipo favorito del bot (Enemigos 1 a 5) o null si no tiene. */
++  afinidad: TipoPPTLS | null;
++  /** Bono de valor para los movimientos del tipo favorito. */
++  pesoAfinidad: number;
++  /** Temperatura de la softmax: alta = más azar, baja = más «racional». */
++  temperatura: number;
++  /** Probabilidad mínima repartida entre todos los movimientos usables (0–1). */
++  exploracion: number;
++  /** Predictores del jugador que usa. Lista vacía = no predice (uniforme). */
++  predictores: NombrePredictor[];
++  /** Cuánto confía en la predicción (0 = uniforme, 1 = predicción completa). */
++  confianza: number;
++  /** Decaimiento del historial (0–1]: más bajo = olvida más rápido. */
++  memoria: number;
++  /** Peso del daño infligido. */
++  agresividad: number;
++  /** Peso del daño recibido. */
++  aversionRiesgo: number;
++  /** Bono por la probabilidad de debilitar al ave rival en este turno. */
++  rematador: number;
++  /** Penalización por gastar MP (proporcional al coste y a la vida que le queda). */
++  ahorroMp: number;
++  /** Penalización por repetir el tipo de su último movimiento. */
++  evitaRepetir: number;
++  /** Bono por repetir el último tipo si con él ganó el intercambio. */
++  terco: number;
++  /**
++   * Información completa (Enemigo 8, «algo injusto»): conoce los movimientos
++   * usables del ave del jugador y sus costes. Nunca ve la elección actual.
++   */
++  informacionCompleta: boolean;
++}
++
++/** Penalización base por un movimiento que deja al ave sin MP para moverse (D-07). */
++const PENALIZACION_RENDICION = 0.45;
++
++/** Resumen del daño de un golpe: media (con tope en el HP actual) y probabilidad de debilitar. */
++export interface ResumenDano {
++  /** Daño medio, sin pasar del HP actual del rival. */
++  media: number;
++  /** Probabilidad de que el golpe deje al rival en 0 HP. */
++  probDebilitar: number;
++}
++
++/**
++ * Distribución exacta del daño de un golpe según `damage.ts`: el daño base es un
++ * entero uniforme entre `danoBaseMinFrac` y `danoBaseMaxFrac` del HP máx del
++ * rival; luego esfuerzo, STAB, bono fijo y `floor`.
++ */
++export function resumirDano(
++  hpMaxRival: number,
++  hpActualRival: number,
++  costeMp: number,
++  aplicaStab: boolean,
++  bonus: number,
++  config: ConfigBatalla,
++): ResumenDano {
++  const minimo = Math.floor(hpMaxRival * config.danoBaseMinFrac);
++  const maximo = Math.floor(hpMaxRival * config.danoBaseMaxFrac);
++  const multiplicador =
++    (1 + costeMp * config.factorEsfuerzo) * (aplicaStab ? config.factorStab : 1);
++  const vida = Math.max(1, hpActualRival);
++
++  let suma = 0;
++  let debilita = 0;
++  for (let base = minimo; base <= maximo; base++) {
++    const dano = Math.max(0, Math.floor(base * multiplicador + bonus));
++    suma += Math.min(dano, vida);
++    if (dano >= vida) debilita++;
++  }
++  const casos = maximo - minimo + 1;
++  return { media: suma / casos, probDebilitar: debilita / casos };
++}
++
++/** Costes posibles de un movimiento del jugador de cierto tipo, según lo que sabe el bot. */
++function costesDelJugador(
++  aveJugador: AveCombate,
++  tipo: TipoPPTLS,
++  config: ConfigBatalla,
++  informacionCompleta: boolean,
++): number[] {
++  if (informacionCompleta) {
++    const costes = movimientosUsables(aveJugador)
++      .filter((mov) => mov.tipo === tipo)
++      .map((mov) => mov.costeMp);
++    if (costes.length > 0) return costes;
++  }
++  // Sin información: cualquier coste del rango es igual de probable.
++  const costes: number[] = [];
++  for (let c = config.costeMpRango[0]; c <= config.costeMpRango[1]; c++) costes.push(c);
++  return costes;
++}
++
++/** Daño que el jugador haría con un movimiento de `tipo` (promedio sobre los costes posibles). */
++function danoDelJugador(
++  aveJugador: AveCombate,
++  aveCpu: AveCombate,
++  tipo: TipoPPTLS,
++  ganaJugador: boolean,
++  config: ConfigBatalla,
++  informacionCompleta: boolean,
++): ResumenDano {
++  const costes = costesDelJugador(aveJugador, tipo, config, informacionCompleta);
++  const bonus = ganaJugador && aveJugador.tipo === 'tijera' ? config.bonusTijera : 0;
++  let media = 0;
++  let prob = 0;
++  for (const coste of costes) {
++    const r = resumirDano(
++      aveCpu.hpMax,
++      aveCpu.hpActual,
++      coste,
++      tipo === aveJugador.tipo,
++      bonus,
++      config,
++    );
++    media += r.media;
++    prob += r.probDebilitar;
++  }
++  return { media: media / costes.length, probDebilitar: prob / costes.length };
++}
++
++/**
++ * Predicción del próximo tipo del jugador según los parámetros del bot.
++ * Con información completa (Enemigo 8) descarta los tipos que el ave del
++ * jugador no puede usar en este turno.
++ */
++export function predecirJugador(estado: EstadoBatalla, ia: ParametrosIA): Distribucion {
++  const aveJugador = aveActiva(estado.jugador);
++  let prediccion =
++    ia.predictores.length === 0
++      ? distribucionUniforme()
++      : predecirConjunto(estado.historial, ia.predictores, ia.memoria, aveJugador.tipo)
++          .distribucion;
++  prediccion = mezclar(distribucionUniforme(), prediccion, ia.confianza);
++
++  if (ia.informacionCompleta) {
++    const posibles = new Set(movimientosUsables(aveJugador).map((mov) => mov.tipo));
++    if (posibles.size > 0) {
++      const filtrada = { ...prediccion };
++      for (const tipo of PPTLS_TIPOS) if (!posibles.has(tipo)) filtrada[tipo] = 0;
++      prediccion = normalizar(filtrada);
++    }
++  }
++  return prediccion;
++}
++
++/** Valor de un movimiento del CPU, con su desglose para depuración y pruebas. */
++export interface EvaluacionMovimiento {
++  movimiento: MovimientoActivo;
++  /** Valor total (más alto = mejor jugada para el bot). */
++  valor: number;
++  /** Parte del valor que viene del intercambio PPTLS esperado. */
++  valorCombate: number;
++  /** Probabilidad (según la predicción) de ganar el intercambio con este movimiento. */
++  probGanar: number;
++  /** Probabilidad (según la predicción) de perder el intercambio con este movimiento. */
++  probPerder: number;
++}
++
++/**
++ * Evalúa todos los movimientos usables del ave activa del CPU contra la
++ * predicción `prediccion` del próximo tipo del jugador.
++ */
++export function evaluarMovimientos(
++  estado: EstadoBatalla,
++  ia: ParametrosIA,
++  prediccion: Distribucion,
++): EvaluacionMovimiento[] {
++  const config = estado.config;
++  const aveCpu = aveActiva(estado.cpu);
++  const aveJugador = aveActiva(estado.jugador);
++  const usables = movimientosUsables(aveCpu);
++  const ultima = estado.historial.length > 0 ? estado.historial[estado.historial.length - 1] : null;
++  const fraccionVidaCpu = aveCpu.hpActual / aveCpu.hpMax;
++  const costeMinimo = Math.min(...aveCpu.movimientos.map((mov) => mov.costeMp));
++  const vidaJugador = Math.max(1, aveJugador.hpActual);
++  const vidaCpu = Math.max(1, aveCpu.hpActual);
++
++  return usables.map((mov) => {
++    let valorCombate = 0;
++    let probGanar = 0;
++    let probPerder = 0;
++    const stabCpu = mov.tipo === aveCpu.tipo;
++
++    for (const tipoJugador of PPTLS_TIPOS) {
++      const p = prediccion[tipoJugador];
++      if (p <= 0) continue;
++      const resultado = compararPPTLS(tipoJugador, mov.tipo);
++      let valor = 0;
++
++      if (resultado === 'cpu') {
++        probGanar += p;
++        const falloCpu = aveCpu.tipo === 'spock' ? 0 : config.probFallo;
++        const bonus = aveCpu.tipo === 'tijera' ? config.bonusTijera : 0;
++        const golpe = resumirDano(
++          aveJugador.hpMax,
++          aveJugador.hpActual,
++          mov.costeMp,
++          stabCpu,
++          bonus,
++          config,
++        );
++        valor =
++          (1 - falloCpu) *
++          (ia.agresividad * (golpe.media / vidaJugador) + ia.rematador * golpe.probDebilitar);
++      } else if (resultado === 'jugador') {
++        probPerder += p;
++        const falloJugador = aveJugador.tipo === 'spock' ? 0 : config.probFallo;
++        const golpe = danoDelJugador(
++          aveJugador,
++          aveCpu,
++          tipoJugador,
++          true,
++          config,
++          ia.informacionCompleta,
++        );
++        valor =
++          -(1 - falloJugador) *
++          ia.aversionRiesgo *
++          (golpe.media / vidaCpu + 0.5 * golpe.probDebilitar);
++      } else {
++        // Empate: en este motor ambos bandos se dañan (D-02) y ambos pueden fallar.
++        const golpeCpu = resumirDano(
++          aveJugador.hpMax,
++          aveJugador.hpActual,
++          mov.costeMp,
++          stabCpu,
++          0,
++          config,
++        );
++        const golpeJugador = danoDelJugador(
++          aveJugador,
++          aveCpu,
++          tipoJugador,
++          false,
++          config,
++          ia.informacionCompleta,
++        );
++        const acierto = 1 - config.probFallo;
++        valor =
++          acierto *
++            (ia.agresividad * (golpeCpu.media / vidaJugador) +
++              ia.rematador * golpeCpu.probDebilitar) -
++          acierto *
++            ia.aversionRiesgo *
++            (golpeJugador.media / vidaCpu + 0.5 * golpeJugador.probDebilitar);
++      }
++      valorCombate += p * valor;
++    }
++
++    let valor = valorCombate;
++
++    // Economía de MP: gastar importa menos cuando al ave le queda poca vida.
++    const costeEsperado =
++      aveCpu.tipo === 'papel' ? mov.costeMp * (1 - config.probCosteCeroPapel) : mov.costeMp;
++    valor -= ia.ahorroMp * (costeEsperado / aveCpu.mpMax) * fraccionVidaCpu;
++
++    // Un movimiento que deja al ave sin MP para ningún otro la saca del combate (D-07).
++    if (aveCpu.mpActual - mov.costeMp < costeMinimo) {
++      valor -= PENALIZACION_RENDICION * fraccionVidaCpu;
++    }
++
++    // Personalidad.
++    if (ia.afinidad !== null && mov.tipo === ia.afinidad) valor += ia.pesoAfinidad;
++    if (ultima !== null && mov.tipo === ultima.movCpu.tipo) {
++      valor -= ia.evitaRepetir;
++      if (ultima.resultado === 'cpu') valor += ia.terco;
++    }
++
++    return { movimiento: mov, valor, valorCombate, probGanar, probPerder };
++  });
++}
++
++/**
++ * Convierte valores en probabilidades: softmax con `temperatura` y un piso de
++ * `exploracion` repartido entre todos. Ningún movimiento queda con
++ * probabilidad 0 si `exploracion` es mayor que 0.
++ */
++export function valoresAProbabilidades(
++  valores: readonly number[],
++  temperatura: number,
++  exploracion: number,
++): number[] {
++  const n = valores.length;
++  if (n === 0) return [];
++  const t = Math.max(1e-3, temperatura);
++  const maximo = Math.max(...valores);
++  const exps = valores.map((v) => Math.exp((v - maximo) / t));
++  const suma = exps.reduce((a, b) => a + b, 0);
++  const e = Math.min(1, Math.max(0, exploracion));
++  return exps.map((x) => (1 - e) * (x / suma) + e / n);
++}
+diff --git a/game/src/battle/ia/prediccion.ts b/game/src/battle/ia/prediccion.ts
+new file mode 100644
+index 0000000..53b8f70
+--- /dev/null
++++ b/game/src/battle/ia/prediccion.ts
+@@ -0,0 +1,244 @@
++/**
++ * Predicción del próximo tipo PPTLS del jugador (IA de los bots, Parte C).
++ *
++ * Todos los predictores usan **solo información pública**: el historial de turnos
++ * (los movimientos se revelan al resolver cada turno) y el tipo del ave activa
++ * del jugador, que se ve en pantalla. Ninguno ve la elección actual del jugador
++ * (decisión D-J de plan_desarrollo.md).
++ *
++ * Cada predictor devuelve una distribución de probabilidad sobre los 5 tipos.
++ * `predecirConjunto` combina varios predictores y les da más peso a los que
++ * acertaron más en los turnos anteriores de la misma batalla.
++ *
++ * Módulo puro: no usa la API de TIC-80 ni aleatoriedad.
++ */
++
++import { ganaPPTLS, PPTLS_TIPOS } from '../pptls';
++import type { EntradaHistorial, TipoPPTLS } from '../types';
++
++/** Probabilidad de cada tipo PPTLS. Siempre suma 1. */
++export type Distribucion = Record<TipoPPTLS, number>;
++
++/** Nombre de cada predictor disponible. */
++export type NombrePredictor =
++  | 'frecuencia'
++  | 'reaccion'
++  | 'transicion'
++  | 'anti-cpu';
++
++/** Distribución uniforme (1/5 a cada tipo). */
++export function distribucionUniforme(): Distribucion {
++  return { piedra: 0.2, papel: 0.2, tijera: 0.2, lagarto: 0.2, spock: 0.2 };
++}
++
++/** Distribución con todos los pesos en 0, para acumular. */
++function distribucionVacia(): Distribucion {
++  return { piedra: 0, papel: 0, tijera: 0, lagarto: 0, spock: 0 };
++}
++
++/** Normaliza los pesos para que sumen 1. Si todos son 0, devuelve la uniforme. */
++export function normalizar(pesos: Distribucion): Distribucion {
++  let total = 0;
++  for (const tipo of PPTLS_TIPOS) total += Math.max(0, pesos[tipo]);
++  if (total <= 0) return distribucionUniforme();
++  const salida = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) salida[tipo] = Math.max(0, pesos[tipo]) / total;
++  return salida;
++}
++
++/** Mezcla dos distribuciones: (1 − peso) × a + peso × b. */
++export function mezclar(a: Distribucion, b: Distribucion, peso: number): Distribucion {
++  const salida = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) salida[tipo] = (1 - peso) * a[tipo] + peso * b[tipo];
++  return normalizar(salida);
++}
++
++/** Tipos que vencen al tipo dado (siempre son 2 en PPTLS). */
++export function tiposQueVencenA(tipo: TipoPPTLS): TipoPPTLS[] {
++  return PPTLS_TIPOS.filter((otro) => ganaPPTLS(otro, tipo));
++}
++
++/** Tipo más probable de una distribución (en empate, el primero de PPTLS_TIPOS). */
++export function tipoMasProbable(dist: Distribucion): TipoPPTLS {
++  let mejor: TipoPPTLS = PPTLS_TIPOS[0];
++  for (const tipo of PPTLS_TIPOS) if (dist[tipo] > dist[mejor]) mejor = tipo;
++  return mejor;
++}
++
++/**
++ * Frecuencia con memoria: cuenta los tipos que usó el jugador. Los turnos
++ * recientes pesan más (`memoria` en (0, 1]: 1 = todos pesan igual).
++ *
++ * `tipoAveJugador` agrega un sesgo inicial hacia el tipo del ave del jugador:
++ * su movimiento de ese tipo tiene STAB, así que es más probable que lo use.
++ */
++export function predecirFrecuencia(
++  historial: readonly EntradaHistorial[],
++  memoria = 0.85,
++  tipoAveJugador: TipoPPTLS | null = null,
++): Distribucion {
++  const pesos = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) pesos[tipo] = 1; // prior de Laplace
++  if (tipoAveJugador) pesos[tipoAveJugador] += 0.75;
++
++  let factor = 1;
++  for (let i = historial.length - 1; i >= 0; i--) {
++    pesos[historial[i].movJugador.tipo] += factor * 2;
++    factor *= memoria;
++  }
++  return normalizar(pesos);
++}
++
++/**
++ * Reacción al último turno, según patrones típicos de jugadores humanos:
++ * - Si el jugador **ganó**, tiende a repetir el mismo tipo («ganar y quedarse»).
++ * - Si **perdió**, tiende a cambiar a un tipo que venza al último del CPU.
++ * - Si **empató**, tiende a cambiar a un tipo que venza al que empató.
++ * Sin historial devuelve la uniforme.
++ */
++export function predecirReaccion(historial: readonly EntradaHistorial[]): Distribucion {
++  if (historial.length === 0) return distribucionUniforme();
++  const ultima = historial[historial.length - 1];
++  const tipoJugador = ultima.movJugador.tipo;
++  const tipoCpu = ultima.movCpu.tipo;
++
++  const pesos = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) pesos[tipo] = 0.35; // resto del azar
++
++  if (ultima.resultado === 'jugador') {
++    pesos[tipoJugador] += 2.2;
++    for (const tipo of tiposQueVencenA(tipoCpu)) pesos[tipo] += 0.4;
++  } else if (ultima.resultado === 'cpu') {
++    for (const tipo of tiposQueVencenA(tipoCpu)) pesos[tipo] += 1.3;
++    pesos[tipoJugador] += 0.2;
++  } else {
++    for (const tipo of tiposQueVencenA(tipoCpu)) pesos[tipo] += 1.0;
++    pesos[tipoJugador] += 0.6;
++  }
++  return normalizar(pesos);
++}
++
++/**
++ * Transiciones (cadena de Markov de orden 1): qué tipo usó el jugador después
++ * de usar el mismo tipo que en su último turno. Detecta rotaciones y secuencias
++ * fijas, como recorrer los movimientos siempre en el mismo orden.
++ */
++export function predecirTransicion(
++  historial: readonly EntradaHistorial[],
++  memoria = 0.9,
++): Distribucion {
++  if (historial.length < 2) return distribucionUniforme();
++  const ultimo = historial[historial.length - 1].movJugador.tipo;
++
++  const pesos = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) pesos[tipo] = 0.4;
++
++  let factor = 1;
++  for (let i = historial.length - 1; i >= 1; i--) {
++    if (historial[i - 1].movJugador.tipo === ultimo) {
++      pesos[historial[i].movJugador.tipo] += factor * 2;
++    }
++    factor *= memoria;
++  }
++  return normalizar(pesos);
++}
++
++/**
++ * Jugador que estudia al CPU: supone que el jugador espera que el CPU repita su
++ * tipo más frecuente y elige un tipo que lo venza. Sirve contra jugadores que
++ * intentan «leer» al bot.
++ */
++export function predecirAntiCpu(
++  historial: readonly EntradaHistorial[],
++  memoria = 0.8,
++): Distribucion {
++  if (historial.length === 0) return distribucionUniforme();
++  const usoCpu = distribucionVacia();
++  let factor = 1;
++  for (let i = historial.length - 1; i >= 0; i--) {
++    usoCpu[historial[i].movCpu.tipo] += factor;
++    factor *= memoria;
++  }
++  const favoritoCpu = tipoMasProbable(usoCpu);
++
++  const pesos = distribucionVacia();
++  for (const tipo of PPTLS_TIPOS) pesos[tipo] = 0.3;
++  for (const tipo of tiposQueVencenA(favoritoCpu)) pesos[tipo] += 1.2;
++  return normalizar(pesos);
++}
++
++/** Predice con un predictor concreto. */
++export function predecirCon(
++  nombre: NombrePredictor,
++  historial: readonly EntradaHistorial[],
++  memoria: number,
++  tipoAveJugador: TipoPPTLS | null,
++): Distribucion {
++  switch (nombre) {
++    case 'frecuencia':
++      return predecirFrecuencia(historial, memoria, tipoAveJugador);
++    case 'reaccion':
++      return predecirReaccion(historial);
++    case 'transicion':
++      return predecirTransicion(historial, memoria);
++    case 'anti-cpu':
++      return predecirAntiCpu(historial, memoria);
++  }
++}
++
++/** Resultado de `predecirConjunto`: la predicción y el peso de cada predictor. */
++export interface PrediccionConjunto {
++  distribucion: Distribucion;
++  pesos: Record<NombrePredictor, number>;
++}
++
++/** Límite del puntaje acumulado de un predictor (evita pesos extremos). */
++const PUNTAJE_MAX = 12;
++
++/**
++ * Conjunto de predictores con pesos por acierto. Para cada turno pasado, cada
++ * predictor «predice» ese turno usando solo los turnos anteriores; su puntaje
++ * suma el logaritmo de la probabilidad que le dio al tipo que el jugador usó
++ * de verdad, comparado con la uniforme (los turnos recientes pesan más).
++ * El peso de cada predictor es proporcional a exp(puntaje).
++ *
++ * Al principio de la batalla todos pesan igual. Si el jugador cambia de
++ * estilo, el decaimiento (`memoria`) deja que el conjunto se adapte.
++ */
++export function predecirConjunto(
++  historial: readonly EntradaHistorial[],
++  predictores: readonly NombrePredictor[],
++  memoria = 0.85,
++  tipoAveJugador: TipoPPTLS | null = null,
++): PrediccionConjunto {
++  const puntajes = {} as Record<NombrePredictor, number>;
++  for (const nombre of predictores) puntajes[nombre] = 0;
++
++  for (let i = 1; i < historial.length; i++) {
++    const previo = historial.slice(0, i);
++    const real = historial[i].movJugador.tipo;
++    const antiguedad = historial.length - 1 - i;
++    const factor = Math.pow(memoria, antiguedad);
++    for (const nombre of predictores) {
++      const p = predecirCon(nombre, previo, memoria, tipoAveJugador)[real];
++      puntajes[nombre] += factor * Math.log(Math.max(p, 1e-6) / 0.2);
++    }
++  }
++
++  const pesos = {} as Record<NombrePredictor, number>;
++  let total = 0;
++  for (const nombre of predictores) {
++    const puntaje = Math.max(-PUNTAJE_MAX, Math.min(PUNTAJE_MAX, puntajes[nombre]));
++    pesos[nombre] = Math.exp(puntaje);
++    total += pesos[nombre];
++  }
++
++  const acumulada = distribucionVacia();
++  for (const nombre of predictores) {
++    pesos[nombre] /= total;
++    const dist = predecirCon(nombre, historial, memoria, tipoAveJugador);
++    for (const tipo of PPTLS_TIPOS) acumulada[tipo] += pesos[nombre] * dist[tipo];
++  }
++
++  return { distribucion: normalizar(acumulada), pesos };
++}
+diff --git a/game/src/data/bots.ts b/game/src/data/bots.ts
+new file mode 100644
+index 0000000..2237166
+--- /dev/null
++++ b/game/src/data/bots.ts
+@@ -0,0 +1,302 @@
++/**
++ * Los 8 bots de la torre (plan_desarrollo.md, Área B, §5.1 y §5.2).
++ *
++ * Cada bot es un perfil 'estrategico' de `battle/cpu.ts` con su personalidad:
++ * - Enemigos 1 a 5 (media): uno por tipo PPTLS. Usan sobre todo su tipo, sin
++ *   usar solo ese, y cada uno «piensa» distinto.
++ * - Enemigo 6 (media/alta): general, sin tipo fijo, equilibrado.
++ * - Enemigo 7 (alta, jefe): predice al jugador **solo con el historial** (D-J)
++ *   combinando varios predictores según cuánto acierta cada uno.
++ * - Enemigo 8 (muy alta, secreto): como el 7, pero «algo injusto»: conoce los
++ *   movimientos usables del jugador y arma su equipo contra el del jugador.
++ *   Tampoco ve la elección actual del jugador.
++ *
++ * Todos tienen azar: `temperatura` (softmax) y `exploracion` (piso de
++ * probabilidad para cualquier movimiento). Los valores se midieron con
++ * `npm run bots:sim` (ver `scripts/simular-bots.ts` y changes.md).
++ */
++
++import type { AveFicha, Rng, TipoPPTLS } from '../battle/types';
++import { armarEquipoCpu, type ParametrosIA, type PerfilEstrategico } from '../battle/cpu';
++
++export type DificultadBot = 'media' | 'media-alta' | 'alta' | 'muy-alta';
++
++export interface BotCpu {
++  /** Identificador estable (para guardado y registro de combates). */
++  id: string;
++  /** Nombre en la torre: «Enemigo 1» a «Enemigo 8». */
++  nombre: string;
++  /** Apodo que resume su personalidad. */
++  apodo: string;
++  dificultad: DificultadBot;
++  /** Tipo favorito (Enemigos 1 a 5) o null (6 a 8). */
++  afinidad: TipoPPTLS | null;
++  /** Id del ave característica (se desbloquea al vencerlo, D-E). Null en el Enemigo 8. */
++  aveCaracteristica: string | null;
++  /** Texto corto para el menú de la torre y el manual. */
++  descripcion: string;
++  /** Arma su equipo mirando el del jugador (solo el Enemigo 8). */
++  contraEquipo: boolean;
++  /** Perfil que se pasa a `elegirMovimientoCpu`. */
++  perfil: PerfilEstrategico;
++}
++
++/** Valores comunes de la IA; cada bot cambia solo lo que lo distingue. */
++const IA_BASE: ParametrosIA = {
++  afinidad: null,
++  pesoAfinidad: 0,
++  temperatura: 0.25,
++  exploracion: 0.12,
++  predictores: [],
++  confianza: 0,
++  memoria: 0.85,
++  agresividad: 1,
++  aversionRiesgo: 0.8,
++  rematador: 0.5,
++  ahorroMp: 0.15,
++  evitaRepetir: 0,
++  terco: 0,
++  informacionCompleta: false,
++};
++
++function crearBot(
++  datos: Omit<BotCpu, 'perfil' | 'contraEquipo'> & { contraEquipo?: boolean },
++  ia: Partial<ParametrosIA>,
++): BotCpu {
++  return {
++    ...datos,
++    contraEquipo: datos.contraEquipo ?? false,
++    perfil: { tipo: 'estrategico', ia: { ...IA_BASE, afinidad: datos.afinidad, ...ia } },
++  };
++}
++
++export const ENEMIGO_1 = crearBot(
++  {
++    id: 'enemigo-1',
++    nombre: 'Enemigo 1',
++    apodo: 'El Porfiado',
++    dificultad: 'media',
++    afinidad: 'piedra',
++    aveCaracteristica: 'picaflor',
++    descripcion:
++      'Terco como piedra: si un movimiento le funcionó, lo repite. No intenta adivinar tu jugada.',
++  },
++  {
++    pesoAfinidad: 0.3,
++    terco: 0.15,
++    temperatura: 0.3,
++    exploracion: 0.15,
++    predictores: [],
++    confianza: 0,
++  },
++);
++
++export const ENEMIGO_2 = crearBot(
++  {
++    id: 'enemigo-2',
++    nombre: 'Enemigo 2',
++    apodo: 'La Filosa',
++    dificultad: 'media',
++    afinidad: 'tijera',
++    aveCaracteristica: 'diucon',
++    descripcion:
++      'Ataca sin miedo y gasta MP en golpes caros. Se fija en cómo reaccionas después de ganar o perder.',
++  },
++  {
++    pesoAfinidad: 0.25,
++    agresividad: 1.5,
++    aversionRiesgo: 0.4,
++    rematador: 0.9,
++    ahorroMp: 0,
++    temperatura: 0.3,
++    exploracion: 0.12,
++    predictores: ['reaccion'],
++    confianza: 0.3,
++  },
++);
++
++export const ENEMIGO_3 = crearBot(
++  {
++    id: 'enemigo-3',
++    nombre: 'Enemigo 3',
++    apodo: 'El Centinela',
++    dificultad: 'media',
++    afinidad: 'papel',
++    aveCaracteristica: 'queltehue',
++    descripcion:
++      'Vigila tus costumbres: recuerda qué tipos usas más. Juega a la defensiva y cuida su MP.',
++  },
++  {
++    pesoAfinidad: 0.25,
++    agresividad: 0.8,
++    aversionRiesgo: 1.3,
++    rematador: 0.4,
++    ahorroMp: 0.4,
++    temperatura: 0.2,
++    exploracion: 0.12,
++    predictores: ['frecuencia'],
++    confianza: 0.8,
++  },
++);
++
++export const ENEMIGO_4 = crearBot(
++  {
++    id: 'enemigo-4',
++    nombre: 'Enemigo 4',
++    apodo: 'El Oportunista',
++    dificultad: 'media',
++    afinidad: 'lagarto',
++    aveCaracteristica: 'tiuque',
++    descripcion:
++      'Carroñero: espera tu error y remata cuando tu ave está débil. Lee tus reacciones y tus costumbres.',
++  },
++  {
++    pesoAfinidad: 0.25,
++    agresividad: 1,
++    aversionRiesgo: 0.8,
++    rematador: 1.2,
++    temperatura: 0.26,
++    exploracion: 0.12,
++    predictores: ['reaccion', 'frecuencia'],
++    confianza: 0.35,
++  },
++);
++
++export const ENEMIGO_5 = crearBot(
++  {
++    id: 'enemigo-5',
++    nombre: 'Enemigo 5',
++    apodo: 'El Escurridizo',
++    dificultad: 'media',
++    afinidad: 'spock',
++    aveCaracteristica: 'chercan',
++    descripcion:
++      'Detecta secuencias en tus jugadas y casi nunca repite la suya, así que cuesta leerlo.',
++  },
++  {
++    pesoAfinidad: 0.25,
++    evitaRepetir: 0.25,
++    temperatura: 0.22,
++    exploracion: 0.12,
++    predictores: ['frecuencia', 'transicion'],
++    confianza: 0.65,
++  },
++);
++
++export const ENEMIGO_6 = crearBot(
++  {
++    id: 'enemigo-6',
++    nombre: 'Enemigo 6',
++    apodo: 'La Estratega',
++    dificultad: 'media-alta',
++    afinidad: null,
++    aveCaracteristica: 'pinguino',
++    descripcion:
++      'Sin tipo favorito. Combina tus costumbres, tus reacciones y tus secuencias, y administra bien su MP.',
++  },
++  {
++    temperatura: 0.18,
++    exploracion: 0.1,
++    evitaRepetir: 0.05,
++    predictores: ['frecuencia', 'reaccion', 'transicion'],
++    confianza: 0.6,
++  },
++);
++
++export const ENEMIGO_7 = crearBot(
++  {
++    id: 'enemigo-7',
++    nombre: 'Enemigo 7',
++    apodo: 'El Jefe',
++    dificultad: 'alta',
++    afinidad: null,
++    aveCaracteristica: 'tucuquere',
++    descripcion:
++      'Jefe final. Aprende de tu historial con varios métodos y confía en el que más acierta. Juega limpio.',
++  },
++  {
++    agresividad: 1.1,
++    aversionRiesgo: 1,
++    rematador: 1,
++    ahorroMp: 0.1,
++    evitaRepetir: 0.05,
++    temperatura: 0.12,
++    exploracion: 0.06,
++    predictores: ['frecuencia', 'reaccion', 'transicion', 'anti-cpu'],
++    confianza: 0.85,
++  },
++);
++
++export const ENEMIGO_8 = crearBot(
++  {
++    id: 'enemigo-8',
++    nombre: 'Enemigo 8',
++    apodo: 'La Sombra',
++    dificultad: 'muy-alta',
++    afinidad: null,
++    aveCaracteristica: null,
++    contraEquipo: true,
++    descripcion:
++      'Jefe secreto. Piensa como el Jefe, pero sabe qué movimientos te quedan y arma su equipo contra el tuyo.',
++  },
++  {
++    agresividad: 1.1,
++    aversionRiesgo: 1,
++    rematador: 1.1,
++    ahorroMp: 0.1,
++    evitaRepetir: 0.05,
++    temperatura: 0.13,
++    exploracion: 0.07,
++    predictores: ['frecuencia', 'reaccion', 'transicion', 'anti-cpu'],
++    confianza: 0.9,
++    informacionCompleta: true,
++  },
++);
++
++/** Los 8 bots en el orden de la torre. */
++export const BOTS: readonly BotCpu[] = [
++  ENEMIGO_1,
++  ENEMIGO_2,
++  ENEMIGO_3,
++  ENEMIGO_4,
++  ENEMIGO_5,
++  ENEMIGO_6,
++  ENEMIGO_7,
++  ENEMIGO_8,
++];
++
++/** Busca un bot por id. Lanza un error si no existe. */
++export function botPorId(id: string): BotCpu {
++  const bot = BOTS.find((b) => b.id === id);
++  if (!bot) throw new Error(`Bot no encontrado: ${id}`);
++  return bot;
++}
++
++/** Bot de los Enemigos 1 a 5 cuyo tipo favorito es `tipo`. */
++export function botPorTipo(tipo: TipoPPTLS): BotCpu {
++  return BOTS.find((b) => b.afinidad === tipo) as BotCpu;
++}
++
++/**
++ * Equipo del bot con `cantidad` aves tomadas de `fichas` (las aves que existan
++ * en el juego). El orden es el de salida al combate.
++ */
++export function equipoDeBot(
++  bot: BotCpu,
++  fichas: readonly AveFicha[],
++  cantidad: number,
++  rng: Rng,
++  equipoJugador: readonly AveFicha[] = [],
++): AveFicha[] {
++  return armarEquipoCpu(
++    fichas,
++    cantidad,
++    rng,
++    {
++      afinidad: bot.afinidad,
++      aveCaracteristica: bot.aveCaracteristica,
++      contraEquipo: bot.contraEquipo,
++    },
++    equipoJugador,
++  );
++}
+diff --git a/game/src/juego/flujo.ts b/game/src/juego/flujo.ts
+index cc5601a..c58c295 100644
+--- a/game/src/juego/flujo.ts
++++ b/game/src/juego/flujo.ts
+@@ -11,10 +11,13 @@
+  * traduce los botones a estas funciones. Todas devuelven un juego nuevo.
+  *
+  * Batalla 1v1 (decisión D1 del plan MVP). El jugador elige una de las aves de
+- * FICHAS_MVP; la CPU recibe otra al azar.
++ * FICHAS_MVP; la CPU recibe otra al azar. Mientras no exista la torre, la CPU
++ * juega con el bot cuyo tipo favorito coincide con el tipo de su ave
++ * (Enemigos 3 a 5 para las aves del MVP; ver game/src/data/bots.ts).
+  */
+ 
+ import { FICHAS_MVP } from '../data/birds';
++import { botPorTipo, type BotCpu } from '../data/bots';
+ import { aveActiva, estaBloqueado, inicializarBatalla } from '../battle/state';
+ import { resolverTurno } from '../battle/turn';
+ import { elegirMovimientoCpu } from '../battle/cpu';
+@@ -38,6 +41,8 @@ export interface Juego {
+   /** Índice del movimiento resaltado en la batalla (0–3). */
+   cursorMov: number;
+   fichaJugador: AveFicha | null;
++  /** Bot que controla a la CPU en la batalla actual (null fuera de batalla). */
++  bot: BotCpu | null;
+   estado: EstadoBatalla | null;
+   /** Mensaje principal del último turno o aviso. */
+   mensaje: string;
+@@ -65,6 +70,7 @@ export function nuevoJuego(): Juego {
+     cursorAve: 0,
+     cursorMov: 0,
+     fichaJugador: null,
++    bot: null,
+     estado: null,
+     mensaje: '',
+     eventos: [],
+@@ -92,6 +98,7 @@ export function confirmarAve(j: Juego, rng: Rng): Juego {
+     ...j,
+     pantalla: 'batalla',
+     fichaJugador: ficha,
++    bot: botPorTipo(fichaCpu.tipo),
+     estado,
+     cursorMov: 0,
+     mensaje: 'Elige un movimiento',
+@@ -122,7 +129,7 @@ export function usarMovimiento(j: Juego, rng: Rng): Juego {
+       eventos: [],
+     };
+   }
+-  const movCpu = elegirMovimientoCpu(j.estado, rng);
++  const movCpu = elegirMovimientoCpu(j.estado, rng, j.bot?.perfil);
+   if (movCpu === null) {
+     // No debería pasar: tras cada turno el motor deja al ave activa con algún movimiento usable.
+     return { ...j, mensaje: 'Error: la CPU no tiene movimientos usables', eventos: [] };
+diff --git a/game/tests/README.md b/game/tests/README.md
+index 82074a2..61c80e8 100644
+--- a/game/tests/README.md
++++ b/game/tests/README.md
+@@ -17,7 +17,7 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
+ 
+ ---
+ 
+-## Qué se prueba (8 archivos, 126 casos)
++## Qué se prueba (10 archivos, 169 casos)
+ 
+ | Archivo | Módulo probado | Casos | En qué consiste |
+ |---|---|---|---|
+@@ -29,6 +29,8 @@ Los tests están **excluidos del build del cartucho** (`game/tsconfig.json` excl
+ | `juego.test.ts` | `src/juego/flujo.ts` | 14 | Estados seleccion → batalla → revelación → resultado; cursores con vuelta; batalla 1v1; movimiento bloqueado por MP sin turno; revelación sin gastar MP antes de confirmar; confirmación que resuelve el turno; fin de batalla con el ganador del motor; rendición; reinicio; acciones fuera de pantalla |
+ | `rendicion.test.ts` | `rendicion.ts` | 7 | Rendir en 1v1 termina con victoria del rival (y viceversa); sin turno, MP ni historial; no muta el estado; en 3v3 entra la siguiente ave; rendir las 3 termina la batalla; error si la batalla ya terminó |
+ | `birds.test.ts` | `src/data/birds.ts`, `src/data/movimientos.ts` | 15 | Las 3 fichas del MVP pasan `validarFicha`; ids únicos; tipo propio según S-01; característicos únicos entre aves; predeterminados de la pool; pool con 3 movimientos por tipo (15); `desdePool` con id inexistente; los 4 movimientos fijos se activan siempre (50 semillas) |
++| `ia.test.ts` | `battle/ia/prediccion.ts`, `battle/ia/evaluacion.ts`, `battle/cpu.ts` (perfil estratégico) | 26 | Predictores (frecuencia con memoria y sesgo STAB, reacción ganar-quedarse / perder-cambiar, transiciones que detectan rotaciones, anti-CPU); el conjunto da más peso al predictor que acierta; `resumirDano` coincide con `calcularDano` para cada daño base; contra «piedra segura» elige un tipo que vence a piedra; penalización por quedarse sin MP (D-07); softmax con piso de exploración; información completa solo en el Enemigo 8; nunca elige bloqueados; una sola tirada de rng por decisión; determinismo; las probabilidades de `decisionCpu` coinciden con la frecuencia real; el Jefe castiga a un jugador repetitivo sin perder el azar; **juego limpio**: el Jefe decide igual sin importar los movimientos ocultos del jugador |
++| `bots.test.ts` | `src/data/bots.ts`, `armarEquipoCpu`, integración con `flujo.ts` | 17 | Los 8 bots en orden de torre, afinidades, aves características (§5.2), azar en todos, solo el 8 con información extra; equipos sin repetir, ave característica al final, al menos un ave del tipo favorito, el 8 elige contra el equipo del jugador; batallas 3v3 completas con cada bot; en el MVP la CPU usa el bot del tipo de su ave |
+ 
+ ---
+ 
+diff --git a/game/tests/bots.test.ts b/game/tests/bots.test.ts
+new file mode 100644
+index 0000000..e49b211
+--- /dev/null
++++ b/game/tests/bots.test.ts
+@@ -0,0 +1,216 @@
++import { describe, expect, it } from 'vitest';
++
++import { armarEquipoCpu, elegirMovimientoCpu } from '../src/battle/cpu';
++import { ganaPPTLS, PPTLS_TIPOS } from '../src/battle/pptls';
++import { crearRng } from '../src/battle/rng';
++import { aveActiva, inicializarBatalla, movimientosUsables } from '../src/battle/state';
++import { resolverTurno } from '../src/battle/turn';
++import { CONFIG_BASE, type AveFicha, type TipoPPTLS } from '../src/battle/types';
++import { FICHAS_MVP } from '../src/data/birds';
++import {
++  BOTS,
++  botPorId,
++  botPorTipo,
++  ENEMIGO_1,
++  ENEMIGO_6,
++  ENEMIGO_8,
++  equipoDeBot,
++} from '../src/data/bots';
++import { confirmarAve, nuevoJuego, usarMovimiento } from '../src/juego/flujo';
++
++/** 10 fichas de prueba: 2 por tipo. Los ids imitan a las aves del PRD donde sirve. */
++function fichasDePrueba(): AveFicha[] {
++  const ids: Record<TipoPPTLS, [string, string]> = {
++    piedra: ['picaflor', 'piedra-2'],
++    papel: ['queltehue', 'chincol'],
++    tijera: ['diucon', 'pinguino'],
++    lagarto: ['tiuque', 'loica'],
++    spock: ['chercan', 'tucuquere'],
++  };
++  return PPTLS_TIPOS.flatMap((tipo) =>
++    ids[tipo].map((id) => ({
++      id,
++      nombre: id,
++      tipo,
++      movimientos: [
++        { id: `${id}-car`, nombre: `car ${tipo}`, tipo, caracteristico: true },
++        ...PPTLS_TIPOS.filter((t) => t !== tipo)
++          .slice(0, 3)
++          .map((t) => ({ id: `pool-${t}`, nombre: `pool ${t}`, tipo: t })),
++      ],
++    })),
++  );
++}
++
++const FICHAS = fichasDePrueba();
++
++describe('los 8 bots (data/bots.ts)', () => {
++  it('son 8, en orden de torre y con ids únicos', () => {
++    expect(BOTS.map((b) => b.nombre)).toEqual([
++      'Enemigo 1',
++      'Enemigo 2',
++      'Enemigo 3',
++      'Enemigo 4',
++      'Enemigo 5',
++      'Enemigo 6',
++      'Enemigo 7',
++      'Enemigo 8',
++    ]);
++    expect(new Set(BOTS.map((b) => b.id)).size).toBe(8);
++  });
++
++  it('los Enemigos 1 a 5 cubren un tipo cada uno; 6 a 8 no tienen tipo favorito', () => {
++    const tipos = BOTS.slice(0, 5).map((b) => b.afinidad);
++    expect(tipos).toEqual(['piedra', 'tijera', 'papel', 'lagarto', 'spock']);
++    for (const bot of BOTS.slice(5)) expect(bot.afinidad).toBeNull();
++  });
++
++  it('cada bot tiene el ave característica del plan (§5.2); el 8 no desbloquea ninguna', () => {
++    expect(BOTS.map((b) => b.aveCaracteristica)).toEqual([
++      'picaflor',
++      'diucon',
++      'queltehue',
++      'tiuque',
++      'chercan',
++      'pinguino',
++      'tucuquere',
++      null,
++    ]);
++  });
++
++  it('todos son estratégicos y conservan azar (exploración y temperatura > 0)', () => {
++    for (const bot of BOTS) {
++      expect(bot.perfil.tipo).toBe('estrategico');
++      if (bot.perfil.tipo !== 'estrategico') continue;
++      expect(bot.perfil.ia.exploracion).toBeGreaterThan(0);
++      expect(bot.perfil.ia.temperatura).toBeGreaterThan(0);
++      expect(bot.perfil.ia.afinidad).toBe(bot.afinidad);
++    }
++  });
++
++  it('solo el Enemigo 8 usa información del jugador más allá del historial', () => {
++    for (const bot of BOTS) {
++      if (bot.perfil.tipo !== 'estrategico') continue;
++      const esSombra = bot.id === 'enemigo-8';
++      expect(bot.perfil.ia.informacionCompleta).toBe(esSombra);
++      expect(bot.contraEquipo).toBe(esSombra);
++    }
++  });
++
++  it('los jefes son menos aleatorios que los bots de media dificultad', () => {
++    const temp = (i: number) => {
++      const p = BOTS[i].perfil;
++      return p.tipo === 'estrategico' ? p.ia.temperatura : Infinity;
++    };
++    for (let i = 0; i < 5; i++) expect(temp(i)).toBeGreaterThan(temp(5));
++    expect(temp(5)).toBeGreaterThan(temp(6));
++  });
++
++  it('botPorId y botPorTipo encuentran el bot correcto', () => {
++    expect(botPorId('enemigo-7').apodo).toBe('El Jefe');
++    expect(() => botPorId('enemigo-9')).toThrow();
++    for (const tipo of PPTLS_TIPOS) expect(botPorTipo(tipo).afinidad).toBe(tipo);
++  });
++});
++
++describe('armarEquipoCpu / equipoDeBot', () => {
++  it('devuelve la cantidad pedida sin repetir aves', () => {
++    for (let seed = 1; seed <= 30; seed++) {
++      const equipo = equipoDeBot(ENEMIGO_6, FICHAS, 3, crearRng(seed));
++      expect(equipo).toHaveLength(3);
++      expect(new Set(equipo.map((f) => f.id)).size).toBe(3);
++    }
++  });
++
++  it('lanza un error si no hay aves suficientes', () => {
++    expect(() => equipoDeBot(ENEMIGO_6, FICHAS.slice(0, 2), 3, crearRng(1))).toThrow();
++  });
++
++  it('el ave característica entra última y siempre hay un ave del tipo favorito', () => {
++    for (const bot of BOTS.slice(0, 7)) {
++      for (let seed = 1; seed <= 20; seed++) {
++        const equipo = equipoDeBot(bot, FICHAS, 3, crearRng(seed));
++        expect(equipo[2].id).toBe(bot.aveCaracteristica);
++        if (bot.afinidad) expect(equipo.some((f) => f.tipo === bot.afinidad)).toBe(true);
++      }
++    }
++  });
++
++  it('sin su ave característica, la primera ave es del tipo favorito', () => {
++    const sinAses = FICHAS.map((f) => ({ ...f, id: `${f.id}-otra` }));
++    for (const bot of BOTS.slice(0, 5)) {
++      for (let seed = 1; seed <= 20; seed++) {
++        expect(equipoDeBot(bot, sinAses, 3, crearRng(seed))[0].tipo).toBe(bot.afinidad);
++      }
++    }
++  });
++
++  it('en 1v1 no reserva el ave característica (no hay «as» con una sola ave)', () => {
++    const equipo = equipoDeBot(ENEMIGO_1, FICHAS, 1, crearRng(4));
++    expect(equipo).toHaveLength(1);
++    expect(equipo[0].tipo).toBe('piedra');
++  });
++
++  it('el Enemigo 8 elige más tipos que vencen al equipo del jugador que el Enemigo 6', () => {
++    const jugador = FICHAS.filter((f) => f.tipo === 'piedra');
++    const ventaja = (bot: typeof ENEMIGO_6) => {
++      let total = 0;
++      for (let seed = 1; seed <= 200; seed++) {
++        for (const f of equipoDeBot(bot, FICHAS, 3, crearRng(seed), jugador)) {
++          if (ganaPPTLS(f.tipo, 'piedra')) total++;
++        }
++      }
++      return total;
++    };
++    expect(ventaja(ENEMIGO_8)).toBeGreaterThan(ventaja(ENEMIGO_6) * 1.3);
++  });
++
++  it('es determinista con la misma semilla', () => {
++    const a = armarEquipoCpu(FICHAS, 3, crearRng(8), { afinidad: 'papel', aveCaracteristica: null, contraEquipo: false });
++    const b = armarEquipoCpu(FICHAS, 3, crearRng(8), { afinidad: 'papel', aveCaracteristica: null, contraEquipo: false });
++    expect(a.map((f) => f.id)).toEqual(b.map((f) => f.id));
++  });
++});
++
++describe('batallas completas con cada bot', () => {
++  it('cada bot juega batallas 3v3 enteras sin quedarse sin jugada', () => {
++    for (const bot of BOTS) {
++      const rng = crearRng(100 + BOTS.indexOf(bot));
++      for (let b = 0; b < 15; b++) {
++        const equipoJugador = armarEquipoCpu(FICHAS, 3, rng, { afinidad: null, aveCaracteristica: null, contraEquipo: false });
++        const equipoCpu = equipoDeBot(bot, FICHAS, 3, rng, equipoJugador);
++        let estado = inicializarBatalla(equipoJugador, equipoCpu, rng, CONFIG_BASE);
++        let turnos = 0;
++        while (!estado.terminada) {
++          const movCpu = elegirMovimientoCpu(estado, rng, bot.perfil);
++          expect(movCpu).not.toBeNull();
++          const usables = movimientosUsables(aveActiva(estado.jugador));
++          const movJugador = usables[Math.floor(rng() * usables.length)];
++          estado = resolverTurno(estado, movJugador, movCpu!, rng).estado;
++          expect(++turnos).toBeLessThan(200);
++        }
++        expect(['jugador', 'cpu', 'empate']).toContain(estado.ganador);
++      }
++    }
++  });
++});
++
++describe('integración con el flujo del MVP (juego/flujo.ts)', () => {
++  it('nuevoJuego no tiene bot; al confirmar, la CPU usa el bot del tipo de su ave', () => {
++    expect(nuevoJuego().bot).toBeNull();
++    for (let seed = 1; seed <= 10; seed++) {
++      const j = confirmarAve(nuevoJuego(), crearRng(seed));
++      const tipoAveCpu = j.estado!.cpu.aves[0].tipo;
++      expect(j.bot!.afinidad).toBe(tipoAveCpu);
++      expect(FICHAS_MVP.some((f) => f.tipo === tipoAveCpu)).toBe(true);
++    }
++  });
++
++  it('usarMovimiento obtiene la jugada de la CPU con el perfil del bot', () => {
++    const rng = crearRng(21);
++    const j = usarMovimiento(confirmarAve(nuevoJuego(), rng), rng);
++    expect(j.pantalla).toBe('revelacion');
++    const ave = j.estado!.cpu.aves[0];
++    expect(ave.movimientos.some((m) => m.id === j.movCpu!.id)).toBe(true);
++  });
++});
+diff --git a/game/tests/ia.test.ts b/game/tests/ia.test.ts
+new file mode 100644
+index 0000000..c6429e7
+--- /dev/null
++++ b/game/tests/ia.test.ts
+@@ -0,0 +1,410 @@
++import { describe, expect, it } from 'vitest';
++
++import {
++  decisionCpu,
++  elegirMovimientoCpu,
++  type ParametrosIA,
++  type PerfilCpu,
++} from '../src/battle/cpu';
++import { calcularDano } from '../src/battle/damage';
++import {
++  evaluarMovimientos,
++  predecirJugador,
++  resumirDano,
++  valoresAProbabilidades,
++} from '../src/battle/ia/evaluacion';
++import {
++  distribucionUniforme,
++  normalizar,
++  predecirAntiCpu,
++  predecirConjunto,
++  predecirFrecuencia,
++  predecirReaccion,
++  predecirTransicion,
++  tipoMasProbable,
++  tiposQueVencenA,
++  type Distribucion,
++} from '../src/battle/ia/prediccion';
++import { compararPPTLS, PPTLS_TIPOS } from '../src/battle/pptls';
++import { crearRng } from '../src/battle/rng';
++import { inicializarBatalla } from '../src/battle/state';
++import {
++  CONFIG_BASE,
++  type AveFicha,
++  type EntradaHistorial,
++  type EstadoBatalla,
++  type MovimientoActivo,
++  type Rng,
++  type TipoPPTLS,
++} from '../src/battle/types';
++import { ENEMIGO_1, ENEMIGO_6, ENEMIGO_7, ENEMIGO_8 } from '../src/data/bots';
++
++// ---------------------------------------------------------------- utilidades
++
++function fichaPrueba(id: string, tipo: TipoPPTLS): AveFicha {
++  const otros = PPTLS_TIPOS.filter((t) => t !== tipo);
++  return {
++    id,
++    nombre: id,
++    tipo,
++    movimientos: [
++      { id: `${id}-car`, nombre: `Característico ${tipo}`, tipo, caracteristico: true },
++      ...otros.slice(0, 3).map((t) => ({ id: `${id}-${t}`, nombre: `Otro ${t}`, tipo: t })),
++    ],
++  };
++}
++
++function mov(tipo: TipoPPTLS, costeMp = 2, id = `m-${tipo}-${costeMp}`): MovimientoActivo {
++  return { id, nombre: id, tipo, costeMp };
++}
++
++/** Entrada de historial mínima: tipos usados y resultado PPTLS. */
++function entrada(tipoJugador: TipoPPTLS, tipoCpu: TipoPPTLS, turno = 1): EntradaHistorial {
++  return {
++    turno,
++    movJugador: mov(tipoJugador),
++    movCpu: mov(tipoCpu),
++    resultado: compararPPTLS(tipoJugador, tipoCpu),
++    danoAlCpu: 0,
++    danoAlJugador: 0,
++    mpGastadoJugador: 0,
++    mpGastadoCpu: 0,
++    mensaje: '',
++    eventos: [],
++  };
++}
++
++function historial(pares: [TipoPPTLS, TipoPPTLS][]): EntradaHistorial[] {
++  return pares.map(([j, c], i) => entrada(j, c, i + 1));
++}
++
++/**
++ * Batalla 1v1 controlada: el ave del CPU es de tipo `tipoCpu` con los
++ * movimientos `movsCpu`; el jugador es de tipo `tipoJugador`.
++ */
++function estado1v1(
++  movsCpu: MovimientoActivo[],
++  opciones: {
++    tipoCpu?: TipoPPTLS;
++    tipoJugador?: TipoPPTLS;
++    mpCpu?: number;
++    hist?: EntradaHistorial[];
++    movsJugador?: MovimientoActivo[];
++  } = {},
++): EstadoBatalla {
++  const config = { ...CONFIG_BASE, modo: '1v1' as const };
++  const estado = inicializarBatalla(
++    [fichaPrueba('jug', opciones.tipoJugador ?? 'spock')],
++    [fichaPrueba('cpu', opciones.tipoCpu ?? 'lagarto')],
++    crearRng(5),
++    config,
++  );
++  const cpu = estado.cpu.aves[0];
++  cpu.movimientos = movsCpu.map((m) => ({ ...m }));
++  cpu.hpMax = 40;
++  cpu.hpActual = 40;
++  cpu.mpActual = opciones.mpCpu ?? 20;
++  const jug = estado.jugador.aves[0];
++  jug.hpMax = 40;
++  jug.hpActual = 40;
++  if (opciones.movsJugador) jug.movimientos = opciones.movsJugador.map((m) => ({ ...m }));
++  estado.historial = opciones.hist ?? [];
++  estado.turno = estado.historial.length;
++  return estado;
++}
++
++function suma(d: Distribucion): number {
++  return PPTLS_TIPOS.reduce((a, t) => a + d[t], 0);
++}
++
++function perfilCon(ia: Partial<ParametrosIA>, base: PerfilCpu = ENEMIGO_7.perfil): PerfilCpu {
++  if (base.tipo !== 'estrategico') throw new Error('perfil no estratégico');
++  return { tipo: 'estrategico', ia: { ...base.ia, ...ia } };
++}
++
++/** rng que cuenta cuántas veces se llamó. */
++function rngContador(): { rng: Rng; llamadas: () => number } {
++  let n = 0;
++  const interno = crearRng(9);
++  return {
++    rng: () => {
++      n++;
++      return interno();
++    },
++    llamadas: () => n,
++  };
++}
++
++const CUATRO_TIPOS = [mov('piedra'), mov('papel'), mov('tijera'), mov('spock')];
++
++// ---------------------------------------------------------------- predicción
++
++describe('predicción del jugador (ia/prediccion.ts)', () => {
++  it('la uniforme y normalizar suman 1; normalizar sin pesos devuelve la uniforme', () => {
++    expect(suma(distribucionUniforme())).toBeCloseTo(1);
++    const vacia = normalizar({ piedra: 0, papel: 0, tijera: 0, lagarto: 0, spock: 0 });
++    expect(vacia).toEqual(distribucionUniforme());
++    expect(suma(normalizar({ piedra: 3, papel: 1, tijera: 0, lagarto: 0, spock: 0 }))).toBeCloseTo(1);
++  });
++
++  it('tiposQueVencenA respeta la matriz PPTLS', () => {
++    expect(tiposQueVencenA('piedra').sort()).toEqual(['papel', 'spock']);
++    expect(tiposQueVencenA('spock').sort()).toEqual(['lagarto', 'papel']);
++    for (const tipo of PPTLS_TIPOS) {
++      for (const otro of tiposQueVencenA(tipo)) expect(compararPPTLS(otro, tipo)).toBe('jugador');
++    }
++  });
++
++  it('frecuencia: el tipo más usado es el más probable', () => {
++    const h = historial([
++      ['piedra', 'papel'],
++      ['piedra', 'tijera'],
++      ['papel', 'piedra'],
++      ['piedra', 'spock'],
++    ]);
++    const d = predecirFrecuencia(h);
++    expect(tipoMasProbable(d)).toBe('piedra');
++    expect(suma(d)).toBeCloseTo(1);
++  });
++
++  it('frecuencia: con memoria baja pesan más los turnos recientes', () => {
++    const h = historial([
++      ['piedra', 'papel'],
++      ['piedra', 'papel'],
++      ['piedra', 'papel'],
++      ['tijera', 'papel'],
++      ['tijera', 'papel'],
++    ]);
++    expect(tipoMasProbable(predecirFrecuencia(h, 1))).toBe('piedra');
++    expect(tipoMasProbable(predecirFrecuencia(h, 0.4))).toBe('tijera');
++  });
++
++  it('frecuencia: sin historial favorece el tipo del ave del jugador (STAB)', () => {
++    const d = predecirFrecuencia([], 0.85, 'lagarto');
++    expect(tipoMasProbable(d)).toBe('lagarto');
++    expect(d.lagarto).toBeLessThan(0.4);
++  });
++
++  it('reacción: si el jugador ganó, espera que repita su tipo', () => {
++    const d = predecirReaccion(historial([['papel', 'piedra']]));
++    expect(tipoMasProbable(d)).toBe('papel');
++  });
++
++  it('reacción: si el jugador perdió, espera un tipo que venza al último del CPU', () => {
++    const d = predecirReaccion(historial([['papel', 'tijera']]));
++    const vencedores = tiposQueVencenA('tijera');
++    expect(vencedores).toContain(tipoMasProbable(d));
++    expect(d.papel).toBeLessThan(d[vencedores[0]]);
++  });
++
++  it('transición: detecta una rotación fija de tipos', () => {
++    const ciclo: TipoPPTLS[] = ['piedra', 'papel', 'tijera'];
++    const pares = Array.from({ length: 8 }, (_, i) => [ciclo[i % 3], 'spock'] as [TipoPPTLS, TipoPPTLS]);
++    // El último tipo del jugador es ciclo[7 % 3] = papel → sigue tijera.
++    expect(tipoMasProbable(predecirTransicion(historial(pares)))).toBe('tijera');
++  });
++
++  it('anti-CPU: si el CPU repite un tipo, espera que el jugador lo contrarreste', () => {
++    const h = historial([
++      ['spock', 'piedra'],
++      ['lagarto', 'piedra'],
++      ['tijera', 'piedra'],
++    ]);
++    const d = predecirAntiCpu(h);
++    expect(d.papel + d.spock).toBeGreaterThan(0.6);
++  });
++
++  it('conjunto: da más peso al predictor que acierta (rotación → transición)', () => {
++    const ciclo: TipoPPTLS[] = ['lagarto', 'spock', 'piedra', 'tijera'];
++    const pares = Array.from({ length: 12 }, (_, i) => [ciclo[i % 4], 'papel'] as [TipoPPTLS, TipoPPTLS]);
++    const { distribucion, pesos } = predecirConjunto(historial(pares), [
++      'frecuencia',
++      'reaccion',
++      'transicion',
++      'anti-cpu',
++    ]);
++    expect(pesos.transicion).toBeGreaterThan(pesos.frecuencia);
++    expect(pesos.transicion).toBeGreaterThan(pesos.reaccion);
++    expect(suma(distribucion)).toBeCloseTo(1);
++    // Último: ciclo[11 % 4] = tijera → sigue lagarto.
++    expect(tipoMasProbable(distribucion)).toBe('lagarto');
++  });
++
++  it('conjunto: sin historial todos los predictores pesan igual', () => {
++    const { pesos } = predecirConjunto([], ['frecuencia', 'reaccion']);
++    expect(pesos.frecuencia).toBeCloseTo(0.5);
++    expect(pesos.reaccion).toBeCloseTo(0.5);
++  });
++});
++
++// ---------------------------------------------------------------- evaluación
++
++describe('evaluación de movimientos (ia/evaluacion.ts)', () => {
++  it('resumirDano coincide con calcularDano de damage.ts para cada daño base posible', () => {
++    const hpMax = 46;
++    const hpActual = 19;
++    const movimiento = mov('tijera', 3);
++    const minimo = Math.floor(hpMax * CONFIG_BASE.danoBaseMinFrac);
++    const maximo = Math.floor(hpMax * CONFIG_BASE.danoBaseMaxFrac);
++    const casos = maximo - minimo + 1;
++    let suma = 0;
++    let debilita = 0;
++    for (let base = minimo; base <= maximo; base++) {
++      const forzar: Rng = () => (base - minimo + 0.5) / casos;
++      const { dano } = calcularDano(hpMax, movimiento, 'tijera', true, forzar, CONFIG_BASE);
++      suma += Math.min(dano, hpActual);
++      if (dano >= hpActual) debilita++;
++    }
++    const resumen = resumirDano(hpMax, hpActual, 3, true, CONFIG_BASE.bonusTijera, CONFIG_BASE);
++    expect(resumen.media).toBeCloseTo(suma / casos);
++    expect(resumen.probDebilitar).toBeCloseTo(debilita / casos);
++  });
++
++  it('resumirDano: rival con 1 HP siempre cae; rival sano casi nunca', () => {
++    expect(resumirDano(40, 1, 1, false, 0, CONFIG_BASE).probDebilitar).toBe(1);
++    expect(resumirDano(40, 40, 1, false, 0, CONFIG_BASE).probDebilitar).toBe(0);
++  });
++
++  it('contra una predicción segura de piedra, lo mejor es un tipo que vence a piedra', () => {
++    const estado = estado1v1(CUATRO_TIPOS, { tipoCpu: 'lagarto' });
++    const seguro: Distribucion = { piedra: 1, papel: 0, tijera: 0, lagarto: 0, spock: 0 };
++    const ia = ENEMIGO_7.perfil.ia;
++    const evals = evaluarMovimientos(estado, ia, seguro);
++    const mejor = evals.reduce((a, b) => (b.valor > a.valor ? b : a));
++    expect(['papel', 'spock']).toContain(mejor.movimiento.tipo);
++    const tijera = evals.find((e) => e.movimiento.tipo === 'tijera')!;
++    expect(tijera.probPerder).toBeCloseTo(1);
++    expect(tijera.valor).toBeLessThan(mejor.valor);
++  });
++
++  it('penaliza el movimiento que dejaría al ave sin MP para seguir (rendición, D-07)', () => {
++    const movs = [mov('piedra', 3), mov('papel', 1)];
++    const ia = ENEMIGO_7.perfil.ia;
++    const pred = distribucionUniforme();
++    const conMp = evaluarMovimientos(estado1v1(movs, { mpCpu: 10 }), ia, pred);
++    const sinMp = evaluarMovimientos(estado1v1(movs, { mpCpu: 3 }), ia, pred);
++    const valor = (e: typeof conMp, tipo: TipoPPTLS) => e.find((x) => x.movimiento.tipo === tipo)!.valor;
++    // Con MP 3, pagar 3 deja 0 MP (< coste mínimo 1): el ave se rendiría.
++    expect(valor(sinMp, 'piedra')).toBeLessThan(valor(conMp, 'piedra') - 0.3);
++    // Pagar 1 deja 2 MP: sin penalización.
++    expect(valor(sinMp, 'papel')).toBeCloseTo(valor(conMp, 'papel'));
++  });
++
++  it('valoresAProbabilidades: suma 1, respeta el piso de exploración y la temperatura', () => {
++    const valores = [0.9, 0.1, -0.4, 0.2];
++    for (const [t, e] of [
++      [0.1, 0.05],
++      [0.3, 0.15],
++    ]) {
++      const p = valoresAProbabilidades(valores, t, e);
++      expect(p.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
++      for (const x of p) expect(x).toBeGreaterThanOrEqual(e / valores.length - 1e-12);
++    }
++    const fria = Math.max(...valoresAProbabilidades(valores, 0.05, 0));
++    const tibia = Math.max(...valoresAProbabilidades(valores, 0.5, 0));
++    expect(fria).toBeGreaterThan(tibia);
++  });
++
++  it('información completa (Enemigo 8) descarta los tipos que el jugador no puede usar', () => {
++    const movsJugador = [mov('papel', 1, 'j1'), mov('tijera', 1, 'j2'), mov('spock', 1, 'j3'), mov('lagarto', 1, 'j4')];
++    const estado = estado1v1(CUATRO_TIPOS, { movsJugador });
++    const iaJefe = ENEMIGO_7.perfil.ia;
++    const iaSombra = ENEMIGO_8.perfil.ia;
++    expect(predecirJugador(estado, iaJefe).piedra).toBeGreaterThan(0);
++    expect(predecirJugador(estado, iaSombra).piedra).toBe(0);
++  });
++});
++
++// ---------------------------------------------------------------- elección
++
++describe('elegirMovimientoCpu — perfil estratégico', () => {
++  it('nunca elige un movimiento bloqueado por MP', () => {
++    const movs = [mov('piedra', 3), mov('papel', 1), mov('tijera', 2), mov('spock', 3)];
++    const estado = estado1v1(movs, { mpCpu: 2 });
++    const rng = crearRng(11);
++    for (const perfil of [ENEMIGO_1.perfil, ENEMIGO_7.perfil, ENEMIGO_8.perfil]) {
++      for (let i = 0; i < 300; i++) {
++        const eleccion = elegirMovimientoCpu(estado, rng, perfil)!;
++        expect(eleccion.costeMp).toBeLessThanOrEqual(2);
++      }
++    }
++  });
++
++  it('con MP 0 devuelve null y con un solo movimiento usable lo devuelve sin tirar el rng', () => {
++    expect(elegirMovimientoCpu(estado1v1([mov('piedra', 1)], { mpCpu: 0 }), crearRng(1), ENEMIGO_7.perfil)).toBeNull();
++    const { rng, llamadas } = rngContador();
++    const unico = elegirMovimientoCpu(estado1v1([mov('piedra', 1), mov('papel', 3)], { mpCpu: 1 }), rng, ENEMIGO_7.perfil);
++    expect(unico!.tipo).toBe('piedra');
++    expect(llamadas()).toBe(0);
++  });
++
++  it('consume una sola tirada del rng por decisión', () => {
++    const { rng, llamadas } = rngContador();
++    elegirMovimientoCpu(estado1v1(CUATRO_TIPOS), rng, ENEMIGO_7.perfil);
++    expect(llamadas()).toBe(1);
++  });
++
++  it('es determinista con la misma semilla', () => {
++    const estado = estado1v1(CUATRO_TIPOS, { hist: historial([['piedra', 'papel'], ['tijera', 'spock']]) });
++    for (let seed = 1; seed <= 20; seed++) {
++      const a = elegirMovimientoCpu(estado, crearRng(seed), ENEMIGO_7.perfil);
++      const b = elegirMovimientoCpu(estado, crearRng(seed), ENEMIGO_7.perfil);
++      expect(a!.id).toBe(b!.id);
++    }
++  });
++
++  it('las probabilidades de decisionCpu coinciden con la frecuencia real de elección', () => {
++    const estado = estado1v1(CUATRO_TIPOS, { hist: historial([['lagarto', 'piedra']]) });
++    const { movimientos, probabilidades } = decisionCpu(estado, ENEMIGO_6.perfil);
++    const rng = crearRng(3);
++    const cuenta = new Map<string, number>();
++    const n = 6000;
++    for (let i = 0; i < n; i++) {
++      const id = elegirMovimientoCpu(estado, rng, ENEMIGO_6.perfil)!.id;
++      cuenta.set(id, (cuenta.get(id) ?? 0) + 1);
++    }
++    movimientos.forEach((m, i) => {
++      expect((cuenta.get(m.id) ?? 0) / n).toBeCloseTo(probabilidades[i], 1);
++    });
++  });
++
++  it('el Jefe castiga a un jugador repetitivo, pero sin dejar de tener azar', () => {
++    const pares = Array.from({ length: 8 }, () => ['piedra', 'lagarto'] as [TipoPPTLS, TipoPPTLS]);
++    const estado = estado1v1(CUATRO_TIPOS, { hist: historial(pares), tipoCpu: 'lagarto' });
++    const { movimientos, probabilidades } = decisionCpu(estado, ENEMIGO_7.perfil);
++    const contraPiedra = movimientos.reduce(
++      (acc, m, i) => acc + (['papel', 'spock'].includes(m.tipo) ? probabilidades[i] : 0),
++      0,
++    );
++    expect(contraPiedra).toBeGreaterThan(0.75);
++    for (const p of probabilidades) expect(p).toBeGreaterThan(0);
++    expect(Math.max(...probabilidades)).toBeLessThan(1);
++  });
++
++  it('juego limpio: el Jefe decide igual sin importar los movimientos ocultos del jugador', () => {
++    const hist = historial([['spock', 'papel'], ['papel', 'piedra']]);
++    const a = estado1v1(CUATRO_TIPOS, { hist, movsJugador: [mov('papel', 1, 'x1'), mov('spock', 1, 'x2')] });
++    const b = estado1v1(CUATRO_TIPOS, { hist, movsJugador: [mov('piedra', 3, 'y1'), mov('tijera', 3, 'y2')] });
++    expect(decisionCpu(a, ENEMIGO_7.perfil).probabilidades).toEqual(decisionCpu(b, ENEMIGO_7.perfil).probabilidades);
++    // La Sombra sí usa esa información («algo injusta»).
++    expect(decisionCpu(a, ENEMIGO_8.perfil).probabilidades).not.toEqual(
++      decisionCpu(b, ENEMIGO_8.perfil).probabilidades,
++    );
++  });
++
++  it('la afinidad sube la probabilidad del tipo favorito', () => {
++    const estado = estado1v1(CUATRO_TIPOS, { tipoCpu: 'lagarto' });
++    const prob = (perfil: PerfilCpu) => {
++      const d = decisionCpu(estado, perfil);
++      return d.probabilidades[d.movimientos.findIndex((m) => m.tipo === 'piedra')];
++    };
++    expect(prob(ENEMIGO_1.perfil)).toBeGreaterThan(prob(perfilCon({ pesoAfinidad: 0 }, ENEMIGO_1.perfil)));
++  });
++
++  it('el perfil aleatorio sigue igual: decisionCpu da probabilidades uniformes', () => {
++    const d = decisionCpu(estado1v1(CUATRO_TIPOS));
++    expect(d.probabilidades).toEqual([0.25, 0.25, 0.25, 0.25]);
++    expect(d.prediccion).toBeNull();
++  });
++});
++
+diff --git a/package.json b/package.json
+index 7306884..67691f3 100644
+--- a/package.json
++++ b/package.json
+@@ -11,7 +11,8 @@
+     "game:build": "cd game && node ../bin/tsc80.js build",
+     "game:run": "cd game && node ../bin/tsc80.js run",
+     "test": "vitest run",
+-    "test:watch": "vitest"
++    "test:watch": "vitest",
++    "bots:sim": "esbuild scripts/simular-bots.ts --bundle --platform=node --outfile=build/simular-bots.cjs --log-level=warning && node build/simular-bots.cjs"
+   },
+   "devDependencies": {
+     "@antora/cli": "^3.1.9",
+diff --git a/plan_desarrollo.md b/plan_desarrollo.md
+index c96df8d..16bebb3 100644
+--- a/plan_desarrollo.md
++++ b/plan_desarrollo.md
+@@ -124,14 +124,17 @@ Cuentas: 10 aves = 3 iniciales (Cóndor, Loica, Chincol) + 7 desbloqueables. Los
+ | Enemigo 8 | — | **Sigiloso:** su primer movimiento de cada combate no puede fallar. |
+ 
+ ### 5.3 Pendientes de bots
+-- [ ] Elegir las mecánicas de los Enemigos 6 a 8.
+-- [ ] IA del Enemigo 6 (sin detalle).
+-- [ ] IA de los Enemigos 1 a 5 (estrategia de cada tipo). Hoy el bot base es aleatorio.
+-- [ ] Equipo de 3 aves de cada bot.
++- [ ] Elegir las mecánicas de los Enemigos 6 a 8 (son reglas del motor, no de la IA).
++- [x] IA del Enemigo 6: La Estratega, tres predictores y juego equilibrado.
++- [x] IA de los Enemigos 1 a 5: una personalidad por tipo (ver 5.4).
++- [x] Equipo de cada bot: `equipoDeBot` lo arma con las fichas que existan. Falta fijar equipos cuando estén las 10 fichas.
+ 
+ ### 5.4 Estado actual
+-- CPU de nivel base: elige un movimiento usable al azar.
+-- `PerfilCpu` listo para añadir comportamientos sin cambiar la firma del motor.
++- Los 8 bots están en `game/src/data/bots.ts` y usan el perfil `estrategico` de `cpu.ts` (paso 13 de `changes.md`).
++- Cada bot predice tu próximo tipo con el historial, calcula el valor esperado de cada movimiento y elige con azar controlado.
++- Personalidades: 1 El Porfiado (piedra, repite lo que le funciona), 2 La Filosa (tijera, agresiva), 3 El Centinela (papel, defensivo), 4 El Oportunista (lagarto, remata), 5 El Escurridizo (spock, evita repetirse), 6 La Estratega (general), 7 El Jefe (solo historial, D-J), 8 La Sombra (conoce tus movimientos usables).
++- Victorias del CPU en simulación (media de 7 estilos de jugador): 40 %, 56 %, 55 %, 61 %, 63 %, 75 %, 83 % y 89 %. El perfil aleatorio base queda en 45 %.
++- El perfil aleatorio base sigue disponible (`PERFIL_BASE`).
+ 
+ ---
+ 
+diff --git a/scripts/simular-bots.ts b/scripts/simular-bots.ts
+new file mode 100644
+index 0000000..60a390f
+--- /dev/null
++++ b/scripts/simular-bots.ts
+@@ -0,0 +1,214 @@
++/**
++ * Simulación de los bots contra jugadores de distintos estilos.
++ *
++ * Uso: `npm run bots:sim` (opcional: `-- 400` para cambiar las batallas por celda).
++ *
++ * Mide, para cada bot, el porcentaje de victorias del CPU en batallas 3v3 con
++ * `CONFIG_BASE` contra 7 estilos de jugador. Las aves son 10 fichas de prueba
++ * (2 por tipo) porque el juego aún tiene solo 3 fichas reales; el equipo del
++ * jugador se sortea y el del bot se arma con `equipoDeBot`.
++ *
++ * Lectura rápida:
++ * - Contra «azar» ningún bot debería pasar mucho del 50 %: un jugador al azar no
++ *   se puede leer en PPTLS. La ventaja que quede viene de usar mejor el daño y el MP.
++ * - Contra estilos con patrón, los bots deben ganar más a medida que sube la
++ *   dificultad. El «lector» intenta explotar el tipo favorito del bot.
++ * - «afinidad»: porcentaje de jugadas del tipo favorito (Enemigos 1 a 5).
++ * - «p.máx»: probabilidad media de la jugada favorita del bot en cada turno.
++ *   Mide el azar: 100 % sería un bot totalmente predecible.
++ */
++
++import { CONFIG_BASE, type AveFicha, type EstadoBatalla, type MovimientoActivo, type Rng, type TipoPPTLS } from '../game/src/battle/types';
++import { inicializarBatalla, aveActiva, movimientosUsables } from '../game/src/battle/state';
++import { resolverTurno } from '../game/src/battle/turn';
++import { decisionCpu, elegirMovimientoCpu, PERFIL_BASE, armarEquipoCpu, type PerfilCpu } from '../game/src/battle/cpu';
++import { crearRng } from '../game/src/battle/rng';
++import { ganaPPTLS, PPTLS_TIPOS } from '../game/src/battle/pptls';
++import { BOTS, equipoDeBot, type BotCpu } from '../game/src/data/bots';
++
++const TIPOS = PPTLS_TIPOS as TipoPPTLS[];
++
++/** 10 fichas de prueba: 2 por tipo, cada una sin un tipo distinto. */
++function fichasDePrueba(): AveFicha[] {
++  const fichas: AveFicha[] = [];
++  TIPOS.forEach((tipo, i) => {
++    for (let variante = 0; variante < 2; variante++) {
++      const otros = TIPOS.filter((t) => t !== tipo);
++      const falta = otros[(i + variante * 2) % otros.length];
++      const usados = otros.filter((t) => t !== falta);
++      const id = `${tipo}-${variante}`;
++      fichas.push({
++        id,
++        nombre: id,
++        tipo,
++        movimientos: [
++          { id: `${id}-car`, nombre: `car ${tipo}`, tipo, caracteristico: true },
++          ...usados.map((t) => ({ id: `pool-${t}`, nombre: `pool ${t}`, tipo: t })),
++        ],
++      });
++    }
++  });
++  return fichas;
++}
++
++/** Estilo de jugador: elige un movimiento usable del ave activa del jugador. */
++type Jugador = (estado: EstadoBatalla, rng: Rng) => MovimientoActivo;
++
++function usables(estado: EstadoBatalla): MovimientoActivo[] {
++  return movimientosUsables(aveActiva(estado.jugador));
++}
++
++function alAzar(lista: MovimientoActivo[], rng: Rng): MovimientoActivo {
++  return lista[Math.floor(rng() * lista.length)];
++}
++
++function delTipo(lista: MovimientoActivo[], tipos: TipoPPTLS[], rng: Rng): MovimientoActivo {
++  const opciones = lista.filter((m) => tipos.includes(m.tipo));
++  return alAzar(opciones.length > 0 ? opciones : lista, rng);
++}
++
++const JUGADORES: Record<string, Jugador> = {
++  azar: (e, rng) => alAzar(usables(e), rng),
++
++  // Siempre su movimiento más fuerte (STAB y coste alto), como quien aprieta el «mejor botón».
++  repetitivo: (e) => {
++    const ave = aveActiva(e.jugador);
++    return [...usables(e)].sort(
++      (a, b) =>
++        (b.tipo === ave.tipo ? 10 : 0) + b.costeMp - ((a.tipo === ave.tipo ? 10 : 0) + a.costeMp),
++    )[0];
++  },
++
++  // Recorre sus movimientos en orden, saltando los bloqueados.
++  rotativo: (e) => {
++    const ave = aveActiva(e.jugador);
++    for (let k = 0; k < ave.movimientos.length; k++) {
++      const mov = ave.movimientos[(e.turno + k) % ave.movimientos.length];
++      if (mov.costeMp <= ave.mpActual) return mov;
++    }
++    return usables(e)[0];
++  },
++
++  // Gana y se queda; pierde y cambia a lo que vence al último del CPU.
++  'ganar-quedarse': (e, rng) => {
++    const ultima = e.historial[e.historial.length - 1];
++    if (!ultima) return alAzar(usables(e), rng);
++    if (ultima.resultado === 'jugador') return delTipo(usables(e), [ultima.movJugador.tipo], rng);
++    return delTipo(usables(e), TIPOS.filter((t) => ganaPPTLS(t, ultima.movCpu.tipo)), rng);
++  },
++
++  // Siempre contra el último movimiento del CPU.
++  'contra-ultimo': (e, rng) => {
++    const ultima = e.historial[e.historial.length - 1];
++    if (!ultima) return alAzar(usables(e), rng);
++    return delTipo(usables(e), TIPOS.filter((t) => ganaPPTLS(t, ultima.movCpu.tipo)), rng);
++  },
++
++  // Cuenta los tipos del CPU y juega contra su favorito (explota la afinidad).
++  lector: (e, rng) => {
++    if (e.historial.length === 0) return alAzar(usables(e), rng);
++    const cuenta: Record<string, number> = {};
++    for (const h of e.historial) cuenta[h.movCpu.tipo] = (cuenta[h.movCpu.tipo] ?? 0) + 1;
++    const favorito = TIPOS.reduce((a, b) => ((cuenta[b] ?? 0) > (cuenta[a] ?? 0) ? b : a));
++    return delTipo(usables(e), TIPOS.filter((t) => ganaPPTLS(t, favorito)), rng);
++  },
++
++  // Mezcla de los anteriores: cambia de estilo cada pocos turnos, como una persona.
++  humano: (e, rng) => {
++    const estilos = ['azar', 'ganar-quedarse', 'repetitivo', 'contra-ultimo'];
++    const estilo = estilos[Math.floor(e.turno / 4 + e.cpu.indiceActiva) % estilos.length];
++    return JUGADORES[estilo](e, rng);
++  },
++};
++
++interface ResultadoCelda {
++  victoriasCpu: number;
++  turnos: number;
++  jugadasAfinidad: number;
++  jugadasCpu: number;
++  /** Suma de la probabilidad de la jugada favorita del bot en cada decisión. */
++  sumaProbMax: number;
++}
++
++function simular(
++  bot: BotCpu | null,
++  jugador: Jugador,
++  batallas: number,
++  semilla: number,
++  fichas: AveFicha[],
++): ResultadoCelda {
++  const rng = crearRng(semilla);
++  const perfil: PerfilCpu = bot ? bot.perfil : PERFIL_BASE;
++  const r: ResultadoCelda = { victoriasCpu: 0, turnos: 0, jugadasAfinidad: 0, jugadasCpu: 0, sumaProbMax: 0 };
++
++  for (let b = 0; b < batallas; b++) {
++    const equipoJugador = armarEquipoCpu(fichas, 3, rng, {
++      afinidad: null,
++      aveCaracteristica: null,
++      contraEquipo: false,
++    });
++    const equipoCpu = bot
++      ? equipoDeBot(bot, fichas, 3, rng, equipoJugador)
++      : armarEquipoCpu(fichas, 3, rng, { afinidad: null, aveCaracteristica: null, contraEquipo: false });
++
++    let estado = inicializarBatalla(equipoJugador, equipoCpu, rng, CONFIG_BASE);
++    let guardia = 0;
++    while (!estado.terminada && guardia++ < 500) {
++      r.sumaProbMax += Math.max(...decisionCpu(estado, perfil).probabilidades);
++      const movCpu = elegirMovimientoCpu(estado, rng, perfil);
++      if (!movCpu) throw new Error('CPU sin movimientos en batalla en curso');
++      const movJugador = jugador(estado, rng);
++      r.jugadasCpu++;
++      if (bot?.afinidad && movCpu.tipo === bot.afinidad) r.jugadasAfinidad++;
++      estado = resolverTurno(estado, movJugador, movCpu, rng).estado;
++    }
++    if (estado.ganador === 'cpu') r.victoriasCpu += 1;
++    else if (estado.ganador === 'empate') r.victoriasCpu += 0.5;
++    r.turnos += estado.turno;
++  }
++  return r;
++}
++
++function main(): void {
++  const batallas = Number(process.argv[2] ?? 300);
++  const fichas = fichasDePrueba();
++  const nombresJugadores = Object.keys(JUGADORES);
++  const filas: (BotCpu | null)[] = [null, ...BOTS];
++
++  const pct = (x: number) => `${(100 * x).toFixed(0).padStart(3)} %`;
++  console.log(`Victorias del CPU (%), ${batallas} batallas 3v3 por celda\n`);
++  console.log(
++    'Bot'.padEnd(26) +
++      nombresJugadores.map((n) => n.padStart(15)).join('') +
++      '   media   turnos  afinidad  p.máx',
++  );
++
++  for (const bot of filas) {
++    const etiqueta = bot ? `${bot.nombre} (${bot.apodo})` : 'Base (aleatorio)';
++    let total = 0;
++    let turnos = 0;
++    let afinidad = 0;
++    let jugadas = 0;
++    let probMax = 0;
++    const celdas = nombresJugadores.map((nombre, j) => {
++      const r = simular(bot, JUGADORES[nombre], batallas, 1000 + 97 * j, fichas);
++      total += r.victoriasCpu / batallas;
++      turnos += r.turnos / batallas;
++      afinidad += r.jugadasAfinidad;
++      jugadas += r.jugadasCpu;
++      probMax += r.sumaProbMax;
++      return pct(r.victoriasCpu / batallas).padStart(15);
++    });
++    const n = nombresJugadores.length;
++    console.log(
++      etiqueta.padEnd(26) +
++        celdas.join('') +
++        pct(total / n).padStart(8) +
++        (turnos / n).toFixed(1).padStart(9) +
++        (bot?.afinidad ? pct(afinidad / jugadas) : '     -').padStart(10) +
++        pct(probMax / jugadas).padStart(7),
++    );
++  }
++}
++
++main();
