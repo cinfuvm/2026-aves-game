@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CARACTERISTICOS_MVP, CHINCOL, CONDOR, FICHAS_MVP, LOICA } from '../src/data/birds';
+import {
+  CARACTERISTICOS,
+  CARACTERISTICOS_MVP,
+  CATALOGO_AVES,
+  CHINCOL,
+  CONDOR,
+  FICHAS_MVP,
+  LOICA,
+} from '../src/data/birds';
 import { POOL_MOVIMIENTOS, desdePool } from '../src/data/movimientos';
 import { seleccionarMovimientos, validarFicha } from '../src/battle/state';
 import { crearRng } from '../src/battle/rng';
@@ -55,7 +63,7 @@ describe('fichas de aves del MVP (game/src/data/birds.ts)', () => {
     expect(() => desdePool('no-existe')).toThrow(/no encontrado/);
   });
 
-  it.each(FICHAS_MVP.map((f) => [f.nombre, f] as const))(
+    it.each(FICHAS_MVP.map((f) => [f.nombre, f] as const))(
     '%s activa siempre sus 4 movimientos fijos, con el característico incluido',
     (_nombre, ficha) => {
       for (let seed = 1; seed <= 50; seed++) {
@@ -65,4 +73,40 @@ describe('fichas de aves del MVP (game/src/data/birds.ts)', () => {
       }
     },
   );
+});
+
+describe('catálogo completo de aves (game/src/data/birds.ts)', () => {
+  it('CATALOGO_AVES tiene las 10 aves', () => {
+    expect(CATALOGO_AVES).toHaveLength(10);
+  });
+
+  it('empieza con las 3 fichas del MVP (Cóndor, Loica, Chincol)', () => {
+    expect(CATALOGO_AVES.slice(0, 3)).toEqual(FICHAS_MVP);
+  });
+
+  it('todas las aves del catálogo tienen ids únicos', () => {
+    const ids = CATALOGO_AVES.map((f) => f.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it.each(CATALOGO_AVES.map((f) => [f.nombre, f] as const))(
+    '%s pasa validarFicha (4 movimientos, 1 característico del tipo propio)',
+    (_nombre, ficha) => {
+      expect(validarFicha(ficha)).toEqual([]);
+    },
+  );
+
+  it('los predeterminados de todo el catálogo salen de la pool compartida', () => {
+    const idsPool = new Set(POOL_MOVIMIENTOS.map((m) => m.id));
+    for (const ficha of CATALOGO_AVES) {
+      for (const mov of ficha.movimientos.filter((m) => !m.caracteristico)) {
+        expect(idsPool.has(mov.id), `${ficha.nombre}: ${mov.id}`).toBe(true);
+      }
+    }
+  });
+
+  it('los característicos de todo el catálogo son únicos (no se comparten)', () => {
+    const ids = CARACTERISTICOS.map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

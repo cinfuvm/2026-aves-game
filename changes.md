@@ -155,3 +155,79 @@ Decisiones del plan MVP (`plan_mvp.md`, sección 2): D1 formato 1v1, D2 balance 
 - **Daño en la revelación:** la pantalla de revelación tiene dos pasos. Primero muestra las dos elecciones. Al confirmar con `Z` se resuelve el turno y, en la misma pantalla, aparecen el daño de cada ave (`Daño a <ave>: -N HP`) y el mensaje del turno. Otro `Z` continúa a batalla o a resultado. El estado de batalla se actualiza en el primer paso (`entradaTurno` en `flujo.ts`).
 - Tests: `game/tests/juego.test.ts` ahora tiene 14 casos. Total: 111 pruebas pasan.
 - Verificado: `tsc` sin errores; cartucho generado; TIC-80 corre sin errores en el log. No verificado visualmente.
+
+### Paso 13 — Selección 3v3 y vistazo del enemigo (fase P2)
+
+- **Módulo nuevo** `game/src/juego/seleccion.ts` (lógica pura): `seleccionVacia`, `moverCursor`, `alternarAve` (añade/quita, límite 3), `fichasElegidas`, `puedeConfirmar`, constante `TAMANO_EQUIPO = 3`.
+- **Módulo nuevo** `game/src/juego/enemigos.ts`: `equipoEnemigo(indiceBot)` determinista a partir de `FICHAS_MVP`. **Placeholder** de Lógica: los equipos reales de los 8 bots se conectan cuando existan; sustituir solo esta función.
+- **`flujo.ts`:** el estado gana `seleccion: SeleccionEquipo` y `equipoEnemigo: AveFicha[]`; `entrarCombate` los prepara. Nuevas funciones `alternarAveDelCursor`, `puedeConfirmarEquipo`, `volverATorre`, `confirmarEquipo`. `reiniciar` vuelve a `menu_torre`.
+- **`main.ts`:** pantalla de selección con catálogo (marca de elegidas), 3 slots de equipo, vistazo del rival y contador `n/3`. Entrada: IZQ/DER mueve, `Z` alterna, `ESPACIO` confirma, `X` vuelve.
+- **Límite de fase:** la batalla sigue en 1v1 real; `confirmarEquipo` usa la primera ave elegida. El motor 3v3 real (relevo, 3 aves) queda para una fase posterior.
+- Tests: `game/tests/seleccion.test.ts` (10 casos) y `juego.test.ts` adaptado. Total: 177 pruebas pasan.
+
+### Paso 14 — Flujo post-victoria en la torre (fase P3)
+
+- **`guardado.ts`:** nueva función pura `registrarVictoria(progreso, indiceBot)` — añade el bot vencido a `combatesGanados`, **idempotente**, ordenada por índice, sin mutar la entrada, ignora índices fuera de rango.
+- **`flujo.ts`:** el estado gana `botActual: number | null`, fijado en `entrarCombate`. Helper interno `irAResultado(j, estado)` que, al terminar la batalla con victoria del jugador y `botActual` no nulo, registra la victoria (desbloquea el siguiente bot). Usado por `confirmarTurno` y `rendirse` (DRY).
+- **`main.ts`:** ya persistía tras `confirmarTurno`/`rendirse`, así que la victoria se guarda en `pmem`.
+- Tests: `guardado.test.ts` (+6 casos de `registrarVictoria`) y `juego.test.ts` (+6 casos de victoria en torre, deterministas). Total: 189 pruebas pasan.
+
+### Paso 15 — Diseño de batalla portado de la rama `ui` (fase P3-visual)
+
+- **Fuente:** rama `ui` del repositorio (archivo `ui`, commit `4675db1`), descargada en `Desktop\2026-aves-game-ui`. Aporta la maqueta de la pantalla de batalla: paleta Sweetie-16, fondo con montañas/suelo, aves con primitivas, barras de HP con color dinámico y menú 2x2.
+- **`main.ts`:** paleta `C` con nombres Sweetie-16; `dibujarFondoBatalla` (cielo, 3 montañas, suelo); `dibujarAve` (primitivas + acento de color por tipo); `barraHP` con color según porcentaje (>50 verde, >20 amarillo, resto rojo); `panel`; menú de movimientos en cuadrícula **2x2**. Se eliminó la barra y el menú vertical previos.
+- **`flujo.ts`:** nueva `moverMovimientoCuadricula(j, dFila, dCol)` para navegar el menú 2x2 (arriba/abajo por columna, izq/der dentro de la fila, sin salir de rango). `moverMovimiento` se mantiene por compatibilidad.
+- **`main.ts`:** entrada de batalla usa las 4 direcciones.
+- Tests: `juego.test.ts` (+2 casos de cuadrícula). Total: **191 pruebas pasan**.
+- Verificado: `tsc` sin errores; cartucho generado; TIC-80 carga `build/output.js` sin errores. No verificado visualmente (sin display).
+
+### Paso 16 — Mejora de interfaz por pantallas (fase UI, sin diseños externos)
+
+Alcance: **solo interfaz** (dibujo en `game/main.ts`). No se tocó lógica de juego ni se inventaron diseños. Se usan los helpers existentes (`envolverTexto`, `recortarTexto`, `layout`).
+
+- **Helpers de UI nuevos en `main.ts`:** `imprimirCentrado` (centrado manual; `print` de TIC-80 no centra), `ayuda` (barra inferior centrada), `marcoTitulo` (título + línea), `anchoTexto`.
+- **Título:** cabecera decorativa (cielo + sol), título a doble escala centrado, opción seleccionada resaltada con rectángulo y `>`.
+- **Torre:** `marcoTitulo`, fila resaltada completa, iconos `[OK]/[Jugar]/[Bloq]` con color.
+- **Selección:** tarjetas de aves con nombre recortado y tipo, panel de detalle con movimientos, slots 1..3, rival en una línea, ayuda contextual.
+- **Revelación:** paneles CPU/jugador, tipos alineados a la derecha, daño y mensaje envuelto.
+- **Resultado:** texto grande centrado con color por resultado, mensaje envuelto, ayuda de teclas.
+- **Borrado:** modal con texto centrado y ayuda.
+- Verificado: `tsc` sin errores; cartucho generado; TIC-80 carga sin errores. **Pendiente de validación visual** en `jugar.bat`.
+
+### Paso 17 — Pipeline de assets (sprites de aves) desde diseños
+
+Fuente de arte: `C:\Users\mauri\Desktop\Proyecto-III` (fondos 240×136 + 10 aves 32×32). Opción elegida: **A** (import al cartucho, `spr()`).
+
+- **Copia local:** PNGs copiados a `game/assets-src/personajes/` (dentro del `--fs` de TIC-80; el import no accede fuera del sandbox).
+- **`tools/build-assets.js`:** genera `game/build/assets.tic` con `import sprites` (TIC-80 cuantiza cada PNG a la paleta por color más cercano) y escribe `game/src/data/sprites.ts` con constantes de tile base (`SPRITE_CONDOR`, `SPRITE_POR_AVE`, etc.). Las 10 aves se colocan en grid 32×32 (8 por fila).
+- **`bin/tsc80.js`:** si existe `build/assets.tic`, el lanzador hace `load build/assets.tic & import code <outfile> & run` (carga binaria con `load`, permitida en versión gratuita) para conservar sprites/paleta.
+- **`main.ts`:** `dibujarAve(lado, id, tipo)` usa `spr(id, x, y, 0, 1, flip, 0, 4, 4)` si la especie tiene sprite; si no, dibujo con primitivas. La CPU se dibuja con flip horizontal.
+- **Límite de la versión gratuita:** la spritesheet (512 tiles) no admite a la vez un fondo full-screen (30×17 = 480 tiles) **más** las aves (160 tiles). Se mantiene **fondo procedural** (`dibujarFondoBatalla`) y **aves con sprite**. Los fondos PNG quedan pendientes (requieren banks → TIC-80 PRO, o cambiar el enfoque).
+- Verificado: `tsc` 0, build OK, `assets.tic` con sprites presentes (1024 bytes no-cero), TIC-80 carga cart + código sin errores, 192 tests verdes.
+- **Pendiente de validación visual** en `jugar.bat` (no hay display). Si el colorkey 0 no transparenta bien, ajustar a -1 o al índice correcto.
+
+### Paso 18 — Catálogo de 10 aves + fondos recortados (opción C)
+
+**Decisión del Product Owner:** sin TIC-80 PRO, se necesita fondo + aves combatiendo; las 7 aves nuevas llevan ficha propia; los fondos se usan recortados (opción C).
+
+- **`game/src/data/birds.ts`:** añadidas 7 fichas nuevas (Picaflor, Diucón, Chercán, Pingüino de Humboldt, Queltehue, Tiuque, Tucúquere) con la misma estructura que el MVP: 1 característico del tipo propio + 3 predeterminados de la pool. Nuevos exports `CATALOGO_AVES` (10) y `CARACTERISTICOS` (10). `FICHAS_MVP` (3) se conserva.
+- **`game/src/juego/flujo.ts`:** la selección usa `CATALOGO_AVES` (10) en `moverSeleccion`, `alternarAveDelCursor`, `puedeConfirmarEquipo`, `confirmarEquipo`. Nueva `moverSeleccionCuadricula(j, dFila, dCol)` para navegar la rejilla 5×2.
+- **`game/main.ts`:** catálogo de selección en rejilla 5×2 con miniatura (sprite a escala 0.5) + nombre + tipo, panel de detalle, slots del equipo y ayuda contextual; entrada con las 4 direcciones. Fondo de batalla = cielo/montañas procedurales + **franja real del PNG** (240×32) en la base, alternando entre los 2 escenarios según el bot.
+- **`tools/build-assets.js`:** además de las 10 aves, importa una **franja inferior 240×32** de cada fondo (pre-recortada en `assets-src/fondos/*_franja.png`). Presupuesto de tiles: aves 160 (y=0..63) + fondo0 120 (y=64) + fondo1 120 (y=96) = 512 exactos. Genera `FONDOS_TILES`, `FONDO_ALTO_TILES` en `sprites.ts`.
+- **Límite asumido (gratis, sin banks):** el fondo es una franja real de 32px (suelo/horizonte); el cielo y montañas siguen procedurales. Un fondo full-screen 240×136 + aves no cabe en 512 tiles.
+- **Tests:** +16 en `birds.test.ts` (catálogo de 10 válido, ids únicos, característicos únicos, predeterminados de la pool) y actualizados los de cursor de selección (n=10 + rejilla). Total **208 verdes**.
+- Verificado: `tsc` 0, build OK, TIC-80 carga `assets.tic` + código sin errores. **Pendiente validación visual** (colorkey 0 en sprites y franja; ajustar si aparece recuadro).
+
+### Paso 19 — Fix del pipeline de assets (sprites/fondos no se veían)
+
+**Síntoma:** ni aves ni fonfos aparecían. **Causas reales (diagnosticadas con `export sprites` + inspección de tamaño PNG):**
+
+1. **`save`/`load` de `.tic` no persiste el spriteset** en la versión gratuita CLI: se importaba (log "imported :)") pero al recargar el cartucho el bank de sprites estaba vacío (PNG exportado = 395 bytes, vacío).
+2. El recorte de las franjas de fondo tomaba **la franja inferior, que es 100 % transparente** (el arte de los PNG está en y=0..103; de y=104 abajo no hay nada).
+
+**Solución:**
+- **`tools/build-assets.js`** ya no genera `assets.tic`. Escribe `game/build/import-assets.txt` con los 12 comandos `import sprites ...`. Los sprites se importan a VRAM **en la misma sesión** en la que corre el código (no se persiste en disco; basta para jugar).
+- **`bin/tsc80.js`:** `launchTIC` lee `import-assets.txt` y ejecuta `<imports> & import code <outfile> & run` (via `spawn` con array, quoting correcto). Se verificó que NO hay "unknown command" y 13 imports OK.
+- **Franjas de fondo:** regeneradas desde la **parte superior** (y=0..31, con arte) en `assets-src/fondos/*_franja.png`. `dibujarFondoBatalla` pinta la franja arriba (y=0) y completa suelo/horizonte con primitivas.
+- Verificado: `tsc` 0, build OK, comando de arranque importa 12 assets + código sin errores, **208 tests verdes**.
+- **Pendiente validación visual:** si aparece recuadro alrededor de aves o franja, ajustar el `colorkey` de `spr` (0 → -1 o el índice transparente real).

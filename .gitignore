@@ -6,3 +6,6 @@ build/
 .env
 # Configuración local que TIC-80 crea al ejecutar el juego
 .local/
+# Binario de TIC-80 descargado localmente (descarga reproducible, no versionar)
+tools/tic80/
+

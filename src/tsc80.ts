@@ -192,10 +192,20 @@ function build({ run = false }): void {
     console.log("Build complete.")
   }
 
-  function launchTIC() {
+    function launchTIC() {
     // TIC80_PATH tiene prioridad sobre ticExecutable del config,
     // para que cada integrante del equipo use la ruta de su máquina.
     const ticExecutable = process.env.TIC80_PATH || config.ticExecutable
+
+    // D4: en la versión gratuita `import code` SOLO trae el script (no sprites,
+    // tiles, mapa ni paleta). Los gráficos viven en build/juego.tic (generado por
+    // tools/build_sheet.py + `import sprites` + `save`). Se hace `load juego.tic`
+    // ANTES de `import code` para que spr() dibuje sobre la hoja real del cartucho.
+    const assetsCart = "build/juego.tic"
+    const cmd = fs.existsSync(path.join(process.cwd(), assetsCart))
+      ? `load ${assetsCart} & import code ${config.outfile} & run`
+      : `import code ${config.outfile} & run`
+
     let child = child_process.spawn(
       ticExecutable,
       [
@@ -203,8 +213,7 @@ function build({ run = false }): void {
         "--keepcmd",
         `--fs=${process.cwd()}`,
         "--cmd",
-        // D4: versión gratuita de TIC-80, sin cargar game.js (sprites). `load` de texto requiere PRO.
-        `import code ${config.outfile} & run`,
+        cmd,
       ],
       {
         stdio: "inherit",
