@@ -1,0 +1,175 @@
+-- title:  Pelea
+-- script: lua
+
+function init_audio()
+  local waves = {
+    "02479bceffecb9742002479bceffecb9", -- 0: Fat Sub-Triangle + 2nd Harmonic Bass
+    "00001111ffff111100001111ffff1111", -- 1: 25% Pulse Heroic Lead
+    "00000000ffffffff00000000ffffffff", -- 2: 50% Square Harmony / Arp
+    "f1c3a82e59d0b476e29c1f4a83d60b57"  -- 3: 8-Bit LFSR Noise
+  }
+
+  for w = 0, 3 do
+    local hex = waves[w + 1]
+    for i = 0, 15 do
+      local hi = tonumber(hex:sub(i * 2 + 1, i * 2 + 1), 16)
+      local lo = tonumber(hex:sub(i * 2 + 2, i * 2 + 2), 16)
+      poke(0x0FFE4 + w * 16 + i, (lo << 4) | hi)
+    end
+  end
+
+  local function build_sfx(id, wave, speed, loop_start, loop_len, vols, pitches)
+    local base = 0x100E4 + id * 66
+    for t = 0, 29 do
+      local v = (15 - (vols[t + 1] or 0)) & 0xF
+      local w_nib = wave & 0xF
+      local p = pitches and (pitches[t + 1] or 0) or 0
+      if p < 0 then p = 16 + p end
+      poke(base + t * 2, (w_nib << 4) | v)
+      poke(base + t * 2 + 1, (p & 0xF) << 4)
+    end
+    poke(base + 60, (speed & 0x7) << 5)
+    poke(base + 61, (loop_len << 4) | (loop_start & 0xF))
+    poke(base + 62, 0)
+    poke(base + 63, 0)
+  end
+
+  -- SFX 0: Heavy Punchy Bassline (full 15/15 volume + sustained body)
+  build_sfx(0, 0, 1, 4, 4,
+    {15,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 1: Classic 25% Pulse Lead
+  build_sfx(1, 1, 1, 6, 4,
+    {14,14,13,13,12,12,11,11,10,10,9,9,8,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,-1,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 2: Rapid 16th-Note Square Harmony / Arp
+  build_sfx(2, 2, 0, 0, 0,
+    {10,8,6,4,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 3: 8-Bit Kick
+  build_sfx(3, 0, 0, 0, 0,
+    {15,15,13,10,7,4,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {7,4,1,-2,-5,-7,-8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 4: 8-Bit Noise Snare
+  build_sfx(4, 3, 0, 0, 0,
+    {15,13,10,8,5,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {3,1,-1,-3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 5: Crisp Noise Hi-Hat
+  build_sfx(5, 3, 0, 0, 0,
+    {8,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 6: Open Noise Crash / Swish
+  build_sfx(6, 3, 1, 0, 0,
+    {12,10,8,6,5,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+end
+
+local _ = -1
+
+-- Channel 0: Deep, Prominent Sub-Octave Walking & Galloping Bassline (D1–A2)
+local ch_bass = {
+  -- Intro (Bars 1-2): Heavy chromatic dive + thundering pedal
+  38, 37, 36, 35,  34, 33, 32, 31,  30, 29, 28, 27,  26, _,  26, _,
+  26, 26, 38, 26,  26, 38, 26, 26,  33, 33, 45, 33,  33, 45, 33, 33,
+
+  -- Loop Bar 1: Dm deep gallop + fifth/octave walk
+  26, 26, 38, 26,  29, 29, 41, 29,  33, 33, 45, 33,  38, 36, 33, 29,
+  -- Loop Bar 2: C deep gallop + syncopated walk
+  24, 24, 36, 24,  28, 28, 40, 28,  31, 31, 43, 31,  36, 35, 31, 28,
+  -- Loop Bar 3: Bb deep gallop + ascending run
+  22, 22, 34, 22,  26, 26, 38, 26,  29, 29, 41, 29,  34, 33, 31, 29,
+  -- Loop Bar 4: A7 dominant driving riff
+  21, 21, 33, 21,  25, 25, 37, 25,  28, 28, 40, 28,  33, 31, 28, 25,
+  -- Loop Bar 5: Dm heavy octave bounce
+  26, 38, 26, 38,  29, 41, 29, 41,  33, 45, 33, 45,  38, 36, 33, 29,
+  -- Loop Bar 6: Gm -> C low-end groove
+  31, 43, 31, 43,  29, 41, 26, 38,  24, 36, 24, 36,  28, 40, 31, 43,
+  -- Loop Bar 7: F -> Bb rising power bass
+  29, 41, 29, 41,  24, 36, 29, 41,  34, 46, 34, 46,  29, 41, 34, 46,
+  -- Loop Bar 8: A7 chromatic bass run back to D1
+  33, 45, 31, 43,  28, 40, 25, 37,  21, 33, 25, 37,  28, 28, 27, 27
+}
+
+-- Channel 1: Heroic 25% Pulse Battle Melody
+local ch_lead = {
+  86, 85, 84, 83,  82, 81, 80, 79,  78, 77, 76, 75,  74, _,  62, _,
+  69, _,  _,  _,   70, _,  _,  _,   73, _,  _,  _,   76, _,  _,  _,
+
+  74, _,  74, 76,  77, _,  76, 74,  73, _,  74, _,   69, _,  _,  _,
+  72, _,  72, 74,  76, _,  74, 72,  71, _,  72, _,   67, _,  _,  _,
+  70, _,  70, 72,  74, _,  72, 70,  69, _,  70, _,   74, _,  77, _,
+  76, _,  _,  _,   73, _,  _,  _,   69, _,  73, _,   76, _,  _,  _,
+  81, _,  79, 77,  79, _,  81, _,   86, _,  84, 81,  79, _,  77, _,
+  79, _,  77, 74,  77, _,  79, _,   84, _,  82, 79,  77, _,  76, _,
+  77, _,  79, _,   81, _,  82, _,   84, _,  86, _,   88, _,  89, _,
+  88, _,  85, _,   81, _,  85, _,   88, _,  91, _,   93, _,  _,  _
+}
+
+-- Channel 2: Rapid 16th-Note Square Harmony Arpeggios
+local ch_arp = {
+  74, 73, 72, 71,  70, 69, 68, 67,  66, 65, 64, 63,  62, _,  _,  _,
+  62, 65, 69, 74,  62, 65, 69, 74,  61, 64, 69, 73,  61, 64, 69, 73,
+
+  62, 65, 69, 74,  62, 65, 69, 74,  62, 65, 69, 74,  62, 65, 69, 74,
+  60, 64, 67, 72,  60, 64, 67, 72,  60, 64, 67, 72,  60, 64, 67, 72,
+  58, 62, 65, 70,  58, 62, 65, 70,  58, 62, 65, 70,  58, 62, 65, 70,
+  57, 61, 64, 69,  57, 61, 64, 69,  61, 64, 69, 73,  64, 69, 73, 76,
+  62, 65, 69, 74,  62, 65, 69, 74,  62, 65, 69, 74,  62, 65, 69, 74,
+  55, 58, 62, 67,  55, 58, 62, 67,  60, 64, 67, 72,  60, 64, 67, 72,
+  53, 57, 60, 65,  53, 57, 60, 65,  58, 62, 65, 70,  58, 62, 65, 70,
+  57, 61, 64, 69,  61, 64, 69, 73,  64, 69, 73, 76,  69, 73, 76, 81
+}
+
+-- Channel 3: 8-Bit Handheld Battle Percussion
+local ch_drums = {
+  4,  _,  _,  _,   _,  _,  _,  _,   _,  _,  _,  _,   2,  _,  2,  2,
+  1,  3,  2,  3,   1,  3,  2,  3,   2,  2,  2,  2,   2,  2,  2,  4,
+
+  4,  3,  3,  3,   2,  3,  3,  1,   3,  1,  1,  3,   2,  3,  4,  3,
+  1,  3,  3,  3,   2,  3,  3,  1,   3,  3,  1,  3,   2,  3,  2,  3,
+  1,  3,  3,  3,   2,  3,  3,  1,   3,  1,  1,  3,   2,  3,  4,  3,
+  1,  3,  1,  3,   2,  3,  2,  3,   1,  1,  2,  2,   2,  2,  2,  2,
+  4,  3,  1,  3,   2,  3,  3,  1,   3,  1,  1,  3,   2,  3,  1,  3,
+  1,  3,  1,  3,   2,  3,  3,  1,   3,  1,  1,  3,   2,  3,  4,  3,
+  1,  3,  1,  3,   2,  3,  1,  3,   1,  3,  1,  3,   2,  3,  2,  3,
+  1,  1,  2,  2,   1,  1,  2,  2,   2,  2,  2,  2,   2,  2,  2,  4
+}
+
+local tick = 0
+local step = 1
+local speed = 6
+local loop_start = 33
+
+init_audio()
+
+function update_music()
+  if tick % speed == 0 then
+    local b = ch_bass[step]
+    if b ~= _ then sfx(0, b, 12, 0, 15, 0) end
+
+    local l = ch_lead[step]
+    if l ~= _ then sfx(1, l, 22, 1, 13, 0) end
+
+    local a = ch_arp[step]
+    if a ~= _ then sfx(2, a, 6, 2, 7, 0) end
+
+    local d = ch_drums[step]
+    if d == 1 then sfx(3, 30, 6, 3, 14, 0)
+    elseif d == 2 then sfx(4, 56, 8, 3, 14, 0)
+    elseif d == 3 then sfx(5, 86, 4, 3, 6, 0)
+    elseif d == 4 then sfx(6, 78, 10, 3, 11, 0)
+    end
+
+    step = step + 1
+    if step > #ch_bass then
+      step = loop_start
+    end
+  end
+  tick = tick + 1
+end
+
+function TIC()
+  update_music()
+end

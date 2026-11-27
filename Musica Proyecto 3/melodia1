@@ -1,0 +1,160 @@
+-- title:  Melodia 1
+-- script: lua
+
+function init_audio()
+  local waves = {
+    "8abdeffedc975310124689abcdba8765", -- 0: Warm Electric Piano
+    "89bcdeffedcba9876543210012345678", -- 1: Smooth Sub Bass
+    "8acdeffedcba8642013579bdfedca987", -- 2: Singing Sine-Triangle Lead
+    "f1c3a82e59d0b476e29c1f4a83d60b57"  -- 3: Soft Noise
+  }
+
+  for w = 0, 3 do
+    local hex = waves[w + 1]
+    for i = 0, 15 do
+      local hi = tonumber(hex:sub(i * 2 + 1, i * 2 + 1), 16)
+      local lo = tonumber(hex:sub(i * 2 + 2, i * 2 + 2), 16)
+      poke(0x0FFE4 + w * 16 + i, (lo << 4) | hi)
+    end
+  end
+
+  local function build_sfx(id, wave, speed, loop_start, loop_len, vols, pitches)
+    local base = 0x100E4 + id * 66
+    for t = 0, 29 do
+      local v = (15 - (vols[t + 1] or 0)) & 0xF
+      local w_nib = wave & 0xF
+      local p = pitches and (pitches[t + 1] or 0) or 0
+      if p < 0 then p = 16 + p end
+      poke(base + t * 2, (w_nib << 4) | v)
+      poke(base + t * 2 + 1, (p & 0xF) << 4)
+    end
+    poke(base + 60, (speed & 0x7) << 5)
+    poke(base + 61, (loop_len << 4) | (loop_start & 0xF))
+    poke(base + 62, 0)
+    poke(base + 63, 0)
+  end
+
+  -- SFX 0: Soft Electric Piano (gentle swell, long tail)
+  build_sfx(0, 0, 3, 10, 4,
+    {7,10,11,10,9,8,7,6,6,5,5,4,4,3,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 1: Deep Sustained Bass
+  build_sfx(1, 1, 3, 6, 4,
+    {13,13,12,11,10,9,8,8,7,7,6,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 2: Expressive Lead (warm vibrato, long sustain)
+  build_sfx(2, 2, 3, 8, 8,
+    {5,9,12,13,13,12,12,11,11,10,10,10,9,9,8,8,7,7,6,5,4,3,2,1,0,0,0,0,0,0},
+    {0,0,0,0,0,0,1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,-1,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 3: Deep Muffled Kick
+  build_sfx(3, 1, 0, 0, 0,
+    {14,13,12,10,8,6,4,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {6,4,1,-1,-3,-5,-6,-7,-8,-8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 4: Soft Rimshot / Brush Snare
+  build_sfx(4, 3, 0, 0, 0,
+    {10,8,6,4,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+
+  -- SFX 5: Whisper Hi-Hat
+  build_sfx(5, 3, 0, 0, 0,
+    {4,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+end
+
+local _ = -1
+
+-- 128 Steps = 8 Bars (~72 BPM)
+-- Progression: Dm9 -> G13 -> Cmaj9 -> Am9 -> Dm9 -> G13 -> Cmaj9 -> A7#9
+local ch_keys = {
+  -- Bar 1: Dm9
+  50, _,  53, 57,  60, _,  64, _,   60, _,  57, _,   53, _,  50, _,
+  -- Bar 2: G13
+  43, _,  53, 57,  59, _,  64, _,   62, _,  59, _,   57, _,  53, _,
+  -- Bar 3: Cmaj9
+  48, _,  52, 55,  59, _,  62, _,   59, _,  55, _,   52, _,  48, _,
+  -- Bar 4: Am9
+  45, _,  52, 55,  59, _,  60, _,   64, _,  60, _,   59, _,  55, _,
+  -- Bar 5: Dm9
+  50, _,  53, 57,  60, _,  64, _,   67, _,  64, _,   60, _,  57, _,
+  -- Bar 6: G13
+  43, _,  53, 57,  59, _,  64, _,   62, _,  59, _,   57, _,  53, _,
+  -- Bar 7: Cmaj9
+  48, _,  52, 55,  59, _,  62, _,   64, _,  62, _,   59, _,  55, _,
+  -- Bar 8: A7alt turnaround
+  45, _,  55, 61,  64, _,  65, _,   64, _,  61, _,   55, _,  52, _
+}
+
+local ch_bass = {
+  26, _,  _,  _,   _,  _,  29, _,   33, _,  _,  _,   31, _,  _,  _,
+  31, _,  _,  _,   _,  _,  35, _,   38, _,  _,  _,   36, _,  35, _,
+  24, _,  _,  _,   _,  _,  28, _,   31, _,  _,  _,   29, _,  _,  _,
+  33, _,  _,  _,   _,  _,  31, _,   28, _,  _,  _,   26, _,  _,  _,
+  26, _,  _,  _,   _,  _,  29, _,   33, _,  _,  _,   31, _,  _,  _,
+  31, _,  _,  _,   _,  _,  35, _,   38, _,  _,  _,   36, _,  35, _,
+  24, _,  _,  _,   _,  _,  28, _,   31, _,  _,  _,   28, _,  _,  _,
+  33, _,  _,  _,   _,  _,  31, _,   28, _,  _,  _,   26, _,  24, _
+}
+
+-- Main singing melody (2-part call & response across 8 bars)
+local ch_lead = {
+  -- Bar 1: Gentle opening phrase
+  _,  _,  69, _,   72, _,  71, _,   69, _,  _,  _,   67, _,  64, _,
+  -- Bar 2: Soft descent
+  62, _,  _,  _,   64, _,  67, _,   64, _,  _,  _,   _,  _,  _,  _,
+  -- Bar 3: Answering lift
+  _,  _,  67, _,   71, _,  74, _,   72, _,  _,  _,   71, _,  67, _,
+  -- Bar 4: Warm resolution
+  64, _,  _,  _,   _,  _,  62, _,   64, _,  _,  _,   _,  _,  _,  _,
+  -- Bar 5: Higher emotional peak
+  _,  _,  72, _,   76, _,  74, _,   72, _,  _,  _,   69, _,  67, _,
+  -- Bar 6: Expressive step-down
+  64, _,  _,  _,   67, _,  69, _,   67, _,  _,  _,   64, _,  _,  _,
+  -- Bar 7: Lingering refrain
+  _,  _,  62, _,   64, _,  67, _,   71, _,  _,  _,   69, _,  67, _,
+  -- Bar 8: Turnaround tail back to start
+  64, _,  _,  _,   61, _,  62, _,   64, _,  _,  _,   _,  _,  _,  _
+}
+
+-- Minimal half-time beat
+local ch_drums = {
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  _,  1,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  1,  _,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  _,  1,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   1,  _,  _,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  _,  1,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  1,  _,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   _,  _,  1,  _,   2,  _,  3,  _,
+  1,  _,  3,  _,   2,  _,  3,  _,   1,  _,  1,  _,   2,  _,  3,  _
+}
+
+local tick = 0
+local step = 1
+local speed = 10 -- Slower tempo (~70 BPM)
+
+init_audio()
+
+function update_music()
+  if tick % speed == 0 then
+    local k = ch_keys[step]
+    if k ~= _ then sfx(0, k, 36, 0, 9, 0) end
+
+    local b = ch_bass[step]
+    if b ~= _ then sfx(1, b, 36, 1, 13, 0) end
+
+    local l = ch_lead[step]
+    if l ~= _ then sfx(2, l, 52, 2, 12, 0) end
+
+    local d = ch_drums[step]
+    if d == 1 then sfx(3, 34, 14, 3, 13, 0)
+    elseif d == 2 then sfx(4, 58, 12, 3, 9, 0)
+    elseif d == 3 then sfx(5, 82, 6, 3, 4, 0)
+    end
+
+    step = (step % #ch_keys) + 1
+  end
+  tick = tick + 1
+end
+
+function TIC()
+  update_music()
+end
